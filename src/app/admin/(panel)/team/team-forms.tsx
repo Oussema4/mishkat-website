@@ -8,7 +8,7 @@ export function NewAdminForm() {
   const [state, action] = useActionState<FormState, FormData>(createAdmin, {});
   const e = state.fieldErrors ?? {};
   return (
-    <form action={action} className="space-y-4 rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">
+    <form action={action} className="space-y-4 rounded-[var(--radius-lg)] bg-surface p-6 shadow-[var(--shadow-soft)]">
       <h2 className="font-sans text-lg font-bold">إضافة مسؤول</h2>
       <AdminField id="name" label="الاسم" error={e.name}>
         <input {...describe("name", { error: e.name })} required className={adminInput} />
@@ -29,7 +29,7 @@ export function PasswordForm() {
   const [state, action] = useActionState<FormState, FormData>(changeOwnPassword, {});
   const e = state.fieldErrors ?? {};
   return (
-    <form action={action} className="space-y-4 rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">
+    <form action={action} className="space-y-4 rounded-[var(--radius-lg)] bg-surface p-6 shadow-[var(--shadow-soft)]">
       <h2 className="font-sans text-lg font-bold">تغيير كلمة السر</h2>
       <AdminField id="current" label="كلمة السر الحالية" error={e.current}>
         <input {...describe("current", { error: e.current })} type="password" dir="ltr" required autoComplete="current-password" className={adminInput} />

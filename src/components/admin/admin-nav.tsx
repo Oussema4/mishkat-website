@@ -26,7 +26,7 @@ export function AdminNav() {
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex min-h-11 items-center gap-3 whitespace-nowrap rounded-[var(--radius-md)] px-3 text-[0.95rem] font-medium transition-colors",
-                  active ? "bg-ink text-paper" : "text-ink hover:bg-mist",
+                  active ? "bg-ink text-paper" : "text-ink hover:bg-sand",
                 )}
               >
                 <Icon aria-hidden className="size-5" strokeWidth={1.75} />
@@ -39,7 +39,7 @@ export function AdminNav() {
           <Link
             href="/"
             target="_blank"
-            className="flex min-h-11 items-center gap-3 whitespace-nowrap rounded-[var(--radius-md)] px-3 text-[0.95rem] text-muted hover:bg-mist"
+            className="flex min-h-11 items-center gap-3 whitespace-nowrap rounded-[var(--radius-md)] px-3 text-[0.95rem] text-muted hover:bg-sand"
           >
             <ExternalLink aria-hidden className="size-5" strokeWidth={1.75} />
             عرض المتجر

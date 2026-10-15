@@ -11,7 +11,7 @@ import { deleteReview, toggleReview, uploadReview, type FormState } from "../../
 export function ReviewsManager({ reviews }: { reviews: Review[] }) {
   const [state, action] = useActionState<FormState, FormData>(uploadReview, {});
   return (
-    <section aria-labelledby="reviews-title" className="rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">
+    <section aria-labelledby="reviews-title" className="rounded-[var(--radius-lg)] bg-surface p-6 shadow-[var(--shadow-soft)]">
       <h2 id="reviews-title" className="font-sans text-lg font-bold">
         آراء العملاء
       </h2>
@@ -48,7 +48,7 @@ export function ReviewsManager({ reviews }: { reviews: Review[] }) {
             <div className="flex items-center justify-between">
               <form action={toggleReview}>
                 <input type="hidden" name="id" value={r.id} />
-                <button type="submit" className="inline-flex min-h-9 items-center gap-1.5 rounded-md px-2 text-sm font-medium hover:bg-mist">
+                <button type="submit" className="inline-flex min-h-9 items-center gap-1.5 rounded-md px-2 text-sm font-medium hover:bg-sand">
                   {r.visible ? <Eye aria-hidden className="size-4" /> : <EyeOff aria-hidden className="size-4" />}
                   {r.visible ? "ظاهر" : "مخفي"}
                 </button>

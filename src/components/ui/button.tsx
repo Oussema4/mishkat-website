@@ -11,12 +11,12 @@ const base =
   "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100";
 
 const variants: Record<Variant, string> = {
-  primary: "bg-ink text-paper hover:bg-ink-soft",
+  primary: "bg-ink text-paper shadow-[var(--shadow-soft)] hover:bg-ink-soft",
   gold: "bg-gold text-ink hover:bg-gold-light",
-  outline: "border border-ink/80 text-ink hover:bg-ink hover:text-paper",
-  ghost: "text-ink hover:bg-mist",
-  sabili: "bg-sabili-yellow text-sabili-navy hover:bg-[#ffe04d]",
-  danger: "bg-danger text-paper hover:bg-[#8f1c13]",
+  outline: "border-[1.5px] border-ink/85 text-ink hover:bg-ink hover:text-paper",
+  ghost: "text-ink hover:bg-sand",
+  sabili: "bg-sabili-yellow text-sabili-navy hover:bg-sabili-yellow-light",
+  danger: "bg-danger text-paper hover:bg-danger-deep",
 };
 
 const sizes: Record<Size, string> = {

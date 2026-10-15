@@ -14,7 +14,7 @@ export function WhatsAppFloat({ number }: { number: string }) {
       target="_blank"
       rel="noopener"
       aria-label="راسلنا على واتساب"
-      className="fixed bottom-5 end-5 z-30 inline-flex size-14 items-center justify-center rounded-full bg-[#1f8f4e] text-paper shadow-[var(--shadow-lift)] transition-transform duration-150 hover:scale-105 active:scale-95"
+      className="fixed bottom-5 end-5 z-30 inline-flex size-14 items-center justify-center rounded-full bg-whatsapp text-paper shadow-[var(--shadow-lift)] transition-transform duration-150 hover:scale-105 active:scale-95"
     >
       <WhatsAppIcon className="size-7" />
     </a>

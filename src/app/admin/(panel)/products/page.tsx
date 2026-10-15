@@ -39,15 +39,15 @@ export default async function AdminProductsPage() {
           <li key={p.id}>
             <Link
               href={`/admin/products/${p.id}`}
-              className="flex gap-4 rounded-[var(--radius-lg)] bg-paper p-4 shadow-[var(--shadow-soft)] transition-shadow hover:shadow-[var(--shadow-lift)]"
+              className="flex gap-4 rounded-[var(--radius-lg)] bg-surface p-4 shadow-[var(--shadow-soft)] transition-shadow hover:shadow-[var(--shadow-lift)]"
             >
-              <div className="relative size-20 shrink-0 overflow-hidden rounded-[var(--radius-md)] bg-mist">
+              <div className="relative size-20 shrink-0 overflow-hidden rounded-[var(--radius-md)] bg-sand">
                 {p.image ? <Image src={p.image} alt="" fill sizes="80px" className="object-cover" /> : null}
               </div>
               <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center justify-between gap-2">
                   <p className="truncate text-lg font-semibold">{p.name}</p>
-                  {p.status === "hidden" ? <span className="rounded-full bg-mist px-2 text-xs text-muted">مخفي</span> : null}
+                  {p.status === "hidden" ? <span className="rounded-full bg-sand px-2 text-xs text-muted">مخفي</span> : null}
                 </div>
                 <p className="font-semibold tabular">{formatTND(p.price)}</p>
                 <StockBadge stock={p.stock} />

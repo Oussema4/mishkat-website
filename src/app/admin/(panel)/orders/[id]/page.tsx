@@ -45,7 +45,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-6">
-          <section aria-labelledby="customer-title" className="rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">
+          <section aria-labelledby="customer-title" className="rounded-[var(--radius-lg)] bg-surface p-6 shadow-[var(--shadow-soft)]">
             <h2 id="customer-title" className="font-sans text-lg font-bold">
               الزبون والتوصيل
             </h2>
@@ -74,7 +74,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
               {order.note ? (
                 <div className="sm:col-span-2">
                   <dt className="text-sm text-muted">ملاحظة الزبون</dt>
-                  <dd className="rounded-[var(--radius-md)] bg-mist p-3 leading-7">{order.note}</dd>
+                  <dd className="rounded-[var(--radius-md)] bg-sand p-3 leading-7">{order.note}</dd>
                 </div>
               ) : null}
             </dl>
@@ -90,7 +90,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
                 href={whatsappLink(order.phone, waText)}
                 target="_blank"
                 rel="noopener"
-                className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-md)] bg-[#1f8f4e] px-4 font-medium text-paper hover:bg-[#187540]"
+                className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-md)] bg-whatsapp px-4 font-medium text-paper hover:bg-whatsapp-deep"
               >
                 <WhatsAppIcon className="size-4" />
                 واتساب
@@ -98,7 +98,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
             </div>
           </section>
 
-          <section aria-labelledby="items-title" className="rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">
+          <section aria-labelledby="items-title" className="rounded-[var(--radius-lg)] bg-surface p-6 shadow-[var(--shadow-soft)]">
             <h2 id="items-title" className="font-sans text-lg font-bold">
               المنتجات
             </h2>
@@ -130,14 +130,14 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
         </div>
 
         <div className="space-y-6">
-          <section aria-labelledby="status-title" className="rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">
+          <section aria-labelledby="status-title" className="rounded-[var(--radius-lg)] bg-surface p-6 shadow-[var(--shadow-soft)]">
             <h2 id="status-title" className="font-sans text-lg font-bold">
               تغيير الحالة
             </h2>
             <StatusForm orderId={order.id} current={order.status} />
           </section>
 
-          <section aria-labelledby="history-title" className="rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">
+          <section aria-labelledby="history-title" className="rounded-[var(--radius-lg)] bg-surface p-6 shadow-[var(--shadow-soft)]">
             <h2 id="history-title" className="font-sans text-lg font-bold">
               سجل الحالات
             </h2>

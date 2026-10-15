@@ -1,22 +1,31 @@
 import type { Metadata, Viewport } from "next";
-import { Aref_Ruqaa, IBM_Plex_Sans_Arabic } from "next/font/google";
+import { Alexandria, Aref_Ruqaa, IBM_Plex_Sans_Arabic } from "next/font/google";
 import { locales, defaultLocale, t } from "@/i18n/config";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
-/** Ruqʿah calligraphy for headings — pairs with the geometric Kufic of the Mishkat logo. */
-const display = Aref_Ruqaa({
+/** Display: geometric modern Arabic that echoes the square Kufic of the Mishkat and Sabili wordmarks. */
+const display = Alexandria({
   subsets: ["arabic", "latin"],
-  weight: ["400", "700"],
-  variable: "--font-calligraphy",
+  variable: "--font-alexandria",
   display: "swap",
 });
 
+/** Text and UI: the most legible Arabic sans at 14–18px. */
 const body = IBM_Plex_Sans_Arabic({
   subsets: ["arabic", "latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-plex-arabic",
   display: "swap",
+});
+
+/** Accent only (the slogan). Not preloaded: it appears below the fold. */
+const accent = Aref_Ruqaa({
+  subsets: ["arabic"],
+  weight: ["700"],
+  variable: "--font-ruqaa",
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -36,7 +45,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
+  themeColor: "#17140f",
   width: "device-width",
   initialScale: 1,
 };
@@ -44,7 +53,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = locales[defaultLocale];
   return (
-    <html lang={locale.lang} dir={locale.dir} className={`${display.variable} ${body.variable}`}>
+    <html lang={locale.lang} dir={locale.dir} className={`${display.variable} ${body.variable} ${accent.variable}`}>
       <body className="min-h-dvh">{children}</body>
     </html>
   );

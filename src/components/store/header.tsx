@@ -43,7 +43,7 @@ export function Header() {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/85">
+    <header className="sticky top-0 z-40 border-b border-line/80 bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/80">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-3 focus:z-50 focus:rounded-md focus:bg-ink focus:px-4 focus:py-2 focus:text-paper"
@@ -63,12 +63,12 @@ export function Header() {
                     href={l.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "relative inline-flex min-h-11 items-center px-3 text-[0.95rem] font-medium transition-colors",
-                      active ? "text-ink" : "text-muted hover:text-ink",
+                      "relative inline-flex min-h-11 items-center px-3.5 text-[0.95rem] font-medium transition-colors",
+                      active ? "font-semibold text-ink" : "text-muted hover:text-ink",
                     )}
                   >
                     {l.label}
-                    {active ? <span aria-hidden className="absolute inset-x-3 bottom-1.5 h-0.5 rounded-full bg-gold" /> : null}
+                    {active ? <span aria-hidden className="absolute inset-x-3.5 bottom-1 h-[3px] rounded-full bg-gold" /> : null}
                   </Link>
                 </li>
               );
@@ -79,14 +79,14 @@ export function Header() {
         <div className="flex items-center gap-1">
           <Link
             href="/cart"
-            className="relative inline-flex size-11 items-center justify-center rounded-full text-ink transition-colors hover:bg-mist"
+            className="relative inline-flex size-11 items-center justify-center rounded-full text-ink transition-colors hover:bg-sand"
             aria-label={count > 0 ? fill("السلة، فيها {n} قطع", { n: count }) : ar.nav.cart}
           >
             <ShoppingBag aria-hidden className="size-6" strokeWidth={1.75} />
             {count > 0 ? (
               <span
                 aria-hidden
-                className="absolute -top-0.5 -end-0.5 grid min-w-5 place-items-center rounded-full bg-gold px-1 text-xs font-bold leading-5 text-ink tabular"
+                className="absolute -top-0.5 -end-0.5 grid min-w-5 place-items-center rounded-full bg-gold px-1 text-xs font-bold leading-5 text-ink ring-2 ring-paper tabular"
               >
                 {count}
               </span>
@@ -95,7 +95,7 @@ export function Header() {
           <button
             ref={menuButton}
             type="button"
-            className="inline-flex size-11 items-center justify-center rounded-full hover:bg-mist md:hidden"
+            className="inline-flex size-11 items-center justify-center rounded-full hover:bg-sand md:hidden"
             aria-expanded={open}
             aria-controls="mobile-menu"
             aria-label={open ? ar.nav.closeMenu : ar.nav.menu}
@@ -121,7 +121,7 @@ export function Header() {
                   href={l.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex min-h-12 items-center border-s-2 ps-3 text-lg",
+                    "flex min-h-12 items-center border-s-[3px] ps-4 text-lg",
                     active ? "border-gold font-semibold text-ink" : "border-transparent text-muted",
                   )}
                 >

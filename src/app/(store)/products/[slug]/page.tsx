@@ -100,9 +100,9 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
         <ProductGallery images={product.images} name={product.name} />
 
         <div className="md:pt-6">
-          <h1 className="text-5xl md:text-6xl">{product.name}</h1>
-          {product.tagline ? <p className="mt-3 text-xl font-medium">{product.tagline}</p> : null}
-          <p className="mt-4 max-w-prose leading-8 text-muted">{product.shortDescription}</p>
+          <h1 className="text-display-xl">{product.name}</h1>
+          {product.tagline ? <p className="mt-2 text-xl font-semibold text-gold-deep">{product.tagline}</p> : null}
+          <p className="text-body-lg mt-4 max-w-prose text-muted">{product.shortDescription}</p>
 
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
             <Price price={product.price} compareAt={product.compareAtPrice} size="lg" showSave />
@@ -110,9 +110,9 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
           </div>
 
           {details.length > 0 ? (
-            <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-2">
+            <dl className="mt-6 flex flex-wrap gap-2">
               {details.map((d) => (
-                <div key={d.label} className="flex gap-2">
+                <div key={d.label} className="flex gap-1.5 rounded-full border border-line bg-surface px-4 py-1.5 text-[0.95rem]">
                   <dt className="text-muted">{d.label}:</dt>
                   <dd className="font-semibold">{d.value}</dd>
                 </div>
@@ -124,13 +124,13 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
             <ProductPurchase product={cartProduct} />
           </div>
 
-          <ul className="mt-8 space-y-3 border-t border-line pt-6 text-[0.95rem]">
+          <ul className="mt-8 space-y-3 rounded-[var(--radius-lg)] border border-line bg-surface p-5 text-[0.95rem]">
             <li className="flex items-center gap-3">
-              <Wallet aria-hidden className="size-5 shrink-0 text-gold-deep" strokeWidth={1.75} />
+              <Wallet aria-hidden className="size-5 shrink-0 text-gold-deep" strokeWidth={1.5} />
               {ar.checkout.paymentCod}
             </li>
             <li className="flex items-center gap-3">
-              <Truck aria-hidden className="size-5 shrink-0 text-gold-deep" strokeWidth={1.75} />
+              <Truck aria-hidden className="size-5 shrink-0 text-gold-deep" strokeWidth={1.5} />
               {fill("توصيل لكل الولايات خلال {time} · {fee}", { time: settings.deliveryTime, fee: formatTND(settings.deliveryFee) })}
             </li>
           </ul>
@@ -138,10 +138,10 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
       </section>
 
       {/* ───── Description + contents ───── */}
-      <section className="border-t border-line">
+      <section className="bg-sand">
         <div className="container-page grid gap-12 py-14 md:grid-cols-[1.3fr_1fr] md:py-20">
           <div>
-            <h2 className="text-3xl">{ar.product.description}</h2>
+            <h2 className="text-display-md">{ar.product.description}</h2>
             <div className="prose-ar mt-5 max-w-prose text-lg leading-9">
               {product.description.split(/\n{2,}/).map((p, i) => (
                 <p key={i}>{p}</p>
@@ -150,7 +150,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
           </div>
           {product.contents.length > 0 ? (
             <div>
-              <h2 className="text-3xl">{ar.product.contents}</h2>
+              <h2 className="text-display-md">{ar.product.contents}</h2>
               <dl className="mt-5 divide-y divide-line border-y border-line">
                 {product.contents.map((c) => (
                   <div key={c.label} className="py-4">
@@ -168,7 +168,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
       {product.howToPlay.length > 0 ? (
         <section id="how-to-play" aria-labelledby="how-to-play-title" className="on-dark scroll-mt-24 bg-sabili-navy text-paper">
           <div className="container-page py-16 md:py-24">
-            <h2 id="how-to-play-title" className="text-3xl md:text-4xl">
+            <h2 id="how-to-play-title" className="text-display-lg">
               {ar.product.howToPlay}
             </h2>
             <p className="mt-3 text-paper/70">{ar.product.rulesNote}</p>
@@ -183,12 +183,12 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
                 <li key={step.title} className="grid grid-cols-[auto_1fr] gap-x-5">
                   <span
                     aria-hidden
-                    className="font-display text-4xl leading-none text-sabili-yellow tabular"
+                    className="font-display text-4xl font-extrabold leading-none text-sabili-yellow tabular"
                   >
                     {i + 1}
                   </span>
                   <div>
-                    <h3 className="font-sans text-xl font-bold">{step.title}</h3>
+                    <h3 className="text-title">{step.title}</h3>
                     <p className="mt-2 leading-8 text-paper/85">{step.body}</p>
                   </div>
                 </li>
@@ -202,11 +202,11 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
       <section className="container-page grid gap-14 py-16 md:grid-cols-2 md:py-24">
         {product.benefits.length > 0 ? (
           <div>
-            <h2 className="text-3xl">{ar.product.benefits}</h2>
+            <h2 className="text-display-md">{ar.product.benefits}</h2>
             <ul className="mt-6 space-y-4">
               {product.benefits.map((b) => (
                 <li key={b} className="flex gap-3 leading-8">
-                  <Check aria-hidden className="mt-1.5 size-5 shrink-0 text-gold-deep" strokeWidth={2.25} />
+                  <span className="mt-1 grid size-6 shrink-0 place-items-center rounded-full bg-zaytun-tint"><Check aria-hidden className="size-4 text-zaytun" strokeWidth={2.5} /></span>
                   <span>{b}</span>
                 </li>
               ))}
@@ -215,7 +215,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
         ) : null}
         {product.faq.length > 0 ? (
           <div>
-            <h2 className="text-3xl">{ar.product.faq}</h2>
+            <h2 className="text-display-md">{ar.product.faq}</h2>
             <div className="mt-4">
               <FaqList items={product.faq} />
             </div>

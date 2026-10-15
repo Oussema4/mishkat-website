@@ -13,8 +13,8 @@ export const metadata: Metadata = {
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const admin = await requireAdmin();
   return (
-    <div className="min-h-dvh bg-mist lg:grid lg:grid-cols-[15rem_1fr]">
-      <aside className="border-b border-line bg-paper lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:border-b-0 lg:border-e">
+    <div className="min-h-dvh bg-sand lg:grid lg:grid-cols-[15rem_1fr]">
+      <aside className="border-b border-line bg-surface lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:border-b-0 lg:border-e">
         <div className="flex items-center justify-between gap-3 px-4 py-3 lg:block lg:px-5 lg:py-6">
           <Logo href="/admin" className="w-24" />
           <p className="hidden text-sm text-muted lg:mt-2 lg:block">لوحة التحكم</p>

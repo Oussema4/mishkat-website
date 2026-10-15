@@ -85,7 +85,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
             type="search"
             defaultValue={q}
             placeholder="رقم الطلب، الاسم، الهاتف، المدينة"
-            className="h-11 w-full rounded-[var(--radius-md)] border border-line bg-paper ps-10 pe-3 outline-none focus:border-ink"
+            className="h-11 w-full rounded-[var(--radius-md)] border border-line bg-surface ps-10 pe-3 outline-none focus:border-ink"
           />
           {status ? <input type="hidden" name="status" value={status} /> : null}
         </form>
@@ -114,14 +114,14 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
       </nav>
 
       {rows.length === 0 ? (
-        <div className="rounded-[var(--radius-lg)] bg-paper p-10 text-center text-muted">
+        <div className="rounded-[var(--radius-lg)] bg-surface p-10 text-center text-muted">
           {q || status ? "لا توجد طلبات تطابق البحث." : "لم تصل أي طلبات بعد."}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-[var(--radius-lg)] bg-paper shadow-[var(--shadow-soft)]">
+        <div className="overflow-hidden rounded-[var(--radius-lg)] bg-surface shadow-[var(--shadow-soft)]">
           {/* Desktop table */}
           <table className="hidden w-full text-start md:table">
-            <thead className="border-b border-line bg-mist/60 text-sm text-muted">
+            <thead className="border-b border-line bg-sand/60 text-sm text-muted">
               <tr>
                 <th scope="col" className="px-4 py-3 text-start font-medium">الطلب</th>
                 <th scope="col" className="px-4 py-3 text-start font-medium">الزبون</th>
@@ -132,7 +132,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
             </thead>
             <tbody className="divide-y divide-line">
               {rows.map((o) => (
-                <tr key={o.id} className="group relative hover:bg-mist/50">
+                <tr key={o.id} className="group relative hover:bg-sand/50">
                   <td className="px-4 py-3">
                     <Link href={`/admin/orders/${o.id}`} className="font-semibold tabular after:absolute after:inset-0" dir="ltr">
                       {o.reference}
@@ -164,7 +164,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
           <ul className="divide-y divide-line md:hidden">
             {rows.map((o) => (
               <li key={o.id}>
-                <Link href={`/admin/orders/${o.id}`} className="block space-y-1 p-4 active:bg-mist">
+                <Link href={`/admin/orders/${o.id}`} className="block space-y-1 p-4 active:bg-sand">
                   <div className="flex items-center justify-between gap-3">
                     <span dir="ltr" className="font-semibold tabular">
                       {o.reference}
@@ -213,11 +213,11 @@ function StatusTab({ href, active, label, n }: { href: string; active: boolean; 
       aria-current={active ? "page" : undefined}
       className={cn(
         "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full px-3.5 text-sm font-medium transition-colors",
-        active ? "bg-ink text-paper" : "bg-paper text-ink hover:bg-line/60",
+        active ? "bg-ink text-paper" : "bg-surface text-ink hover:bg-line/60",
       )}
     >
       {label}
-      <span className={cn("rounded-full px-1.5 text-xs tabular", active ? "bg-paper/20" : "bg-mist")}>{n}</span>
+      <span className={cn("rounded-full px-1.5 text-xs tabular", active ? "bg-paper/20" : "bg-sand")}>{n}</span>
     </Link>
   );
 }
@@ -234,7 +234,7 @@ function PageLink({ href, disabled, label, icon }: { href: string; disabled: boo
     );
   }
   return (
-    <Link href={href} className="inline-flex min-h-11 items-center gap-1 rounded-[var(--radius-md)] bg-paper px-3 font-medium hover:bg-line/60">
+    <Link href={href} className="inline-flex min-h-11 items-center gap-1 rounded-[var(--radius-md)] bg-surface px-3 font-medium hover:bg-line/60">
       {icon === "prev" ? <Icon aria-hidden className="size-4" /> : null}
       {label}
       {icon === "next" ? <Icon aria-hidden className="size-4" /> : null}

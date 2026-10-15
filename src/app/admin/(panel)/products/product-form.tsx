@@ -103,7 +103,7 @@ export function ProductForm({ product, categories }: { product?: Product; catego
         </div>
       </Section>
 
-      <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center gap-4 border-t border-line bg-mist/95 px-4 py-3 backdrop-blur md:-mx-8 md:px-8">
+      <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center gap-4 border-t border-line bg-sand/95 px-4 py-3 backdrop-blur md:-mx-8 md:px-8">
         <SubmitButton pending={pending}>{product ? "حفظ التعديلات" : "إضافة المنتج"}</SubmitButton>
         <div className="flex-1">
           <FormMessage state={state} />
@@ -115,7 +115,7 @@ export function ProductForm({ product, categories }: { product?: Product; catego
 
 function Section({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <fieldset className={cn("rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]", className)}>
+    <fieldset className={cn("rounded-[var(--radius-lg)] bg-surface p-6 shadow-[var(--shadow-soft)]", className)}>
       <legend className="sr-only">{title}</legend>
       <h2 aria-hidden className="mb-5 font-sans text-lg font-bold">
         {title}

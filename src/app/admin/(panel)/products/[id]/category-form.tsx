@@ -7,7 +7,7 @@ import { createCategory, type FormState } from "../../../actions";
 export function CategoryForm() {
   const [state, action] = useActionState<FormState, FormData>(createCategory, {});
   return (
-    <details className="rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">
+    <details className="rounded-[var(--radius-lg)] bg-surface p-6 shadow-[var(--shadow-soft)]">
       <summary className="min-h-11 font-semibold">إضافة تصنيف جديد</summary>
       <form action={action} className="mt-4 flex flex-wrap items-end gap-3">
         <div className="min-w-60 flex-1">

@@ -9,7 +9,7 @@ export default async function CartPage() {
   const settings = await getSettings();
   return (
     <div className="container-page py-10 md:py-16">
-      <h1 className="text-4xl md:text-5xl">{ar.cart.title}</h1>
+      <h1 className="text-display-lg">{ar.cart.title}</h1>
       <CartView deliveryFee={settings.deliveryFee} />
     </div>
   );
