@@ -7,9 +7,10 @@
     "node": ">=20.9"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 3100",
     "build": "tsx scripts/prepare-db.ts && tsx src/db/seed.ts && next build",
     "start": "next start",
+    "preview": "npm run build && next start --port 3100",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",

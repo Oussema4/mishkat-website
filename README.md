@@ -47,14 +47,15 @@ npm run admin:create -- "اسمك" you@example.com "كلمة-سر-قوية-10-أ
 npm run dev
 ```
 
-- المتجر: http://localhost:3000
-- لوحة التحكم: http://localhost:3000/admin
+- المتجر: http://localhost:3100
+- لوحة التحكم: http://localhost:3100/admin
 
 ## 2. أوامر مفيدة
 
 | الأمر | الوظيفة |
 |---|---|
-| `npm run dev` | تشغيل الموقع للتطوير |
+| `npm run dev` | تشغيل الموقع للتطوير (أبطأ: كل صفحة تُجهَّز عند أول فتح) |
+| `npm run preview` | تشغيل الموقع محليًا بسرعة النسخة المنشورة على http://localhost:3100 |
 | `npm run build` ثم `npm start` | نسخة الإنتاج |
 | `npm test` | الاختبارات الآلية (الطلبات، المخزون، التحقق من البيانات) |
 | `npm run db:migrate` | تطبيق تحديثات قاعدة البيانات |

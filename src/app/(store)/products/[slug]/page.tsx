@@ -11,8 +11,17 @@ import { StockBadge } from "@/components/ui/stock-badge";
 import { ar, fill } from "@/i18n/ar";
 import { formatTND, fromMillimes } from "@/lib/money";
 import { siteUrl } from "@/lib/site";
-import { getProductBySlug } from "@/server/catalog";
+import { getActiveProducts, getProductBySlug } from "@/server/catalog";
 import { getSettings } from "@/server/settings";
+
+/**
+ * Product pages are pre-built at deploy time and served instantly. New products are built
+ * on their first visit; dashboard edits and orders refresh them via revalidatePath.
+ */
+export async function generateStaticParams() {
+  const products = await getActiveProducts();
+  return products.map((p) => ({ slug: p.slug }));
+}
 
 export async function generateMetadata({ params }: PageProps<"/products/[slug]">): Promise<Metadata> {
   const { slug } = await params;
