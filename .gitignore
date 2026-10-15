@@ -1,0 +1,23 @@
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# local database & uploads (orders and customer data never go to git)
+data/
+public/uploads/
+
+# env (secrets)
+.env
+.env.local
+.env*.local
+
+.vercel
+
+# original customer screenshots: they show names and profile photos.
+# The site only uses the anonymised versions in public/images/reviews/.
+الأراء/
+
+# local editor / assistant settings
+.claude/
