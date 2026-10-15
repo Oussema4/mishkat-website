@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import { databaseConfig } from "./config";
 import * as schema from "./schema";
-import { SABILI, SEED_CATEGORY, SEED_REVIEWS } from "./seed-data";
+import { REVIEW_REPLACEMENTS, SABILI, SEED_CATEGORY, SEED_REVIEWS } from "./seed-data";
 
 const db = drizzle(createClient(databaseConfig()), { schema });
 
@@ -30,6 +30,16 @@ async function main() {
   if (reviewCount === 0) {
     await db.insert(schema.reviews).values(SEED_REVIEWS);
     console.log(`✓ تمت إضافة ${SEED_REVIEWS.length} آراء`);
+  }
+
+  // Re-cropped screenshots (messages only): move existing rows to the new files. No-op once applied.
+  for (const r of REVIEW_REPLACEMENTS) {
+    const moved = await db
+      .update(schema.reviews)
+      .set({ imageUrl: r.to, width: r.width, height: r.height })
+      .where(eq(schema.reviews.imageUrl, r.from))
+      .returning({ id: schema.reviews.id });
+    if (moved.length > 0) console.log(`✓ تحديث صورة رأي: ${r.to}`);
   }
 }
 

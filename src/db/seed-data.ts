@@ -88,16 +88,28 @@ export const SABILI = {
   ],
 };
 
-// [width, height] of each prepared image in public/images/reviews
-const REVIEW_SIZES = [
-  [720, 685], [440, 1065], [720, 393], [720, 160], [720, 304], [720, 405], [720, 583],
-  [720, 332], [562, 1010], [612, 762], [720, 481], [720, 693], [720, 1111],
+// [file, width, height] of each prepared image in public/images/reviews (messages only, no photos)
+const REVIEW_FILES = [
+  ["review-01-msg", 720, 213], ["review-02-msg", 440, 380], ["review-03", 720, 393], ["review-04", 720, 160],
+  ["review-05", 720, 304], ["review-06", 720, 405], ["review-07", 720, 583], ["review-08", 720, 332],
+  ["review-09-msg", 562, 348], ["review-10-msg", 612, 270], ["review-11", 720, 481], ["review-12", 720, 693],
+  ["review-13-msg", 720, 556],
 ] as const;
 
-export const SEED_REVIEWS = REVIEW_SIZES.map(([width, height], i) => ({
-  imageUrl: `/images/reviews/review-${String(i + 1).padStart(2, "0")}.webp`,
+export const SEED_REVIEWS = REVIEW_FILES.map(([file, width, height], i) => ({
+  imageUrl: `/images/reviews/${file}.webp`,
   width,
   height,
   alt: "رسالة من أحد عملاء مشكاة عن لعبة سبيلي",
   sortOrder: i + 1,
 }));
+
+/**
+ * Reviews whose screenshot was re-cropped to the message only (attached photos removed).
+ * The seed moves existing rows from the old file to the new one, so already-seeded databases follow.
+ */
+export const REVIEW_REPLACEMENTS = [1, 2, 9, 10, 13].map((n) => {
+  const old = `/images/reviews/review-${String(n).padStart(2, "0")}.webp`;
+  const next = SEED_REVIEWS[n - 1];
+  return { from: old, to: next.imageUrl, width: next.width, height: next.height };
+});

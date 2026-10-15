@@ -204,23 +204,25 @@ async function logos() {
 }
 
 // ---------- Customer reviews: cropped to the customer's own message only ----------
-// Crops exclude profile pictures and names. [left, top, width, height] in source pixels.
+// Crops keep the message text only: no profile pictures, names or attached photos.
+// [left, top, width, height] in source pixels. `file` renames an output whose crop changed,
+// so CDN/image-optimizer caches of the old version are never served again.
 // Optional `blur` rectangles hide anything personal that remains inside the crop.
 const reviewsDir = path.join(root, "الأراء");
 const reviews = [
-  { src: "WhatsApp Image 2026-10-15 at 9.08.38 AM.jpeg", crop: [150, 140, 830, 790], blur: [[20, 12, 290, 50]] },
-  { src: "WhatsApp Image 2026-10-15 at 9.09.49 AM.jpeg", crop: [80, 5, 440, 1065] },
+  { src: "WhatsApp Image 2026-10-15 at 9.08.38 AM.jpeg", crop: [150, 140, 830, 245], blur: [[20, 12, 290, 50]], file: "review-01-msg" },
+  { src: "WhatsApp Image 2026-10-15 at 9.09.49 AM.jpeg", crop: [80, 690, 440, 380], file: "review-02-msg" },
   { src: "WhatsApp Image 2026-10-15 at 9.10.40 AM.jpeg", crop: [155, 225, 815, 445] },
   { src: "WhatsApp Image 2026-10-15 at 9.12.34 AM.jpeg", crop: [165, 90, 830, 185] },
   { src: "WhatsApp Image 2026-10-15 at 9.12.43 AM.jpeg", crop: [38, 118, 868, 366] },
   { src: "WhatsApp Image 2026-10-15 at 9.13.04 AM.jpeg", crop: [165, 35, 875, 492] },
   { src: "WhatsApp Image 2026-10-15 at 9.13.29 AM.jpeg", crop: [153, 18, 798, 646] },
   { src: "WhatsApp Image 2026-10-15 at 9.17.08 AM.jpeg", crop: [225, 102, 745, 344] },
-  { src: "WhatsApp Image 2026-10-15 at 9.17.08 AM (1).jpeg", crop: [93, 78, 562, 1010] },
-  { src: "WhatsApp Image 2026-10-15 at 9.17.08 AM (2).jpeg", crop: [120, 22, 612, 762] },
+  { src: "WhatsApp Image 2026-10-15 at 9.17.08 AM (1).jpeg", crop: [93, 78, 562, 348], file: "review-09-msg" },
+  { src: "WhatsApp Image 2026-10-15 at 9.17.08 AM (2).jpeg", crop: [120, 514, 612, 270], file: "review-10-msg" },
   { src: "WhatsApp Image 2026-10-15 at 9.17.08 AM (3).jpeg", crop: [125, 32, 908, 606] },
   { src: "WhatsApp Image 2026-10-15 at 9.17.08 AM (4).jpeg", crop: [165, 33, 878, 845] },
-  { src: "WhatsApp Image 2026-10-15 at 9.17.08 AM (5).jpeg", crop: [115, 118, 742, 1145] },
+  { src: "WhatsApp Image 2026-10-15 at 9.17.08 AM (5).jpeg", crop: [115, 690, 742, 573], file: "review-13-msg" },
 ];
 
 async function reviewImages() {
@@ -238,7 +240,7 @@ async function reviewImages() {
       }
       base = sharp(buf).composite(overlays);
     }
-    const file = out("reviews", `review-${String(n).padStart(2, "0")}.webp`);
+    const file = out("reviews", `${r.file ?? `review-${String(n).padStart(2, "0")}`}.webp`);
     await base.resize({ width: 720, withoutEnlargement: true }).webp({ quality: 80 }).toFile(file);
     n++;
   }
