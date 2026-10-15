@@ -32,7 +32,7 @@ Personality: trustworthy, warm, curious; playful through the card fan, colour po
 | Surface | `surface` | `#FFFFFF` | Cards, inputs, forms, admin panels. |
 | Secondary text | `muted` | `#5F584C` | 6.6:1 on ivory, 6:1 on sand. |
 | Border | `line` | `#E5DDCE` | Dividers, card borders. |
-| Strong border | `line-strong` | `#CFC4B0` | Inputs, chips, steppers. |
+| Control border | `line-strong` | `#8F836E` | Inputs, chips, steppers: ≥ 3:1 on white, ivory and sand (WCAG 1.4.11). |
 | Success / Warning / Danger | `success` / `warning` / `danger` (+ `-bg`) | `#1D6B44` / `#8A5300` / `#B42318` | Status only, always with an icon and words. |
 | WhatsApp | `whatsapp` | `#1F8F4E` | WhatsApp buttons only. |
 | Sabili | `sabili` / `sabili-navy` / `sabili-yellow` | `#0025D7` / `#1C2257` / `#FFD200` | Sabili world only. Never Mishkat's colour. |

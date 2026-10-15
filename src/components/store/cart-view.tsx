@@ -71,7 +71,7 @@ export function CartView({ deliveryFee }: { deliveryFee: number }) {
                 <button
                   type="button"
                   onClick={() => remove(line.productId)}
-                  className="inline-flex min-h-10 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-danger hover:bg-danger-bg"
+                  className="inline-flex min-h-11 items-center gap-1.5 rounded-md px-3 text-sm font-medium text-danger hover:bg-danger-bg"
                   aria-label={fill(ar.cart.removeItem, { name: line.name })}
                 >
                   <Trash2 aria-hidden className="size-4" />

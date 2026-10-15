@@ -39,7 +39,7 @@ const PALETTE: { title: string; swatches: Swatch[] }[] = [
       { name: "أبيض", token: "surface", hex: "#FFFFFF", use: "البطاقات والحقول والنماذج" },
       { name: "نص ثانوي", token: "muted", hex: "#5F584C", use: "الأوصاف والتفاصيل الصغيرة", dark: true },
       { name: "حدود", token: "line", hex: "#E5DDCE", use: "الفواصل والحدود الهادئة" },
-      { name: "حدود بارزة", token: "line-strong", hex: "#CFC4B0", use: "حدود الحقول والأزرار الثانوية" },
+      { name: "حدود العناصر التفاعلية", token: "line-strong", hex: "#8F836E", use: "حدود الحقول والأزرار والشرائح (تباين 3:1 على الأقل)", dark: true },
     ],
   },
   {
