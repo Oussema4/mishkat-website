@@ -17,7 +17,7 @@ export function Logo({ tone = "ink", className, href = "/" }: { tone?: "ink" | "
   );
   if (!href) return img;
   return (
-    <Link href={href} className="inline-flex min-h-11 shrink-0 items-center rounded-sm" aria-label={`${t.brand.name}، الصفحة الرئيسية`}>
+    <Link href={href} className="inline-flex shrink-0 items-center rounded-sm" aria-label={`${t.brand.name}، الصفحة الرئيسية`}>
       {img}
     </Link>
   );

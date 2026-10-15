@@ -8,7 +8,7 @@ import { cn } from "@/lib/site";
 import type { FormState } from "@/app/admin/actions";
 
 export const adminInput =
-  "block w-full min-h-11 rounded-[var(--radius-md)] border border-line-strong bg-surface px-3 py-2 text-base outline-none transition-colors " +
+  "block w-full min-h-11 rounded-[var(--radius-md)] border border-line bg-surface px-3 py-2 text-base outline-none transition-colors " +
   "focus:border-ink focus:ring-2 focus:ring-gold/40 aria-[invalid=true]:border-danger";
 
 /**

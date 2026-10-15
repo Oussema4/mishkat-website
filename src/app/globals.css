@@ -25,7 +25,7 @@
   --color-sand: #f3ecdf;
   --color-surface: #ffffff;
   --color-line: #e5ddce;
-  --color-line-strong: #8f836e;
+  --color-line-strong: #cfc4b0;
   --color-muted: #5f584c;
 
   /* Sabili world (fixed by the product's packaging) */
@@ -109,14 +109,6 @@
   html {
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
-    /* Keyboard focus and anchors never land under the sticky header (WCAG 2.4.11). */
-    scroll-padding-top: 5.5rem;
-  }
-  @media (max-width: 767px) {
-    html {
-      /* …nor under the product page's sticky order bar. */
-      scroll-padding-bottom: 6rem;
-    }
   }
   body {
     background: var(--color-paper);

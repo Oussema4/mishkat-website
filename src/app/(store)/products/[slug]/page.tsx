@@ -75,16 +75,16 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
 
-      <nav aria-label="مسار التصفح" className="container-page pt-3 text-sm text-muted">
+      <nav aria-label="مسار التصفح" className="container-page pt-6 text-sm text-muted">
         <ol className="flex flex-wrap items-center gap-2">
           <li>
-            <Link href="/" className="inline-flex min-h-11 items-center hover:text-ink">
+            <Link href="/" className="hover:text-ink">
               {ar.nav.home}
             </Link>
           </li>
           <li aria-hidden>/</li>
           <li>
-            <Link href="/shop" className="inline-flex min-h-11 items-center hover:text-ink">
+            <Link href="/shop" className="hover:text-ink">
               {ar.nav.shop}
             </Link>
           </li>
@@ -166,7 +166,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
 
       {/* ───── How to play (a real sequence → numbered) ───── */}
       {product.howToPlay.length > 0 ? (
-        <section id="how-to-play" aria-labelledby="how-to-play-title" className="on-dark bg-sabili-navy text-paper">
+        <section id="how-to-play" aria-labelledby="how-to-play-title" className="on-dark scroll-mt-24 bg-sabili-navy text-paper">
           <div className="container-page py-16 md:py-24">
             <h2 id="how-to-play-title" className="text-display-lg">
               {ar.product.howToPlay}
