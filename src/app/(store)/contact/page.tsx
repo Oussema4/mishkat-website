@@ -24,16 +24,16 @@ export default async function ContactPage() {
   return (
     <div className="container-page py-10 md:py-16">
       <div className="max-w-2xl">
-        <h1 className="text-display-lg">{ar.contact.title}</h1>
+        <h1 className="text-4xl md:text-5xl">{ar.contact.title}</h1>
         <p className="mt-3 text-lg text-muted">{ar.contact.lead}</p>
       </div>
 
       <div className="mt-10 grid gap-10 md:grid-cols-[1fr_1.2fr]">
         {s.whatsapp ? (
-          <div className="on-dark pattern-niche flex flex-col justify-between gap-8 rounded-[var(--radius-lg)] bg-ink p-8 text-paper">
+          <div className="on-dark flex flex-col justify-between gap-8 rounded-[var(--radius-lg)] bg-ink p-8 text-paper">
             <div>
               <WhatsAppIcon className="size-10 text-gold" />
-              <p className="text-display-md mt-5 text-gold">{ar.contact.whatsapp}</p>
+              <p className="mt-5 font-display text-3xl text-gold">{ar.contact.whatsapp}</p>
               <p className="mt-2 text-paper/75">نردّ على أسئلتك قبل الطلب وبعده.</p>
             </div>
             <a
@@ -58,7 +58,7 @@ export default async function ContactPage() {
                 {...(c.external ? { target: "_blank", rel: "noopener" } : {})}
                 className="flex min-h-20 items-center gap-4 py-4 hover:[&_.value]:underline"
               >
-                <span className="grid size-12 shrink-0 place-items-center rounded-full bg-gold-light/60"><c.icon aria-hidden className="size-5 text-gold-deep" /></span>
+                <c.icon aria-hidden className="size-6 shrink-0 text-gold-deep" />
                 <span className="flex-1">
                   <span className="block text-sm text-muted">{c.label}</span>
                   <span dir={c.ltr ? "ltr" : undefined} className="value block break-all text-lg font-semibold">

@@ -8,7 +8,7 @@ const styles: Record<OrderStatus, string> = {
   preparing: "bg-[#f1ebff] text-[#5a2aa8] ring-[#ddd0fa]",
   shipped: "bg-[#e6f4f7] text-[#155e6e] ring-[#c3e2ea]",
   delivered: "bg-success-bg text-success ring-[#c5e5d2]",
-  cancelled: "bg-sand text-muted ring-line line-through decoration-1",
+  cancelled: "bg-mist text-muted ring-line line-through decoration-1",
 };
 
 export function StatusBadge({ status }: { status: OrderStatus }) {

@@ -59,11 +59,11 @@ export function QuantityStepper({
 }) {
   const limit = Math.max(1, Math.min(max, MAX_QTY_PER_ITEM));
   const btn = cn(
-    "inline-flex items-center justify-center text-ink transition-colors hover:bg-sand disabled:opacity-35 disabled:hover:bg-transparent",
+    "inline-flex items-center justify-center text-ink transition-colors hover:bg-mist disabled:opacity-35 disabled:hover:bg-transparent",
     size === "sm" ? "size-10" : "size-12",
   );
   return (
-    <div role="group" aria-label={label} className="inline-flex items-center rounded-[var(--radius-md)] border border-line-strong bg-surface">
+    <div role="group" aria-label={label} className="inline-flex items-center rounded-[var(--radius-md)] border border-line bg-paper">
       <button type="button" className={btn} onClick={() => onChange(value + 1)} disabled={value >= limit} aria-label={ar.product.increase}>
         <Plus aria-hidden className="size-4" />
       </button>

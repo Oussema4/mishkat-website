@@ -31,10 +31,10 @@ export default async function OrderConfirmationPage({ params }: PageProps<"/orde
     <div className="container-page max-w-3xl py-12 md:py-20">
       <ClearCart />
       <CircleCheck aria-hidden className="size-14 text-success" strokeWidth={1.5} />
-      <h1 className="text-display-lg mt-5">{ar.confirmation.title}</h1>
+      <h1 className="mt-5 text-4xl md:text-5xl">{ar.confirmation.title}</h1>
       <p className="mt-4 text-lg text-muted">{fill(ar.confirmation.lead, { name: order.firstName })}</p>
 
-      <div className="mt-8 inline-flex flex-col rounded-[var(--radius-md)] border border-gold bg-surface px-5 py-3 shadow-[var(--shadow-soft)]">
+      <div className="mt-8 inline-flex flex-col rounded-[var(--radius-md)] border-2 border-ink px-5 py-3">
         <span className="text-sm text-muted">{ar.confirmation.reference}</span>
         <span dir="ltr" className="text-2xl font-bold tabular">
           {order.reference}
@@ -52,8 +52,8 @@ export default async function OrderConfirmationPage({ params }: PageProps<"/orde
         </li>
       </ul>
 
-      <section aria-labelledby="items-title" className="mt-10 rounded-[var(--radius-lg)] border border-line bg-sand p-6">
-        <h2 id="items-title" className="text-title">
+      <section aria-labelledby="items-title" className="mt-10 rounded-[var(--radius-lg)] bg-mist p-6">
+        <h2 id="items-title" className="font-sans text-lg font-bold">
           {ar.confirmation.items}
         </h2>
         <ul className="mt-4 space-y-2 border-b border-line pb-4">
@@ -77,7 +77,7 @@ export default async function OrderConfirmationPage({ params }: PageProps<"/orde
             href={whatsappLink(settings.whatsapp, fill(ar.confirmation.whatsappMessage, { ref: order.reference }))}
             target="_blank"
             rel="noopener"
-            className="inline-flex min-h-12 items-center gap-2 rounded-[var(--radius-md)] bg-whatsapp px-5 font-semibold text-paper hover:bg-whatsapp-deep"
+            className="inline-flex min-h-12 items-center gap-2 rounded-[var(--radius-md)] bg-[#1f8f4e] px-5 font-semibold text-paper hover:bg-[#187540]"
           >
             <WhatsAppIcon className="size-5" />
             {ar.confirmation.whatsapp}

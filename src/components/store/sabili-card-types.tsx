@@ -32,7 +32,7 @@ export function SabiliCardTypes() {
   return (
     <div className="grid gap-12">
       <div>
-        <h3 className="text-title text-sabili-yellow">البطاقات الملوّنة: أسئلة سهلة</h3>
+        <h3 className="text-2xl text-sabili-yellow">البطاقات الملوّنة: أسئلة سهلة</h3>
         <p className="mt-1 text-paper/75">10 نقاط لكل إجابة صحيحة، و10 ثوانٍ للإجابة.</p>
         <ul className="mt-6 grid max-w-3xl grid-cols-5 gap-2 sm:gap-5">
           {CATEGORIES.map((c) => (
@@ -45,7 +45,7 @@ export function SabiliCardTypes() {
       </div>
 
       <div>
-        <h3 className="text-title text-sabili-yellow">البطاقات الصفراء: أسئلة أصعب</h3>
+        <h3 className="text-2xl text-sabili-yellow">البطاقات الصفراء: أسئلة أصعب</h3>
         <p className="mt-1 text-paper/75">30 نقطة لكل إجابة صحيحة، و35 ثانية للإجابة.</p>
         <ul className="mt-6 grid max-w-4xl grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-5">
           {CATEGORIES.map((c) => (
@@ -58,7 +58,7 @@ export function SabiliCardTypes() {
 
       <div className="grid gap-10 md:grid-cols-[1fr_auto] md:items-center">
         <div>
-          <h3 className="text-title text-sabili-yellow">بطاقات الفوز</h3>
+          <h3 className="text-2xl text-sabili-yellow">بطاقات الفوز</h3>
           <p className="mt-1 max-w-md text-paper/75">في نهاية اللعبة يوزّع الفائز على الخاسرين بطاقة «حسنة» أو بطاقة «موعظة».</p>
           <ul className="mt-6 flex max-w-sm gap-4">
             <li className="flex-1">

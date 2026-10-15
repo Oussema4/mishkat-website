@@ -22,15 +22,15 @@ export function CartView({ deliveryFee }: { deliveryFee: number }) {
     return (
       <div aria-busy="true" className="mt-10 space-y-4">
         <span className="sr-only">{ar.cart.loading}</span>
-        <div className="h-28 animate-pulse rounded-[var(--radius-lg)] bg-sand" />
-        <div className="h-28 animate-pulse rounded-[var(--radius-lg)] bg-sand" />
+        <div className="h-28 animate-pulse rounded-[var(--radius-lg)] bg-mist" />
+        <div className="h-28 animate-pulse rounded-[var(--radius-lg)] bg-mist" />
       </div>
     );
   }
 
   if (lines.length === 0) {
     return (
-      <div className="mt-10 flex flex-col items-start gap-5 rounded-[var(--radius-lg)] bg-sand p-8 md:p-12">
+      <div className="mt-10 flex flex-col items-start gap-5 rounded-[var(--radius-lg)] bg-mist p-8 md:p-12">
         <ShoppingBag aria-hidden className="size-10 text-gold-deep" strokeWidth={1.5} />
         <p className="text-xl">{ar.cart.empty}</p>
         <ButtonLink href="/shop">{ar.cart.emptyCta}</ButtonLink>
@@ -45,13 +45,13 @@ export function CartView({ deliveryFee }: { deliveryFee: number }) {
       <ul className="divide-y divide-line border-y border-line">
         {lines.map((line) => (
           <li key={line.productId} className="grid grid-cols-[5.5rem_1fr] gap-4 py-6 sm:grid-cols-[7rem_1fr]">
-            <Link href={`/products/${line.slug}`} tabIndex={-1} aria-hidden className="niche-sm relative block aspect-[4/5] overflow-hidden bg-sand">
+            <Link href={`/products/${line.slug}`} tabIndex={-1} aria-hidden className="niche-sm relative block aspect-[4/5] overflow-hidden bg-mist">
               {line.image ? <Image src={line.image} alt="" fill sizes="112px" className="object-cover" /> : null}
             </Link>
             <div className="flex flex-col gap-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <Link href={`/products/${line.slug}`} className="text-title decoration-gold decoration-2 underline-offset-8 hover:underline">
+                  <Link href={`/products/${line.slug}`} className="text-xl font-semibold hover:underline">
                     {line.name}
                   </Link>
                   <p className="text-sm text-muted tabular">
@@ -84,7 +84,7 @@ export function CartView({ deliveryFee }: { deliveryFee: number }) {
         ))}
       </ul>
 
-      <aside aria-label={ar.checkout.summary} className="rounded-[var(--radius-lg)] border border-line bg-sand p-6 lg:sticky lg:top-24">
+      <aside aria-label={ar.checkout.summary} className="rounded-[var(--radius-lg)] bg-mist p-6 lg:sticky lg:top-24">
         <OrderTotals {...totals} />
         <p className="mt-4 text-sm text-muted">{ar.checkout.paymentCodBody}</p>
         <ButtonLink href="/checkout" size="lg" className="mt-6 w-full">

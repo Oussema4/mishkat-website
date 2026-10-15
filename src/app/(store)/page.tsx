@@ -1,13 +1,11 @@
 import { Banknote, MessageCircle, Truck, Wallet } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { NicheMark } from "@/components/brand/niche-mark";
 import { CardFan } from "@/components/store/card-fan";
 import { FaqList } from "@/components/store/faq-list";
 import { ReviewWall } from "@/components/store/review-wall";
 import { ButtonLink } from "@/components/ui/button";
 import { Price } from "@/components/ui/price";
-import { SectionHeading } from "@/components/ui/section-heading";
 import { ar, fill } from "@/i18n/ar";
 import { BRAND_IMAGES } from "@/lib/brand-images";
 import { formatTND } from "@/lib/money";
@@ -29,10 +27,12 @@ export default async function HomePage() {
     <>
       {/* ───── Hero ───── */}
       <section aria-labelledby="hero-title" className="relative overflow-hidden">
-        <div className="container-page grid items-center gap-12 py-12 md:grid-cols-[1.05fr_1fr] md:gap-14 md:py-20">
+        <div className="container-page grid items-center gap-10 py-10 md:grid-cols-[1.05fr_1fr] md:gap-14 md:py-20">
           <div className="max-w-xl">
-            <SectionHeading as="h1" id="hero-title" size="xl" eyebrow={ar.home.heroEyebrow} title={ar.home.heroTitle} className="max-w-xl" />
-            <p className="text-body-lg mt-6 max-w-[34rem] text-muted md:text-xl md:leading-10">{ar.home.heroText}</p>
+            <h1 id="hero-title" className="text-[3rem] leading-[1.45] sm:text-6xl lg:text-[5rem] lg:leading-[1.35]">
+              {ar.home.heroTitle}
+            </h1>
+            <p className="mt-6 max-w-[34rem] text-lg leading-9 text-muted md:text-xl md:leading-10">{ar.home.heroText}</p>
             <div className="mt-9 flex flex-wrap gap-3">
               <ButtonLink href={product ? `/products/${product.slug}` : "/shop"} size="lg">
                 {ar.home.shopNow}
@@ -41,21 +41,11 @@ export default async function HomePage() {
                 {ar.home.discover}
               </ButtonLink>
             </div>
-            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[0.95rem] text-muted">
-              <li className="flex items-center gap-2">
-                <Wallet aria-hidden className="size-5 text-gold-deep" strokeWidth={1.5} />
-                {ar.home.perks.cod.title}
-              </li>
-              <li className="flex items-center gap-2">
-                <Truck aria-hidden className="size-5 text-gold-deep" strokeWidth={1.5} />
-                {ar.home.perks.delivery.title}
-              </li>
-            </ul>
           </div>
 
           <div className="relative mx-auto w-full max-w-[30rem]">
-            <div aria-hidden className="niche absolute -inset-2 translate-x-2 translate-y-2 bg-gold md:-inset-4 md:translate-x-3 md:translate-y-3" />
-            <div className="niche relative aspect-[4/5] overflow-hidden bg-sand">
+            <div aria-hidden className="niche absolute -inset-2 translate-x-2 translate-y-2 bg-gold/80 md:-inset-4 md:translate-x-3 md:translate-y-3" />
+            <div className="niche relative aspect-[4/5] overflow-hidden bg-mist">
               <Image
                 src="/images/products/sabili-table.webp"
                 alt={ar.home.heroImageAlt}
@@ -69,15 +59,11 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ───── Sabili (the product's own world: navy + card yellow) ───── */}
+      {/* ───── Sabili ───── */}
       {product ? (
         <section aria-labelledby="sabili-title" className="on-dark overflow-hidden bg-sabili-navy text-paper">
-          <div className="container-page section grid items-center gap-12 lg:grid-cols-2">
+          <div className="container-page grid items-center gap-12 py-16 md:py-24 lg:grid-cols-2">
             <div className="order-2 lg:order-1">
-              <p className="text-eyebrow mb-5 flex items-center gap-2 text-sabili-yellow">
-                <NicheMark />
-                {ar.home.sabiliEyebrow}
-              </p>
               <Image
                 src={BRAND_IMAGES["sabili-yellow"].src}
                 alt=""
@@ -113,51 +99,44 @@ export default async function HomePage() {
       ) : null}
 
       {/* ───── How Mishkat makes learning fun ───── */}
-      <section aria-labelledby="how-title" className="on-dark pattern-niche bg-zaytun text-paper">
-        <div className="container-page section">
-          <SectionHeading id="how-title" tone="zaytun" eyebrow={ar.home.howEyebrow} title={ar.home.howTitle} />
-          <ul className="mt-12 grid gap-10 md:grid-cols-3 md:gap-8">
-            {ar.home.howItems.map((item) => (
-              <li key={item.title} className="border-t border-paper/20 pt-6">
-                <NicheMark filled className="text-2xl text-gold" />
-                <h3 className="text-title mt-4 text-gold-light">{item.title}</h3>
-                <p className="mt-3 leading-8 text-paper/85">{item.body}</p>
-              </li>
-            ))}
-          </ul>
+      <section aria-labelledby="how-title" className="container-page py-16 md:py-24">
+        <h2 id="how-title" className="max-w-xl text-3xl md:text-4xl">
+          {ar.home.howTitle}
+        </h2>
+        <div className="mt-12 grid gap-10 md:grid-cols-3 md:gap-0">
+          {ar.home.howItems.map((item) => (
+            <div key={item.title} className="md:border-s md:border-line md:px-8 md:first:border-s-0 md:first:ps-0">
+              <h3 className="text-2xl text-ink">{item.title}</h3>
+              <p className="mt-3 leading-8 text-muted">{item.body}</p>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* ───── Why buy from Mishkat ───── */}
-      <section aria-labelledby="perks-title" className="bg-sand">
-        <div className="container-page py-14 md:py-20">
-          <SectionHeading id="perks-title" size="md" eyebrow={ar.home.perksEyebrow} title={ar.home.perksTitle} />
-          <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section aria-labelledby="perks-title" className="bg-mist">
+        <div className="container-page py-14 md:py-16">
+          <h2 id="perks-title" className="text-2xl md:text-3xl">
+            {ar.home.perksTitle}
+          </h2>
+          <ul className="mt-8 grid gap-x-8 gap-y-7 sm:grid-cols-2 lg:grid-cols-4">
             {perks.map(({ icon: Icon, title, body, ...rest }) => {
               const href = "href" in rest ? rest.href : undefined;
               const content = (
                 <>
-                  <span className="grid size-12 place-items-center rounded-full bg-gold-light/60">
-                    <Icon aria-hidden className="size-6 text-gold-deep" strokeWidth={1.5} />
-                  </span>
-                  <span className="mt-4 block font-display text-lg font-semibold leading-snug text-ink">{title}</span>
+                  <Icon aria-hidden className="size-7 text-gold-deep" strokeWidth={1.6} />
+                  <span className="mt-3 block text-lg font-semibold text-ink">{title}</span>
                   <span className="mt-1 block leading-7 text-muted">{body}</span>
                 </>
               );
-              const card = "block h-full rounded-[var(--radius-lg)] border border-line bg-surface p-6";
               return (
                 <li key={title}>
                   {href ? (
-                    <a
-                      href={href}
-                      target="_blank"
-                      rel="noopener"
-                      className={`${card} transition-[border-color,box-shadow] duration-150 hover:border-gold hover:shadow-[var(--shadow-soft)]`}
-                    >
+                    <a href={href} target="_blank" rel="noopener" className="block rounded-md hover:[&>span:first-of-type]:underline">
                       {content}
                     </a>
                   ) : (
-                    <div className={card}>{content}</div>
+                    content
                   )}
                 </li>
               );
@@ -168,16 +147,14 @@ export default async function HomePage() {
 
       {/* ───── Reviews (real customer messages) ───── */}
       {reviews.length > 0 ? (
-        <section aria-labelledby="reviews-title" className="on-dark pattern-niche bg-ink text-paper">
-          <div className="container-page section">
-            <SectionHeading
-              id="reviews-title"
-              tone="dark"
-              eyebrow={ar.home.reviewsEyebrow}
-              title={ar.home.reviewsTitle}
-              lead={ar.home.reviewsNote}
-              titleClassName="text-gold"
-            />
+        <section aria-labelledby="reviews-title" className="on-dark bg-ink text-paper">
+          <div className="container-page py-16 md:py-24">
+            <div className="max-w-2xl">
+              <h2 id="reviews-title" className="text-3xl text-gold md:text-4xl">
+                {ar.home.reviewsTitle}
+              </h2>
+              <p className="mt-4 text-paper/70">{ar.home.reviewsNote}</p>
+            </div>
             <ReviewWall reviews={reviews} />
           </div>
         </section>
@@ -185,10 +162,12 @@ export default async function HomePage() {
 
       {/* ───── FAQ ───── */}
       {settings.faq.length > 0 ? (
-        <section aria-labelledby="faq-title" className="container-page section grid gap-8 md:grid-cols-[1fr_2fr] md:gap-12">
+        <section aria-labelledby="faq-title" className="container-page grid gap-8 py-16 md:grid-cols-[1fr_2fr] md:py-24">
           <div>
-            <SectionHeading id="faq-title" eyebrow={ar.home.faqEyebrow} title={ar.home.faqTitle} />
-            <Link href="/faq" className="mt-4 inline-flex min-h-11 items-center font-semibold text-gold-deep underline underline-offset-4 hover:text-ink">
+            <h2 id="faq-title" className="text-3xl md:text-4xl">
+              {ar.home.faqTitle}
+            </h2>
+            <Link href="/faq" className="mt-4 inline-flex min-h-11 items-center font-semibold text-gold-deep underline underline-offset-4">
               {ar.home.faqMore}
             </Link>
           </div>

@@ -1,4 +1,3 @@
-import { Badge } from "@/components/ui/badge";
 import { fill, ar } from "@/i18n/ar";
 import { formatTND } from "@/lib/money";
 import { discountPercent } from "@/lib/pricing";
@@ -19,15 +18,24 @@ export function Price({
 }) {
   const pct = discountPercent(price, compareAt);
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 tabular">
-      <span className={cn("font-bold leading-tight", size === "lg" ? "text-[2rem]" : "text-xl")}>{formatTND(price)}</span>
+    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 tabular">
+      <span className={cn("font-bold", size === "lg" ? "text-3xl" : "text-xl")}>{formatTND(price)}</span>
       {pct !== null && compareAt ? (
         <>
-          <span className={cn("line-through decoration-1", tone === "dark" ? "text-paper/65" : "text-muted", size === "lg" ? "text-lg" : "text-base")}>
+          <span className={cn("line-through", tone === "dark" ? "text-paper/65" : "text-muted", size === "lg" ? "text-lg" : "text-base")}>
             <span className="sr-only">بدلًا من </span>
             {formatTND(compareAt)}
           </span>
-          {showSave ? <Badge tone={tone === "dark" ? "sabili" : "gold"}>{fill(ar.product.save, { n: pct })}</Badge> : null}
+          {showSave ? (
+            <span
+              className={cn(
+                "rounded-full px-2.5 py-0.5 text-sm font-semibold",
+                tone === "dark" ? "bg-sabili-yellow text-sabili-navy" : "bg-success-bg text-success",
+              )}
+            >
+              {fill(ar.product.save, { n: pct })}
+            </span>
+          ) : null}
         </>
       ) : null}
     </div>

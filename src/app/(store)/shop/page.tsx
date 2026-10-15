@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Search } from "lucide-react";
 import Link from "next/link";
 import { ProductCard } from "@/components/store/product-card";
-import { SectionHeading } from "@/components/ui/section-heading";
 import { ar, fill } from "@/i18n/ar";
 import { cn } from "@/lib/site";
 import { getActiveProducts, getCategories } from "@/server/catalog";
@@ -44,7 +43,10 @@ export default async function ShopPage({ searchParams }: PageProps<"/shop">) {
 
   return (
     <div className="container-page py-10 md:py-16">
-      <SectionHeading as="h1" eyebrow={ar.brand.name} title={ar.shop.title} lead={ar.shop.lead} />
+      <header className="max-w-2xl">
+        <h1 className="text-4xl md:text-5xl">{ar.shop.title}</h1>
+        <p className="mt-3 text-lg text-muted">{ar.shop.lead}</p>
+      </header>
 
       {showTools ? (
         <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -59,7 +61,7 @@ export default async function ShopPage({ searchParams }: PageProps<"/shop">) {
               type="search"
               defaultValue={q}
               placeholder={ar.shop.searchPlaceholder}
-              className="h-12 w-full rounded-[var(--radius-md)] border border-line-strong bg-surface ps-10 pe-3 text-base outline-none transition-colors focus:border-ink focus:ring-2 focus:ring-gold/40"
+              className="h-12 w-full rounded-[var(--radius-md)] border border-line bg-paper ps-10 pe-3 text-base outline-none focus:border-ink"
             />
             {activeCategory ? <input type="hidden" name="category" value={activeCategory.slug} /> : null}
           </form>
@@ -87,7 +89,7 @@ export default async function ShopPage({ searchParams }: PageProps<"/shop">) {
       </p>
 
       {products.length === 0 ? (
-        <div className="mt-12 flex flex-col items-center rounded-[var(--radius-lg)] bg-sand p-10 text-center">
+        <div className="mt-12 rounded-[var(--radius-lg)] bg-mist p-10 text-center">
           <p className="text-lg">{ar.shop.empty}</p>
           <Link href="/shop" className="mt-4 inline-flex min-h-11 items-center font-semibold underline underline-offset-4">
             {ar.shop.clear}
@@ -111,7 +113,7 @@ function FilterChip({ href, active, children }: { href: string; active: boolean;
       aria-current={active ? "page" : undefined}
       className={cn(
         "inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-medium transition-colors",
-        active ? "border-ink bg-ink text-paper" : "border-line-strong bg-surface text-ink hover:border-ink",
+        active ? "border-ink bg-ink text-paper" : "border-line text-ink hover:border-ink",
       )}
     >
       {children}

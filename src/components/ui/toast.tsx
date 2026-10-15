@@ -36,7 +36,7 @@ export function Toaster() {
           key={t.id}
           role={t.kind === "error" ? "alert" : "status"}
           className={cn(
-            "pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-[var(--radius-md)] border bg-surface px-4 py-3 shadow-[var(--shadow-lift)]",
+            "pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-[var(--radius-md)] border bg-paper px-4 py-3 shadow-[var(--shadow-lift)]",
             "animate-[toast-in_220ms_var(--ease-out-soft)]",
             t.kind === "error" ? "border-danger/30" : "border-line",
           )}
@@ -55,7 +55,7 @@ export function Toaster() {
           <button
             type="button"
             onClick={() => dismiss(t.id)}
-            className="-me-1 inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted hover:bg-sand"
+            className="-me-1 inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted hover:bg-mist"
             aria-label="إغلاق التنبيه"
           >
             <X aria-hidden className="size-4" />

@@ -9,16 +9,16 @@ import type { StoreSettings } from "@/lib/settings-schema";
 export function Footer({ settings }: { settings: StoreSettings }) {
   const year = new Date().getFullYear();
   return (
-    <footer className="on-dark pattern-niche bg-ink text-paper">
-      <div className="container-page grid gap-10 py-14 md:grid-cols-[1.4fr_1fr_1fr_1.2fr] md:gap-8 md:py-20">
+    <footer className="on-dark bg-ink text-paper">
+      <div className="container-page grid gap-10 py-14 md:grid-cols-[1.4fr_1fr_1fr_1.2fr] md:gap-8">
         <div className="space-y-4">
           <Logo tone="gold" className="w-36" />
-          <p className="font-accent text-2xl leading-relaxed text-gold">{ar.brand.slogan}</p>
+          <p className="font-display text-xl text-gold">{ar.brand.slogan}</p>
           <p className="max-w-xs text-paper/75">{ar.brand.mission}</p>
         </div>
 
         <nav aria-labelledby="footer-shop">
-          <h2 id="footer-shop" className="text-eyebrow mb-3 text-gold">
+          <h2 id="footer-shop" className="mb-3 font-sans text-base font-semibold text-gold">
             {ar.footer.shop}
           </h2>
           <ul className="space-y-1">
@@ -29,7 +29,7 @@ export function Footer({ settings }: { settings: StoreSettings }) {
         </nav>
 
         <nav aria-labelledby="footer-help">
-          <h2 id="footer-help" className="text-eyebrow mb-3 text-gold">
+          <h2 id="footer-help" className="mb-3 font-sans text-base font-semibold text-gold">
             {ar.footer.help}
           </h2>
           <ul className="space-y-1">
@@ -41,7 +41,7 @@ export function Footer({ settings }: { settings: StoreSettings }) {
         </nav>
 
         <div>
-          <h2 className="text-eyebrow mb-3 text-gold">{ar.footer.follow}</h2>
+          <h2 className="mb-3 font-sans text-base font-semibold text-gold">{ar.footer.follow}</h2>
           <ul className="space-y-1">
             {settings.whatsapp ? (
               <li>
@@ -89,7 +89,7 @@ export function Footer({ settings }: { settings: StoreSettings }) {
         </div>
       </div>
       <div className="border-t border-paper/10">
-        <p className="container-page py-5 text-sm text-paper/65">
+        <p className="container-page py-5 text-sm text-paper/60">
           © {year} {ar.brand.name} ({ar.brand.nameLatin}). {ar.footer.rights}
         </p>
       </div>

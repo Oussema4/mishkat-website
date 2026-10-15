@@ -31,7 +31,7 @@ const LABELS: Record<FieldName, string> = {
 };
 
 const inputClass =
-  "block w-full min-h-12 rounded-[var(--radius-md)] border bg-surface px-3.5 py-2.5 text-base outline-none transition-colors " +
+  "block w-full min-h-12 rounded-[var(--radius-md)] border bg-paper px-3.5 py-2.5 text-base outline-none transition-colors " +
   "focus:border-ink focus:ring-2 focus:ring-gold/40 aria-[invalid=true]:border-danger";
 
 export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: number; deliveryTime: string }) {
@@ -59,12 +59,12 @@ export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: numbe
   }
 
   if (!hydrated) {
-    return <div aria-busy="true" className="mt-10 h-96 animate-pulse rounded-[var(--radius-lg)] bg-sand" />;
+    return <div aria-busy="true" className="mt-10 h-96 animate-pulse rounded-[var(--radius-lg)] bg-mist" />;
   }
 
   if (lines.length === 0) {
     return (
-      <div className="mt-10 flex flex-col items-start gap-5 rounded-[var(--radius-lg)] bg-sand p-8 md:p-12">
+      <div className="mt-10 flex flex-col items-start gap-5 rounded-[var(--radius-lg)] bg-mist p-8 md:p-12">
         <p className="text-xl">{ar.cart.empty}</p>
         <ButtonLink href="/shop">{ar.cart.emptyCta}</ButtonLink>
       </div>
@@ -149,7 +149,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: numbe
     onBlur: (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
       if (e.target.value || errors[name]) validateField(name, e.target.value);
     },
-    className: cn(inputClass, errors[name] ? "border-danger" : "border-line-strong"),
+    className: cn(inputClass, errors[name] ? "border-danger" : "border-line"),
   });
 
   return (
@@ -191,7 +191,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: numbe
         ) : null}
 
         <fieldset className="space-y-5">
-          <legend className="text-display-md mb-5">{ar.checkout.contactSection}</legend>
+          <legend className="mb-5 font-display text-2xl font-bold">{ar.checkout.contactSection}</legend>
           <div className="grid gap-5 sm:grid-cols-2">
             <Field name="firstName" error={errors.firstName}>
               <input {...field("firstName")} type="text" autoComplete="given-name" required maxLength={60} />
@@ -216,7 +216,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: numbe
         </fieldset>
 
         <fieldset className="space-y-5">
-          <legend className="text-display-md mb-5">{ar.checkout.addressSection}</legend>
+          <legend className="mb-5 font-display text-2xl font-bold">{ar.checkout.addressSection}</legend>
           <div className="grid gap-5 sm:grid-cols-2">
             <Field name="governorate" error={errors.governorate}>
               <select {...field("governorate")} autoComplete="address-level1" required defaultValue="">
@@ -247,21 +247,21 @@ export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: numbe
           </div>
         </fieldset>
 
-        <section aria-labelledby="payment-title" className="rounded-[var(--radius-lg)] border border-zaytun/25 bg-zaytun-tint p-5">
-          <h2 id="payment-title" className="text-eyebrow text-zaytun">
+        <section aria-labelledby="payment-title" className="rounded-[var(--radius-md)] border-2 border-ink p-5">
+          <h2 id="payment-title" className="font-sans text-base font-semibold text-muted">
             {ar.checkout.paymentTitle}
           </h2>
           <p className="mt-2 flex items-center gap-3 text-lg font-bold">
-            <Wallet aria-hidden className="size-6 text-zaytun" strokeWidth={1.5} />
+            <Wallet aria-hidden className="size-6 text-gold-deep" strokeWidth={1.75} />
             {ar.checkout.paymentCod}
           </p>
           <p className="mt-1 text-muted">{ar.checkout.paymentCodBody}</p>
         </section>
       </div>
 
-      <aside aria-label={ar.checkout.summary} className="rounded-[var(--radius-lg)] border border-line bg-sand p-6 lg:sticky lg:top-24">
+      <aside aria-label={ar.checkout.summary} className="rounded-[var(--radius-lg)] bg-mist p-6 lg:sticky lg:top-24">
         <div className="flex items-center justify-between">
-          <h2 className="text-title">{ar.checkout.summary}</h2>
+          <h2 className="font-sans text-lg font-bold">{ar.checkout.summary}</h2>
           <Link href="/cart" className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
             {ar.checkout.edit}
           </Link>
@@ -269,7 +269,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: numbe
         <ul className="mt-4 space-y-4 border-b border-line pb-5">
           {lines.map((l) => (
             <li key={l.productId} className="flex items-center gap-3">
-              <div className="niche-sm relative h-16 w-13 shrink-0 overflow-hidden bg-surface">
+              <div className="niche-sm relative h-16 w-13 shrink-0 overflow-hidden bg-paper">
                 {l.image ? <Image src={l.image} alt="" fill sizes="52px" className="object-cover" /> : null}
               </div>
               <div className="flex-1">

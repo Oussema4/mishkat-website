@@ -24,16 +24,16 @@ export default async function FaqPage() {
   return (
     <div className="container-page max-w-3xl py-10 md:py-16">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd).replace(/</g, "\\u003c") }} />
-      <h1 className="text-display-lg">{ar.nav.faq}</h1>
+      <h1 className="text-4xl md:text-5xl">{ar.nav.faq}</h1>
       <section aria-labelledby="faq-order" className="mt-10">
-        <h2 id="faq-order" className="text-display-md mb-4">
+        <h2 id="faq-order" className="mb-4 text-2xl">
           الطلب والتوصيل
         </h2>
         <FaqList items={settings.faq} />
       </section>
       {sabili && sabili.faq.length > 0 ? (
         <section aria-labelledby="faq-sabili" className="mt-14">
-          <h2 id="faq-sabili" className="text-display-md mb-4">
+          <h2 id="faq-sabili" className="mb-4 text-2xl">
             لعبة سبيلي
           </h2>
           <FaqList items={sabili.faq} />

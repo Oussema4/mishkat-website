@@ -28,7 +28,7 @@ export default async function PolicyPage({ params }: PageProps<"/policies/[slug]
 
   return (
     <div className="container-page max-w-3xl py-10 md:py-16">
-      <h1 className="text-display-lg">{policy.title}</h1>
+      <h1 className="text-4xl md:text-5xl">{policy.title}</h1>
       {text ? (
         <div className="prose-ar mt-8 text-lg leading-9">
           {text.split(/\n+/).map((line, i) => (

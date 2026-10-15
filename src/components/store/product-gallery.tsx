@@ -9,11 +9,11 @@ import { cn } from "@/lib/site";
 export function ProductGallery({ images, name }: { images: ProductImage[]; name: string }) {
   const [index, setIndex] = useState(0);
   const current = images[index];
-  if (!current) return <div className="niche aspect-[4/5] bg-surface" />;
+  if (!current) return <div className="niche aspect-[4/5] bg-mist" />;
 
   return (
     <div>
-      <div className="niche relative aspect-[4/5] overflow-hidden bg-surface">
+      <div className="niche relative aspect-[4/5] overflow-hidden bg-mist">
         <Image
           key={current.id}
           src={current.url}
@@ -34,8 +34,8 @@ export function ProductGallery({ images, name }: { images: ProductImage[]; name:
                 aria-label={fill(ar.product.showImage, { n: i + 1 })}
                 aria-pressed={i === index}
                 className={cn(
-                  "relative block aspect-square w-full overflow-hidden rounded-[var(--radius-sm)] border-2 bg-surface transition-colors",
-                  i === index ? "border-gold" : "border-transparent hover:border-line-strong",
+                  "relative block aspect-square w-full overflow-hidden rounded-[var(--radius-sm)] border-2 bg-mist transition-colors",
+                  i === index ? "border-ink" : "border-transparent hover:border-line",
                 )}
               >
                 <Image src={img.url} alt="" fill sizes="96px" className="object-cover" />

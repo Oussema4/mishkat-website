@@ -19,7 +19,7 @@ export default async function TeamPage() {
     <div className="space-y-6">
       <h1 className="text-3xl">المسؤولون</h1>
 
-      <section className="overflow-hidden rounded-[var(--radius-lg)] bg-surface shadow-[var(--shadow-soft)]">
+      <section className="overflow-hidden rounded-[var(--radius-lg)] bg-paper shadow-[var(--shadow-soft)]">
         <ul className="divide-y divide-line">
           {rows.map((a) => (
             <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
