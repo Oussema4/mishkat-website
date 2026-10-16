@@ -1,6 +1,7 @@
 import { Banknote, MessageCircle, Truck, Wallet } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { NicheDivider } from "@/components/brand/niche-divider";
 import { CardFan } from "@/components/store/card-fan";
 import { FaqList } from "@/components/store/faq-list";
 import { ReviewWall } from "@/components/store/review-wall";
@@ -29,7 +30,7 @@ export default async function HomePage() {
       <section aria-labelledby="hero-title" className="relative overflow-hidden">
         <div className="container-page grid items-center gap-10 py-10 md:grid-cols-[1.05fr_1fr] md:gap-14 md:py-20">
           <div className="max-w-xl">
-            <h1 id="hero-title" className="text-[3rem] leading-[1.45] sm:text-6xl lg:text-[5rem] lg:leading-[1.35]">
+            <h1 id="hero-title" className="text-[2.6rem] sm:text-5xl lg:text-[4.25rem]">
               {ar.home.heroTitle}
             </h1>
             <p className="mt-6 max-w-[34rem] text-lg leading-9 text-muted md:text-xl md:leading-10">{ar.home.heroText}</p>
@@ -98,18 +99,21 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      {/* ───── How Mishkat makes learning fun ───── */}
-      <section aria-labelledby="how-title" className="container-page py-16 md:py-24">
-        <h2 id="how-title" className="max-w-xl text-3xl md:text-4xl">
-          {ar.home.howTitle}
-        </h2>
-        <div className="mt-12 grid gap-10 md:grid-cols-3 md:gap-0">
-          {ar.home.howItems.map((item) => (
-            <div key={item.title} className="md:border-s md:border-line md:px-8 md:first:border-s-0 md:first:ps-0">
-              <h3 className="text-2xl text-ink">{item.title}</h3>
-              <p className="mt-3 leading-8 text-muted">{item.body}</p>
-            </div>
-          ))}
+      {/* ───── How Mishkat makes learning fun: a Mishkat brand section (black, niche pattern) ───── */}
+      <section aria-labelledby="how-title" className="on-dark niche-pattern bg-ink text-paper">
+        <div className="container-page py-16 md:py-24">
+          <h2 id="how-title" className="max-w-xl text-3xl md:text-4xl">
+            {ar.home.howTitle}
+          </h2>
+          <NicheDivider className="mt-8 max-w-xs" />
+          <div className="mt-12 grid gap-10 md:grid-cols-3 md:gap-0">
+            {ar.home.howItems.map((item) => (
+              <div key={item.title} className="md:border-s md:border-paper/15 md:px-8 md:first:border-s-0 md:first:ps-0">
+                <h3 className="text-2xl text-gold">{item.title}</h3>
+                <p className="mt-3 leading-8 text-paper/80">{item.body}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -124,7 +128,7 @@ export default async function HomePage() {
               const href = "href" in rest ? rest.href : undefined;
               const content = (
                 <>
-                  <Icon aria-hidden className="size-7 text-gold-deep" strokeWidth={1.6} />
+                  <Icon aria-hidden className="size-7 text-gold-deep" strokeWidth={1.5} />
                   <span className="mt-3 block text-lg font-semibold text-ink">{title}</span>
                   <span className="mt-1 block leading-7 text-muted">{body}</span>
                 </>

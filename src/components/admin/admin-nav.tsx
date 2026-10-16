@@ -29,7 +29,7 @@ export function AdminNav() {
                   active ? "bg-ink text-paper" : "text-ink hover:bg-mist",
                 )}
               >
-                <Icon aria-hidden className="size-5" strokeWidth={1.75} />
+                <Icon aria-hidden className="size-5" strokeWidth={1.5} />
                 {label}
               </Link>
             </li>
@@ -41,7 +41,7 @@ export function AdminNav() {
             target="_blank"
             className="flex min-h-11 items-center gap-3 whitespace-nowrap rounded-[var(--radius-md)] px-3 text-[0.95rem] text-muted hover:bg-mist"
           >
-            <ExternalLink aria-hidden className="size-5" strokeWidth={1.75} />
+            <ExternalLink aria-hidden className="size-5" strokeWidth={1.5} />
             عرض المتجر
           </Link>
         </li>

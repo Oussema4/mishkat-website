@@ -38,7 +38,7 @@ export function AddToCartButton({ product, variant = "outline", className }: { p
         toast.success(fill("أُضيفت «{name}» إلى السلة", { name: product.name }), { href: "/cart", label: "عرض السلة" });
       }}
     >
-      <ShoppingBag aria-hidden className="size-5" strokeWidth={1.75} />
+      <ShoppingBag aria-hidden className="size-5" strokeWidth={1.5} />
       {disabled ? ar.shop.outOfStock : ar.shop.addToCart}
     </Button>
   );
@@ -111,7 +111,7 @@ export function ProductPurchase({ product, sticky = false }: { product: CartProd
           {out ? ar.shop.outOfStock : ar.product.orderNow}
         </Button>
         <Button type="button" variant="outline" size="lg" disabled={out} onClick={() => addToCart(false)}>
-          <ShoppingBag aria-hidden className="size-5" strokeWidth={1.75} />
+          <ShoppingBag aria-hidden className="size-5" strokeWidth={1.5} />
           {ar.product.addToCart}
         </Button>
       </div>

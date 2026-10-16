@@ -1,18 +1,24 @@
 import Image from "next/image";
 import Link from "next/link";
 import { t } from "@/i18n/config";
+import { BRAND_IMAGES } from "@/lib/brand-images";
 import { cn } from "@/lib/site";
 
-/** Mishkat wordmark, recolored from the original gold logo (see scripts/prepare-assets.mjs). */
+/**
+ * Official Mishkat wordmark (charte-graphique/assets). Charter rules: black on light
+ * backgrounds, gold on dark ones, never gold on ivory; minimum 120px wide on screen.
+ */
 export function Logo({ tone = "ink", className, href = "/" }: { tone?: "ink" | "gold"; className?: string; href?: string | null }) {
+  const asset = BRAND_IMAGES[tone === "ink" ? "mishkat-ink" : "mishkat-gold"];
   const img = (
     <Image
-      src={tone === "ink" ? "/images/brand/mishkat-ink.png" : "/images/brand/mishkat-gold.png"}
+      src={asset.src}
       alt={t.brand.name}
-      width={640}
-      height={178}
+      width={asset.width}
+      height={asset.height}
       priority={tone === "ink"}
-      className={cn("h-auto w-28 md:w-32", className)}
+      quality={90}
+      className={cn("h-auto w-[7.5rem] md:w-32", className)}
     />
   );
   if (!href) return img;

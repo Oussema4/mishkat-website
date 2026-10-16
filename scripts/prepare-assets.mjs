@@ -185,13 +185,22 @@ async function straightenedSabiliMask() {
     .toBuffer();
 }
 
+const charter = (...p) => path.join(root, "charte-graphique", "assets", ...p);
+
 async function logos() {
   await ensure(out("brand"));
-  const mishkatSrc = path.join(video, "public", "mishkat-logo-trim.png");
-  await recolorFromMask(mishkatSrc, { threshold: 90, color: [10, 10, 10], width: 640, file: out("brand", "mishkat-ink.png") });
-  await recolorFromMask(mishkatSrc, { threshold: 90, color: [217, 175, 87], width: 640, file: out("brand", "mishkat-gold.png") });
-  const sabiliMask = await straightenedSabiliMask();
   const brand = {};
+  // Official Mishkat wordmarks from the brand charter (charte-graphique/assets): black for light
+  // backgrounds, gold for dark ones. Hashed names so a new logo never hides behind a cache.
+  for (const [key, file] of [
+    ["mishkat-ink", "logo-black.png"],
+    ["mishkat-gold", "logo-gold.png"],
+  ]) {
+    const { data, info } = await sharp(charter(file)).trim().resize({ width: 720 }).png({ compressionLevel: 9 }).toBuffer({ resolveWithObject: true });
+    const name = await writeHashed(data, out("brand"), key, "png");
+    brand[key] = { src: `/images/brand/${name}`, width: info.width, height: info.height };
+  }
+  const sabiliMask = await straightenedSabiliMask();
   for (const [key, color] of [
     ["sabili-gold", [217, 175, 87]],
     ["sabili-yellow", [255, 210, 0]],
@@ -248,16 +257,10 @@ async function reviewImages() {
 
 // ---------- Favicon: the "niche" letter from the Mishkat logo, gold on ink ----------
 async function appIcon() {
-  const logo = sharp(out("brand", "mishkat-gold.png"));
-  const { width, height } = await logo.metadata();
-  // The first glyph (ة with the niche) sits at the visual start (left edge) of the wordmark.
-  const glyph = await sharp(out("brand", "mishkat-gold.png"))
-    .extract({ left: 0, top: 0, width: Math.round(width * 0.168), height })
-    .trim()
-    .resize({ height: 300, width: 300, fit: "inside" })
-    .toBuffer();
+  // The charter's symbol (the niche inside the taa marbuta), gold on Mishkat black.
+  const glyph = await sharp(charter("symbol-gold.png")).trim().resize({ height: 330, width: 330, fit: "inside" }).toBuffer();
   const meta = await sharp(glyph).metadata();
-  await sharp({ create: { width: 512, height: 512, channels: 4, background: "#0a0a0a" } })
+  await sharp({ create: { width: 512, height: 512, channels: 4, background: "#0b0b0b" } })
     .composite([{ input: glyph, left: Math.round((512 - meta.width) / 2), top: Math.round((512 - meta.height) / 2) }])
     .png()
     .toFile(path.join(root, "src", "app", "icon.png"));

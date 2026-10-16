@@ -126,11 +126,11 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
 
           <ul className="mt-8 space-y-3 border-t border-line pt-6 text-[0.95rem]">
             <li className="flex items-center gap-3">
-              <Wallet aria-hidden className="size-5 shrink-0 text-gold-deep" strokeWidth={1.75} />
+              <Wallet aria-hidden className="size-5 shrink-0 text-gold-deep" strokeWidth={1.5} />
               {ar.checkout.paymentCod}
             </li>
             <li className="flex items-center gap-3">
-              <Truck aria-hidden className="size-5 shrink-0 text-gold-deep" strokeWidth={1.75} />
+              <Truck aria-hidden className="size-5 shrink-0 text-gold-deep" strokeWidth={1.5} />
               {fill("توصيل لكل الولايات خلال {time} · {fee}", { time: settings.deliveryTime, fee: formatTND(settings.deliveryFee) })}
             </li>
           </ul>
@@ -224,7 +224,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
       </section>
 
       {/* Mobile sticky order bar */}
-      <div className="sticky bottom-0 z-30 border-t border-line bg-paper/95 px-4 py-3 backdrop-blur md:hidden">
+      <div className="sticky bottom-0 z-30 border-t border-line bg-ivory/95 px-4 py-3 backdrop-blur md:hidden">
         <div className="flex items-center gap-4">
           <div className="shrink-0">
             <span className="block text-sm text-muted">{product.name}</span>

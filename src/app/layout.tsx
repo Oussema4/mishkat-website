@@ -1,14 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Aref_Ruqaa, IBM_Plex_Sans_Arabic } from "next/font/google";
+import { IBM_Plex_Sans_Arabic, Reem_Kufi } from "next/font/google";
 import { locales, defaultLocale, t } from "@/i18n/config";
 import { siteUrl } from "@/lib/site";
 import "./globals.css";
 
-/** Ruqʿah calligraphy for headings — pairs with the geometric Kufic of the Mishkat logo. */
-const display = Aref_Ruqaa({
+/** Charter: Reem Kufi for headings — geometric Kufic in tune with the square letters of the logo. */
+const display = Reem_Kufi({
   subsets: ["arabic", "latin"],
-  weight: ["400", "700"],
-  variable: "--font-calligraphy",
+  weight: ["500", "600", "700"],
+  variable: "--font-reem-kufi",
   display: "swap",
 });
 
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
+  themeColor: "#0b0b0b",
   width: "device-width",
   initialScale: 1,
 };

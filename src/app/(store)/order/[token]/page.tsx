@@ -43,11 +43,11 @@ export default async function OrderConfirmationPage({ params }: PageProps<"/orde
 
       <ul className="mt-8 space-y-4 text-lg">
         <li className="flex gap-3">
-          <Wallet aria-hidden className="mt-1 size-6 shrink-0 text-gold-deep" strokeWidth={1.75} />
+          <Wallet aria-hidden className="mt-1 size-6 shrink-0 text-gold-deep" strokeWidth={1.5} />
           <span>{fill(ar.confirmation.payment, { total: formatTND(order.total) })}</span>
         </li>
         <li className="flex gap-3">
-          <Truck aria-hidden className="mt-1 size-6 shrink-0 text-gold-deep" strokeWidth={1.75} />
+          <Truck aria-hidden className="mt-1 size-6 shrink-0 text-gold-deep" strokeWidth={1.5} />
           <span>{fill(ar.confirmation.delivery, { time: settings.deliveryTime, place: `${order.city}، ${order.governorate}` })}</span>
         </li>
       </ul>

@@ -54,7 +54,7 @@ export function Footer({ settings }: { settings: StoreSettings }) {
             {settings.phone ? (
               <li>
                 <a href={`tel:${settings.phone.replace(/\s/g, "")}`} className="footer-link">
-                  <Phone aria-hidden className="size-5" strokeWidth={1.75} />
+                  <Phone aria-hidden className="size-5" strokeWidth={1.5} />
                   <span dir="ltr">{settings.phone}</span>
                 </a>
               </li>
@@ -62,7 +62,7 @@ export function Footer({ settings }: { settings: StoreSettings }) {
             {settings.email ? (
               <li>
                 <a href={`mailto:${settings.email}`} className="footer-link">
-                  <Mail aria-hidden className="size-5" strokeWidth={1.75} />
+                  <Mail aria-hidden className="size-5" strokeWidth={1.5} />
                   <span dir="ltr" className="break-all">
                     {settings.email}
                   </span>

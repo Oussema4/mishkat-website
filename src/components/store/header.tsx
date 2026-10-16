@@ -43,7 +43,7 @@ export function Header() {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-paper/95 backdrop-blur supports-[backdrop-filter]:bg-paper/85">
+    <header className="sticky top-0 z-40 border-b border-line bg-ivory/95 backdrop-blur supports-[backdrop-filter]:bg-ivory/85">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-3 focus:z-50 focus:rounded-md focus:bg-ink focus:px-4 focus:py-2 focus:text-paper"
@@ -82,7 +82,7 @@ export function Header() {
             className="relative inline-flex size-11 items-center justify-center rounded-full text-ink transition-colors hover:bg-mist"
             aria-label={count > 0 ? fill("السلة، فيها {n} قطع", { n: count }) : ar.nav.cart}
           >
-            <ShoppingBag aria-hidden className="size-6" strokeWidth={1.75} />
+            <ShoppingBag aria-hidden className="size-6" strokeWidth={1.5} />
             {count > 0 ? (
               <span
                 aria-hidden
@@ -110,7 +110,7 @@ export function Header() {
         id="mobile-menu"
         aria-label="القائمة الرئيسية"
         hidden={!open}
-        className="border-t border-line bg-paper md:hidden"
+        className="border-t border-line bg-ivory md:hidden"
       >
         <ul className="container-page flex flex-col py-2">
           {links.map((l) => {

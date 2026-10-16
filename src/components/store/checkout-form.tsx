@@ -252,7 +252,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: numbe
             {ar.checkout.paymentTitle}
           </h2>
           <p className="mt-2 flex items-center gap-3 text-lg font-bold">
-            <Wallet aria-hidden className="size-6 text-gold-deep" strokeWidth={1.75} />
+            <Wallet aria-hidden className="size-6 text-gold-deep" strokeWidth={1.5} />
             {ar.checkout.paymentCod}
           </p>
           <p className="mt-1 text-muted">{ar.checkout.paymentCodBody}</p>
