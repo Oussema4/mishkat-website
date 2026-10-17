@@ -45,8 +45,8 @@ export default async function HomePage() {
           </div>
 
           <div className="relative mx-auto w-full max-w-[30rem]">
-            <div aria-hidden className="niche absolute -inset-2 translate-x-2 translate-y-2 bg-gold/80 md:-inset-4 md:translate-x-3 md:translate-y-3" />
-            <div className="niche relative aspect-[4/5] overflow-hidden bg-mist">
+            <div aria-hidden className="hero-frame niche absolute -inset-2 translate-x-2 translate-y-2 bg-gold/80 md:-inset-4 md:translate-x-3 md:translate-y-3" />
+            <div className="hero-rise niche relative aspect-[4/5] overflow-hidden bg-mist">
               <Image
                 src="/images/products/sabili-table.webp"
                 alt={ar.home.heroImageAlt}

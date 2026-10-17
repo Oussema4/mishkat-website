@@ -155,16 +155,76 @@
   }
 }
 
-/* Sabili card fan: one orchestrated reveal on the homepage. */
+/* Sabili card fan: opens once when it scrolls into view (state set by CardFan). */
 @keyframes fan-in {
   from {
-    transform: translateX(var(--fan-from-x, 0)) rotate(0deg);
+    transform: translateY(1.5rem) rotate(0deg);
     opacity: 0;
   }
   to {
     transform: translateX(var(--fan-x)) translateY(var(--fan-y)) rotate(var(--fan-r));
     opacity: 1;
   }
+}
+.fan-card {
+  transform: translateX(var(--fan-x)) translateY(var(--fan-y)) rotate(var(--fan-r));
+}
+.card-fan[data-fan="armed"] .fan-card {
+  opacity: 0;
+  transform: translateY(1.5rem);
+}
+.card-fan[data-fan="play"] .fan-card {
+  animation: fan-in 950ms var(--ease-out-soft) var(--fan-delay) both;
+}
+
+/*
+ * Hero: the photo rises inside the niche like light filling it, then the gold frame settles
+ * behind it. The page's single load-time moment. "from"-only keyframes animate towards each
+ * element's own final value, so every breakpoint keeps its layout.
+ */
+@keyframes niche-rise {
+  from {
+    clip-path: polygon(0 100%, 50% 100%, 100% 100%, 100% 100%, 0 100%);
+  }
+}
+@keyframes niche-settle {
+  from {
+    transform: scale(1.08);
+  }
+}
+@keyframes frame-settle {
+  from {
+    translate: 0 0;
+    opacity: 0;
+  }
+}
+.hero-rise {
+  animation: niche-rise 1100ms var(--ease-out-soft) 120ms both;
+}
+.hero-rise img {
+  animation: niche-settle 1600ms var(--ease-out-soft) 120ms both;
+}
+.hero-frame {
+  animation: frame-settle 700ms var(--ease-out-soft) 900ms both;
+}
+
+/* Review dialog: the message grows from the wall into view (answers the tap). */
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+dialog.review-dialog[open] > * {
+  animation: dialog-in 260ms var(--ease-out-soft);
+}
+dialog.review-dialog[open]::backdrop {
+  animation: backdrop-in 260ms ease-out;
 }
 
 @keyframes toast-in {

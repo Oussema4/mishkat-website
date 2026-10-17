@@ -58,7 +58,7 @@ export function ReviewWall({ reviews }: { reviews: Review[] }) {
         ref={dialog}
         onClose={() => setActive(null)}
         onClick={(e) => e.target === dialog.current && dialog.current?.close()}
-        className="m-auto max-h-[92dvh] w-[min(92vw,44rem)] overflow-visible bg-transparent p-0 backdrop:bg-ink/85"
+        className="review-dialog m-auto max-h-[92dvh] w-[min(92vw,44rem)] overflow-visible bg-transparent p-0 backdrop:bg-ink/85"
         aria-label="رسالة من أحد العملاء"
       >
         {active ? (
