@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { ProductPurchase } from "@/components/store/add-to-cart";
 import { FaqList } from "@/components/store/faq-list";
 import { ProductGallery } from "@/components/store/product-gallery";
-import { SabiliCardTypes } from "@/components/store/sabili-card-types";
 import { buttonClass } from "@/components/ui/button";
 import { Price } from "@/components/ui/price";
 import { StockBadge } from "@/components/ui/stock-badge";
@@ -186,8 +185,14 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
             </div>
             {product.slug === "sabili" ? (
               <div className="mt-12 border-b border-paper/15 pb-14">
-                <h3 className="sr-only">أنواع البطاقات</h3>
-                <SabiliCardTypes />
+                {/* The rules deck itself (public/rules/sabili.html); ?embed hides its "back" link and wheel paging. */}
+                <iframe
+                  src="/rules/sabili?embed"
+                  title={ar.product.rulesDeckTitle}
+                  loading="lazy"
+                  allow="fullscreen"
+                  className="aspect-video w-full rounded-[var(--radius-lg)] bg-[#0b0e2c] shadow-[0_30px_60px_-30px_rgb(0_0_0/0.7)]"
+                />
               </div>
             ) : null}
             <ol className="mt-12 grid gap-x-12 gap-y-10 md:grid-cols-2">

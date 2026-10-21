@@ -336,6 +336,8 @@ svg {
 .deck-controls .pos { direction: ltr; min-width: 64px; text-align: center; font-size: 15px; font-variant-numeric: tabular-nums; }
 .rotate-hint { display: none; position: fixed; top: 20px; left: 16px; right: 16px; text-align: center; font: 600 15px var(--body); color: var(--text-soft); }
 @media (orientation: portrait) and (max-width: 700px) { .rotate-hint { display: block; } }
+/* Embedded in the product page (?embed): no way "back" from inside a frame, no rotate hint */
+.embed .deck-controls .back, .embed .rotate-hint { display: none !important; }
 
 /* ===========================================
    INLINE EDITING (only with ?edit in the URL)
@@ -565,7 +567,7 @@ body.editing [contenteditable="true"] { outline: 2px dashed rgba(255, 210, 0, .6
 
 <!-- Controls live outside the 1920×1080 stage -->
 <nav class="deck-controls" aria-label="التنقل بين الشرائح">
-  <a href="/products/sabili" title="العودة إلى صفحة سبيلي">العودة إلى سبيلي</a>
+  <a class="back" href="/products/sabili" title="العودة إلى صفحة سبيلي">العودة إلى سبيلي</a>
   <button type="button" id="prevBtn" aria-label="الشريحة السابقة"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
   <span class="pos" id="pos">1 / 10</span>
   <button type="button" id="nextBtn" aria-label="الشريحة التالية"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
@@ -577,6 +579,9 @@ body.editing [contenteditable="true"] { outline: 2px dashed rgba(255, 210, 0, .6
    SLIDE PRESENTATION CONTROLLER
    RTL deck: "next" is ← (ArrowLeft), Space, PageDown, swipe right, wheel down.
    =========================================== */
+const EMBED = new URLSearchParams(location.search).has("embed");
+if (EMBED) document.documentElement.classList.add("embed");
+
 class SlidePresentation {
   constructor() {
     this.slides = [...document.querySelectorAll(".slide")];
@@ -587,7 +592,7 @@ class SlidePresentation {
     this.setupStageScale();
     this.setupKeyboardNav();
     this.setupTouchNav();
-    this.setupWheelNav();
+    if (!EMBED) this.setupWheelNav(); // inside the product page the wheel must keep scrolling the page
     this.setupControls();
     const fromHash = parseInt(location.hash.slice(1), 10);
     this.show(Number.isFinite(fromHash) ? fromHash - 1 : 0);
@@ -657,10 +662,12 @@ class SlidePresentation {
     document.getElementById("fsBtn").onclick = () => this.toggleFullscreen();
     // Hide the bar while presenting; any pointer movement brings it back.
     let t;
-    const wake = () => { bar.classList.remove("idle"); clearTimeout(t); t = setTimeout(() => bar.classList.add("idle"), 2500); };
+    // Embedded, the bar stays up until the visitor first changes slide, so they see it can be navigated.
+    const wake = () => { bar.classList.remove("idle"); clearTimeout(t); if (!EMBED || this.moved) t = setTimeout(() => bar.classList.add("idle"), 2500); };
     ["mousemove", "touchstart", "keydown"].forEach((ev) => addEventListener(ev, wake, { passive: true }));
     bar.addEventListener("focusin", () => { clearTimeout(t); bar.classList.remove("idle"); });
     wake();
+    this.wake = wake;
   }
 
   toggleFullscreen() {
@@ -669,7 +676,9 @@ class SlidePresentation {
   }
 
   show(i) {
-    this.current = Math.max(0, Math.min(i, this.slides.length - 1));
+    const next = Math.max(0, Math.min(i, this.slides.length - 1));
+    if (this.slides[this.current].classList.contains("active") && next !== this.current) { this.moved = true; this.wake?.(); }
+    this.current = next;
     this.slides.forEach((s, n) => {
       s.classList.toggle("active", n === this.current);
       s.classList.toggle("visible", n === this.current);
