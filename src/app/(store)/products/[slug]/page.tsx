@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Check, Truck, Wallet } from "lucide-react";
+import { Check, Presentation, Truck, Wallet } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductPurchase } from "@/components/store/add-to-cart";
 import { FaqList } from "@/components/store/faq-list";
 import { ProductGallery } from "@/components/store/product-gallery";
 import { SabiliCardTypes } from "@/components/store/sabili-card-types";
+import { buttonClass } from "@/components/ui/button";
 import { Price } from "@/components/ui/price";
 import { StockBadge } from "@/components/ui/stock-badge";
 import { ar, fill } from "@/i18n/ar";
@@ -168,10 +169,21 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
       {product.howToPlay.length > 0 ? (
         <section id="how-to-play" aria-labelledby="how-to-play-title" className="on-dark scroll-mt-24 bg-sabili-navy text-paper">
           <div className="container-page py-16 md:py-24">
-            <h2 id="how-to-play-title" className="text-3xl md:text-4xl">
-              {ar.product.howToPlay}
-            </h2>
-            <p className="mt-3 text-paper/70">{ar.product.rulesNote}</p>
+            <div className="flex flex-wrap items-end justify-between gap-6">
+              <div>
+                <h2 id="how-to-play-title" className="text-3xl md:text-4xl">
+                  {ar.product.howToPlay}
+                </h2>
+                <p className="mt-3 text-paper/70">{ar.product.rulesNote}</p>
+              </div>
+              {product.slug === "sabili" ? (
+                // A static page in public/rules (built by scripts/build-slides.mjs), so a plain <a>, not <Link>.
+                <a href="/rules/sabili" className={buttonClass("sabili", "lg")}>
+                  <Presentation aria-hidden className="size-5" strokeWidth={1.5} />
+                  {ar.product.rulesDeck}
+                </a>
+              ) : null}
+            </div>
             {product.slug === "sabili" ? (
               <div className="mt-12 border-b border-paper/15 pb-14">
                 <h3 className="sr-only">أنواع البطاقات</h3>

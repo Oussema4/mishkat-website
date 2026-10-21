@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: { bodySizeLimit: "6mb" },
   },
+  // Presentations are static pages built into public/rules/ (scripts/build-slides.mjs); serve them without ".html".
+  async rewrites() {
+    return [{ source: "/rules/:deck", destination: "/rules/:deck.html" }];
+  },
   async headers() {
     return [
       {

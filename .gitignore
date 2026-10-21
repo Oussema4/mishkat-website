@@ -21,3 +21,6 @@ public/uploads/
 
 # local editor / assistant settings
 .claude/
+
+# frontend-slides working files (previews)
+.frontend-slides/

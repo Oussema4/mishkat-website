@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev --port 3100",
-    "build": "tsx scripts/prepare-db.ts && tsx src/db/seed.ts && next build",
+    "build": "tsx scripts/prepare-db.ts && tsx src/db/seed.ts && node scripts/build-slides.mjs && next build",
     "start": "next start",
     "preview": "npm run build && next start --port 3100",
     "typecheck": "tsc --noEmit",
@@ -19,7 +19,8 @@
     "setup": "npm run db:migrate && npm run seed",
     "seed": "tsx src/db/seed.ts",
     "admin:create": "tsx scripts/create-admin.ts",
-    "assets": "node scripts/prepare-assets.mjs"
+    "assets": "node scripts/prepare-assets.mjs && node scripts/build-slides.mjs",
+    "slides": "node scripts/build-slides.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
