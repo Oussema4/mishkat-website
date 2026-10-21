@@ -55,6 +55,34 @@
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/*
+ * The store is a black page lit in gold ("night"). Inside `.night` (the store layout) the tokens
+ * that only ever serve the light theme are redefined, so surfaces, lines, secondary text and status
+ * colours turn dark without touching every class. Ink and paper keep their values (they mean "black"
+ * and "near-white" in both themes); where the store wrote ink as text, the class says paper now.
+ * The admin is outside `.night` and stays ivory. `night:` styles shared components for the store only.
+ */
+@custom-variant night (&:where(.night, .night *));
+
+.night {
+  --color-ivory: #0b0b0b;
+  --color-mist: #1e1c19;
+  --color-line: rgb(255 253 248 / 0.12);
+  --color-muted: #b9b1a3;
+  --color-gold-deep: #f2d27a;
+  --color-success: #8fd5a6;
+  --color-success-bg: rgb(143 213 166 / 0.12);
+  --color-danger: #ff9a8a;
+  --color-danger-bg: rgb(255 154 138 / 0.12);
+  --color-warning: #f2d27a;
+  --color-warning-bg: rgb(242 210 122 / 0.12);
+  color-scheme: dark;
+}
+body:has(.night) {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
@@ -112,19 +140,6 @@
 }
 
 @layer components {
-  /* The "mishkat" niche: the pointed window from the logo, used to frame product imagery. */
-  .niche {
-    clip-path: polygon(0 14%, 50% 0, 100% 14%, 100% 100%, 0 100%);
-  }
-  .niche-sm {
-    clip-path: polygon(0 10%, 50% 0, 100% 10%, 100% 100%, 0 100%);
-  }
-  /* Charter "نقش الكوّة": a lattice of small niches in gold at very low opacity. Dark backgrounds only,
-     never behind long text. */
-  .niche-pattern {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='84' viewBox='0 0 56 84'%3E%3Cg fill='none' stroke='%23D4A440' stroke-opacity='.13' stroke-width='1.1' stroke-linejoin='round'%3E%3Cpath d='M14 76V30L28 18l14 12v46z'/%3E%3Cpath d='M18.5 71.5V32.2L28 24.1l9.5 8.1v39.3z'/%3E%3C/g%3E%3C/svg%3E");
-    background-size: 56px 84px;
-  }
   .container-page {
     width: 100%;
     max-width: 76rem;
@@ -155,57 +170,122 @@
   }
 }
 
-/* Sabili card fan: opens once when it scrolls into view (state set by CardFan). */
-@keyframes fan-in {
+/* Homepage: a black page lit by the lamp. The light comes from one corner and runs along the
+   wires of the knowledge diagram (knowledge-map.tsx). */
+.lamp-glow {
+  background:
+    radial-gradient(38rem 26rem at 88% -6%, rgb(212 164 64 / 0.55), transparent 70%),
+    radial-gradient(22rem 14rem at 96% 2%, rgb(242 210 122 / 0.45), transparent 70%),
+    radial-gradient(50rem 22rem at 50% 108%, rgb(212 164 64 / 0.12), transparent 70%);
+  animation: lamp-breathe 7s ease-in-out infinite alternate;
+}
+@keyframes lamp-breathe {
   from {
-    transform: translateY(1.5rem) rotate(0deg);
-    opacity: 0;
+    opacity: 0.85;
   }
   to {
-    transform: translateX(var(--fan-x)) translateY(var(--fan-y)) rotate(var(--fan-r));
     opacity: 1;
   }
 }
-.fan-card {
-  transform: translateX(var(--fan-x)) translateY(var(--fan-y)) rotate(var(--fan-r));
+.lamp-core {
+  box-shadow:
+    0 0 0 1px rgb(212 164 64 / 0.15),
+    0 0 48px 6px rgb(212 164 64 / 0.28);
 }
-.card-fan[data-fan="armed"] .fan-card {
+.wire-pulse {
+  stroke-dasharray: 70 930;
+  stroke-dashoffset: 1000;
+  filter: drop-shadow(0 0 6px rgb(242 210 122 / 0.9));
+  animation: wire-run 3.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+@keyframes wire-run {
+  from {
+    stroke-dashoffset: 1000;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wire-pulse {
+    display: none;
+  }
+}
+
+/* <ReviewPile>: a gold neon frame. Two bright segments run around it (pathLength 1000: two dashes of
+   160 per 500), the frame breathes a soft glow, and messages slide right → left through it. */
+.neon-frame {
+  background: radial-gradient(closest-side, rgb(212 164 64 / 0.1), transparent) #0b0b0b;
+  box-shadow:
+    0 0 0 1px rgb(212 164 64 / 0.12),
+    0 0 40px -6px rgb(212 164 64 / 0.45),
+    inset 0 0 40px -10px rgb(212 164 64 / 0.35);
+  animation: neon-breathe 3.2s ease-in-out infinite alternate;
+}
+@keyframes neon-breathe {
+  from {
+    box-shadow:
+      0 0 0 1px rgb(212 164 64 / 0.12),
+      0 0 28px -8px rgb(212 164 64 / 0.35),
+      inset 0 0 30px -12px rgb(212 164 64 / 0.25);
+  }
+  to {
+    box-shadow:
+      0 0 0 1px rgb(212 164 64 / 0.2),
+      0 0 56px -4px rgb(212 164 64 / 0.6),
+      inset 0 0 48px -8px rgb(212 164 64 / 0.42);
+  }
+}
+.neon-run {
+  stroke-dasharray: 160 340;
+  filter: drop-shadow(0 0 4px rgb(242 210 122 / 0.95)) drop-shadow(0 0 12px rgb(212 164 64 / 0.8));
+  animation: neon-run 5.5s linear infinite;
+}
+@keyframes neon-run {
+  to {
+    stroke-dashoffset: -1000;
+  }
+}
+.msg-in {
+  animation: msg-in 700ms var(--ease-out-soft) both;
+}
+.msg-out {
+  animation: msg-out 700ms var(--ease-out-soft) both;
+}
+@keyframes msg-in {
+  from {
+    opacity: 0;
+    transform: translateX(65%);
+  }
+}
+@keyframes msg-out {
+  to {
+    opacity: 0;
+    transform: translateX(-65%);
+  }
+}
+
+/* <Reveal>: a block's children rise in one after another as it enters (see reveal.tsx) */
+[data-reveal="armed"] > * {
   opacity: 0;
   transform: translateY(1.5rem);
 }
-.card-fan[data-fan="play"] .fan-card {
-  animation: fan-in 950ms var(--ease-out-soft) var(--fan-delay) both;
+[data-reveal="in"] > * {
+  animation: reveal-rise 800ms var(--ease-out-soft) both;
 }
-
-/*
- * Hero: the photo rises inside the niche like light filling it, then the gold frame settles
- * behind it. The page's single load-time moment. "from"-only keyframes animate towards each
- * element's own final value, so every breakpoint keeps its layout.
- */
-@keyframes niche-rise {
+[data-reveal="in"] > :nth-child(2) { animation-delay: 80ms; }
+[data-reveal="in"] > :nth-child(3) { animation-delay: 160ms; }
+[data-reveal="in"] > :nth-child(4) { animation-delay: 240ms; }
+[data-reveal="in"] > :nth-child(n + 5) { animation-delay: 320ms; }
+@keyframes reveal-rise {
   from {
-    clip-path: polygon(0 100%, 50% 100%, 100% 100%, 100% 100%, 0 100%);
-  }
-}
-@keyframes niche-settle {
-  from {
-    transform: scale(1.08);
-  }
-}
-@keyframes frame-settle {
-  from {
-    translate: 0 0;
     opacity: 0;
+    transform: translateY(1.5rem);
   }
-}
-.hero-rise {
-  animation: niche-rise 1100ms var(--ease-out-soft) 120ms both;
-}
-.hero-rise img {
-  animation: niche-settle 1600ms var(--ease-out-soft) 120ms both;
-}
-.hero-frame {
-  animation: frame-settle 700ms var(--ease-out-soft) 900ms both;
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* Review dialog: the message grows from the wall into view (answers the tap). */

@@ -58,6 +58,7 @@ async function products() {
       .webp({ quality: 82 })
       .toFile(out("products", dst));
   }
+  await boxCutout();
   // Rules sheet (both pages of the printed rules)
   for (const [src, dst] of [
     ["page1_x6.png", "sabili-rules-1.webp"],
@@ -68,6 +69,55 @@ async function products() {
       .webp({ quality: 80 })
       .toFile(out("products", dst));
   }
+}
+
+// The studio box shot without its white background, for the black store. The background is found
+// by filling inwards from the photo's edges across pale, colourless pixels, so only the white sweep
+// and the shadow attached to it are removed; everything inside the box's outline (its blue, its gold
+// foil, the cream ribbon with the motto) stays exactly as photographed. The shadow keeps its
+// darkness as black with alpha, so it still sits under the box.
+async function boxCutout() {
+  const { data, info } = await sharp(out("products", "sabili-box.webp")).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { width: w, height: h } = info;
+  const n = w * h;
+  const isBackdrop = (p) => {
+    const [r, g, b] = [data[p * 3], data[p * 3 + 1], data[p * 3 + 2]];
+    return Math.max(r, g, b) - Math.min(r, g, b) < 26 && (r + g + b) / 3 > 120;
+  };
+  const bg = new Uint8Array(n);
+  const stack = [];
+  for (let x = 0; x < w; x++) stack.push(x, (h - 1) * w + x);
+  for (let y = 0; y < h; y++) stack.push(y * w, y * w + w - 1);
+  while (stack.length) {
+    const p = stack.pop();
+    if (bg[p] || !isBackdrop(p)) continue;
+    bg[p] = 1;
+    const x = p % w;
+    if (x > 0) stack.push(p - 1);
+    if (x < w - 1) stack.push(p + 1);
+    if (p >= w) stack.push(p - w);
+    if (p < n - w) stack.push(p + w);
+  }
+  const px = Buffer.alloc(n * 4);
+  let [x0, y0, x1, y1] = [w, h, 0, 0];
+  for (let p = 0; p < n; p++) {
+    const [r, g, b] = [data[p * 3], data[p * 3 + 1], data[p * 3 + 2]];
+    if (bg[p]) {
+      px[p * 4 + 3] = Math.max(0, Math.min(255, (255 - (r + g + b) / 3) * 1.6 - 6));
+    } else {
+      px.set([r, g, b, 255], p * 4);
+    }
+    if (px[p * 4 + 3] > 60) {
+      const x = p % w, y = Math.floor(p / w);
+      [x0, y0, x1, y1] = [Math.min(x0, x), Math.min(y0, y), Math.max(x1, x), Math.max(y1, y)];
+    }
+  }
+  const pad = 40;
+  const left = Math.max(0, x0 - pad), top = Math.max(0, y0 - pad);
+  await sharp(px, { raw: { width: w, height: h, channels: 4 } })
+    .extract({ left, top, width: Math.min(w, x1 + pad) - left, height: Math.min(h, y1 + pad) - top })
+    .webp({ quality: 88, alphaQuality: 90 })
+    .toFile(out("products", "sabili-box-cutout.webp"));
 }
 
 // ---------- Digital card artwork (print files supplied by Mishkat) ----------
@@ -199,6 +249,12 @@ async function logos() {
     const { data, info } = await sharp(charter(file)).trim().resize({ width: 720 }).png({ compressionLevel: 9 }).toBuffer({ resolveWithObject: true });
     const name = await writeHashed(data, out("brand"), key, "png");
     brand[key] = { src: `/images/brand/${name}`, width: info.width, height: info.height };
+  }
+  // The charter's symbol on its own, in gold: the lamp at the centre of the homepage diagram.
+  {
+    const { data, info } = await sharp(charter("symbol-gold.png")).trim().resize({ height: 480 }).png({ compressionLevel: 9 }).toBuffer({ resolveWithObject: true });
+    const name = await writeHashed(data, out("brand"), "mishkat-symbol-gold", "png");
+    brand["mishkat-symbol-gold"] = { src: `/images/brand/${name}`, width: info.width, height: info.height };
   }
   const sabiliMask = await straightenedSabiliMask();
   for (const [key, color] of [

@@ -8,7 +8,8 @@ import { getSettings } from "@/server/settings";
 export default async function StoreLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSettings();
   return (
-    <>
+    // .night: the store's black-and-gold theme (globals.css); .on-dark: gold focus rings
+    <div className="night on-dark min-h-dvh bg-ink text-paper">
       <Header />
       <main id="main" tabIndex={-1} className="outline-none">
         {children}
@@ -17,6 +18,6 @@ export default async function StoreLayout({ children }: { children: React.ReactN
       {settings.whatsapp ? <WhatsAppFloat number={settings.whatsapp} /> : null}
       <Toaster />
       <CartHydrator />
-    </>
+    </div>
   );
 }

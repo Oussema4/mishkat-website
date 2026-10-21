@@ -24,3 +24,6 @@ public/uploads/
 
 # frontend-slides working files (previews)
 .frontend-slides/
+
+# taste-skill inspector output
+.taste-skill/

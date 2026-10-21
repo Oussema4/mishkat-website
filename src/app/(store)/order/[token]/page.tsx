@@ -34,7 +34,7 @@ export default async function OrderConfirmationPage({ params }: PageProps<"/orde
       <h1 className="mt-5 text-4xl md:text-5xl">{ar.confirmation.title}</h1>
       <p className="mt-4 text-lg text-muted">{fill(ar.confirmation.lead, { name: order.firstName })}</p>
 
-      <div className="mt-8 inline-flex flex-col rounded-[var(--radius-md)] border-2 border-ink px-5 py-3">
+      <div className="mt-8 inline-flex flex-col rounded-[var(--radius-md)] border border-gold/40 bg-ink-soft px-5 py-3">
         <span className="text-sm text-muted">{ar.confirmation.reference}</span>
         <span dir="ltr" className="text-2xl font-bold tabular">
           {order.reference}

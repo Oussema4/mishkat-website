@@ -88,7 +88,7 @@ export function Footer({ settings }: { settings: StoreSettings }) {
           </ul>
         </div>
       </div>
-      <div className="border-t border-paper/10">
+      <div className="bg-ink-soft">
         <p className="container-page py-5 text-sm text-paper/60">
           © {year} {ar.brand.name} ({ar.brand.nameLatin}). {ar.footer.rights}
         </p>

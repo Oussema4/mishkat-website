@@ -45,7 +45,7 @@ export function CartView({ deliveryFee }: { deliveryFee: number }) {
       <ul className="divide-y divide-line border-y border-line">
         {lines.map((line) => (
           <li key={line.productId} className="grid grid-cols-[5.5rem_1fr] gap-4 py-6 sm:grid-cols-[7rem_1fr]">
-            <Link href={`/products/${line.slug}`} tabIndex={-1} aria-hidden className="niche-sm relative block aspect-[4/5] overflow-hidden bg-mist">
+            <Link href={`/products/${line.slug}`} tabIndex={-1} aria-hidden className="rounded-2xl relative block aspect-[4/5] overflow-hidden bg-mist">
               {line.image ? <Image src={line.image} alt="" fill sizes="112px" className="object-cover" /> : null}
             </Link>
             <div className="flex flex-col gap-3">
@@ -90,7 +90,7 @@ export function CartView({ deliveryFee }: { deliveryFee: number }) {
         <ButtonLink href="/checkout" size="lg" className="mt-6 w-full">
           {ar.cart.checkout}
         </ButtonLink>
-        <Link href="/shop" className="mt-3 flex min-h-11 items-center justify-center font-medium text-muted hover:text-ink">
+        <Link href="/shop" className="mt-3 flex min-h-11 items-center justify-center font-medium text-muted hover:text-paper">
           {ar.cart.continue}
         </Link>
       </aside>

@@ -30,7 +30,7 @@ export function Price({
             <span
               className={cn(
                 "rounded-full px-2.5 py-0.5 text-sm font-semibold",
-                tone === "dark" ? "bg-sabili-yellow text-sabili-navy" : "bg-success-bg text-success",
+                tone === "dark" ? "bg-gold text-ink" : "bg-success-bg text-success night:bg-gold/15 night:text-gold-light",
               )}
             >
               {fill(ar.product.save, { n: pct })}

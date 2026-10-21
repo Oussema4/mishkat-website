@@ -2,6 +2,7 @@
 export const BRAND_IMAGES = {
   "mishkat-ink": { src: "/images/brand/mishkat-ink.d4e8f102.png", width: 720, height: 201 },
   "mishkat-gold": { src: "/images/brand/mishkat-gold.4b2b34ec.png", width: 720, height: 201 },
+  "mishkat-symbol-gold": { src: "/images/brand/mishkat-symbol-gold.76f9b1e5.png", width: 353, height: 480 },
   "sabili-gold": { src: "/images/brand/sabili-gold.1639715a.png", width: 520, height: 536 },
   "sabili-yellow": { src: "/images/brand/sabili-yellow.1f7927b8.png", width: 520, height: 536 },
 } as const;

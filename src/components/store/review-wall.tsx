@@ -5,14 +5,16 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 import type { Review } from "@/db/schema";
 
-const INITIAL = 6;
 
-/** Masonry of real customer screenshots; each opens full size in an accessible dialog. */
-export function ReviewWall({ reviews }: { reviews: Review[] }) {
+/**
+ * Masonry of real customer screenshots; each opens full size in an accessible dialog.
+ * `initial` messages show at first (0: only the "read all" button until it is pressed).
+ */
+export function ReviewWall({ reviews, initial = 6, showAllLabel }: { reviews: Review[]; initial?: number; showAllLabel?: string }) {
   const [showAll, setShowAll] = useState(false);
   const [active, setActive] = useState<Review | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
-  const visible = showAll ? reviews : reviews.slice(0, INITIAL);
+  const visible = showAll ? reviews : reviews.slice(0, initial);
 
   const open = (r: Review) => {
     setActive(r);
@@ -21,35 +23,37 @@ export function ReviewWall({ reviews }: { reviews: Review[] }) {
 
   return (
     <>
-      <ul className="mt-10 columns-1 gap-5 sm:columns-2 lg:columns-3">
-        {visible.map((r, i) => (
-          <li key={r.id} className="mb-5 break-inside-avoid">
-            <button
-              type="button"
-              onClick={() => open(r)}
-              className="block w-full overflow-hidden rounded-[var(--radius-lg)] border border-paper/10 transition-[border-color] duration-150 hover:border-gold/60"
-              aria-label={`تكبير الرسالة ${i + 1}`}
-            >
-              <Image
-                src={r.imageUrl}
-                alt={r.alt}
-                width={r.width}
-                height={r.height}
-                sizes="(min-width: 1024px) 380px, (min-width: 640px) 45vw, 92vw"
-                className="h-auto w-full"
-              />
-            </button>
-          </li>
-        ))}
-      </ul>
-      {reviews.length > INITIAL && !showAll ? (
-        <div className="mt-4 flex justify-center">
+      {visible.length > 0 ? (
+        <ul className="mt-10 columns-1 gap-5 sm:columns-2 lg:columns-3">
+          {visible.map((r, i) => (
+            <li key={r.id} className="mb-5 break-inside-avoid">
+              <button
+                type="button"
+                onClick={() => open(r)}
+                className="block w-full overflow-hidden rounded-[var(--radius-lg)] transition-transform duration-200 ease-out hover:-translate-y-1 active:translate-y-0"
+                aria-label={`تكبير الرسالة ${i + 1}`}
+              >
+                <Image
+                  src={r.imageUrl}
+                  alt={r.alt}
+                  width={r.width}
+                  height={r.height}
+                  sizes="(min-width: 1024px) 380px, (min-width: 640px) 45vw, 92vw"
+                  className="h-auto w-full"
+                />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {reviews.length > initial && !showAll ? (
+        <div className="mt-10 flex justify-center">
           <button
             type="button"
             onClick={() => setShowAll(true)}
-            className="inline-flex min-h-12 items-center rounded-[var(--radius-md)] border border-gold/70 px-6 font-semibold text-gold transition-colors hover:bg-gold hover:text-ink"
+            className="inline-flex min-h-12 items-center rounded-[var(--radius-md)] bg-paper/10 px-6 font-semibold text-paper transition-colors hover:bg-gold hover:text-ink"
           >
-            عرض كل الرسائل ({reviews.length})
+            {showAllLabel ?? `عرض كل الرسائل (${reviews.length})`}
           </button>
         </div>
       ) : null}

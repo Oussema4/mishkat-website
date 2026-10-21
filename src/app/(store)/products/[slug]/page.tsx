@@ -78,18 +78,18 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
       <nav aria-label="مسار التصفح" className="container-page pt-6 text-sm text-muted">
         <ol className="flex flex-wrap items-center gap-2">
           <li>
-            <Link href="/" className="hover:text-ink">
+            <Link href="/" className="hover:text-paper">
               {ar.nav.home}
             </Link>
           </li>
           <li aria-hidden>/</li>
           <li>
-            <Link href="/shop" className="hover:text-ink">
+            <Link href="/shop" className="hover:text-paper">
               {ar.nav.shop}
             </Link>
           </li>
           <li aria-hidden>/</li>
-          <li aria-current="page" className="text-ink">
+          <li aria-current="page" className="text-paper">
             {product.name}
           </li>
         </ol>
@@ -97,12 +97,12 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
 
       {/* ───── Purchase area ───── */}
       <section className="container-page grid gap-10 py-8 md:grid-cols-2 md:gap-14 md:py-12">
-        <ProductGallery images={product.images} name={product.name} />
+        <ProductGallery images={product.images} name={product.name} slug={product.slug} />
 
         <div className="md:pt-6">
           <h1 className="text-5xl md:text-6xl">{product.name}</h1>
           {product.tagline ? <p className="mt-3 text-xl font-medium">{product.tagline}</p> : null}
-          <p className="mt-4 max-w-prose leading-8 text-muted">{product.shortDescription}</p>
+          <p className="mt-4 max-w-prose text-lg leading-8 text-paper/80">{product.shortDescription}</p>
 
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
             <Price price={product.price} compareAt={product.compareAtPrice} size="lg" showSave />
@@ -124,7 +124,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
             <ProductPurchase product={cartProduct} />
           </div>
 
-          <ul className="mt-8 space-y-3 border-t border-line pt-6 text-[0.95rem]">
+          <ul className="mt-8 space-y-3 rounded-[var(--radius-md)] bg-mist p-5 text-[0.95rem]">
             <li className="flex items-center gap-3">
               <Wallet aria-hidden className="size-5 shrink-0 text-gold-deep" strokeWidth={1.5} />
               {ar.checkout.paymentCod}
@@ -138,7 +138,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
       </section>
 
       {/* ───── Description + contents ───── */}
-      <section className="border-t border-line">
+      <section>
         <div className="container-page grid gap-12 py-14 md:grid-cols-[1.3fr_1fr] md:py-20">
           <div>
             <h2 className="text-3xl">{ar.product.description}</h2>
@@ -151,11 +151,11 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
           {product.contents.length > 0 ? (
             <div>
               <h2 className="text-3xl">{ar.product.contents}</h2>
-              <dl className="mt-5 divide-y divide-line border-y border-line">
+              <dl className="mt-5 grid gap-2">
                 {product.contents.map((c) => (
-                  <div key={c.label} className="py-4">
+                  <div key={c.label} className="rounded-[var(--radius-md)] bg-mist px-5 py-4">
                     <dt className="font-semibold">{c.label}</dt>
-                    <dd className="mt-1 leading-7 text-muted">{c.value}</dd>
+                    <dd className="mt-1 leading-7 text-paper/75">{c.value}</dd>
                   </div>
                 ))}
               </dl>
@@ -166,7 +166,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
 
       {/* ───── How to play (a real sequence → numbered) ───── */}
       {product.howToPlay.length > 0 ? (
-        <section id="how-to-play" aria-labelledby="how-to-play-title" className="on-dark scroll-mt-24 bg-sabili-navy text-paper">
+        <section id="how-to-play" aria-labelledby="how-to-play-title" className="scroll-mt-24">
           <div className="container-page py-16 md:py-24">
             <div className="flex flex-wrap items-end justify-between gap-6">
               <div>
@@ -177,21 +177,21 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
               </div>
               {product.slug === "sabili" ? (
                 // A static page in public/rules (built by scripts/build-slides.mjs), so a plain <a>, not <Link>.
-                <a href="/rules/sabili" className={buttonClass("sabili", "lg")}>
+                <a href="/rules/sabili" className={buttonClass("gold", "lg", "rounded-full px-8")}>
                   <Presentation aria-hidden className="size-5" strokeWidth={1.5} />
                   {ar.product.rulesDeck}
                 </a>
               ) : null}
             </div>
             {product.slug === "sabili" ? (
-              <div className="mt-12 border-b border-paper/15 pb-14">
+              <div className="mt-12 pb-6">
                 {/* The rules deck itself (public/rules/sabili.html); ?embed hides its "back" link and wheel paging. */}
                 <iframe
                   src="/rules/sabili?embed"
                   title={ar.product.rulesDeckTitle}
                   loading="lazy"
                   allow="fullscreen"
-                  className="aspect-video w-full rounded-[var(--radius-lg)] bg-[#0b0e2c] shadow-[0_30px_60px_-30px_rgb(0_0_0/0.7)]"
+                  className="aspect-video w-full rounded-[var(--radius-lg)] bg-[#0b0e2c]"
                 />
               </div>
             ) : null}
@@ -200,7 +200,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
                 <li key={step.title} className="grid grid-cols-[auto_1fr] gap-x-5">
                   <span
                     aria-hidden
-                    className="font-display text-4xl leading-none text-sabili-yellow tabular"
+                    className="font-display text-4xl leading-none text-gold tabular"
                   >
                     {i + 1}
                   </span>
@@ -241,7 +241,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
       </section>
 
       {/* Mobile sticky order bar */}
-      <div className="sticky bottom-0 z-30 border-t border-line bg-ivory/95 px-4 py-3 backdrop-blur md:hidden">
+      <div className="sticky bottom-0 z-30 bg-mist px-4 py-3 md:hidden">
         <div className="flex items-center gap-4">
           <div className="shrink-0">
             <span className="block text-sm text-muted">{product.name}</span>

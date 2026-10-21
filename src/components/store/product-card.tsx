@@ -4,17 +4,32 @@ import { AddToCartButton } from "@/components/store/add-to-cart";
 import { Price } from "@/components/ui/price";
 import { StockBadge } from "@/components/ui/stock-badge";
 import { ar } from "@/i18n/ar";
+import { PRODUCT_CUTOUTS } from "@/lib/product-cutouts";
 import { buttonClass } from "@/components/ui/button";
 import type { ProductWithImages } from "@/server/catalog";
 
 export function ProductCard({ product }: { product: ProductWithImages }) {
   const image = product.images[0];
+  const cutout = PRODUCT_CUTOUTS[product.slug];
   const href = `/products/${product.slug}`;
   return (
     <article className="group flex flex-col">
       <Link href={href} className="block" tabIndex={-1} aria-hidden>
-        <div className="niche-sm relative aspect-[4/5] overflow-hidden bg-mist">
-          {image ? (
+        <div className="relative isolate grid aspect-[4/5] place-items-center overflow-hidden rounded-2xl bg-ink-soft">
+          {cutout ? (
+            <>
+              {/* the lamp's light behind the product, which keeps its own colours */}
+              <span className="absolute inset-0 -z-10 bg-[radial-gradient(closest-side,rgb(212_164_64/0.3),transparent)]" />
+              <Image
+                src={cutout.src}
+                alt=""
+                width={cutout.width}
+                height={cutout.height}
+                sizes="(min-width: 1024px) 300px, (min-width: 640px) 38vw, 80vw"
+                className="h-auto w-[78%] transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+              />
+            </>
+          ) : image ? (
             <Image
               src={image.url}
               alt=""
@@ -34,7 +49,7 @@ export function ProductCard({ product }: { product: ProductWithImages }) {
           </h2>
           <StockBadge stock={product.stock} className="mt-1.5 shrink-0" />
         </div>
-        {product.tagline ? <p className="mt-1 font-medium text-ink">{product.tagline}</p> : null}
+        {product.tagline ? <p className="mt-1 font-medium text-paper">{product.tagline}</p> : null}
         <p className="mt-2 leading-7 text-muted">{product.shortDescription}</p>
         <div className="mt-4">
           <Price price={product.price} compareAt={product.compareAtPrice} />

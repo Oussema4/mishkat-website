@@ -31,8 +31,8 @@ const LABELS: Record<FieldName, string> = {
 };
 
 const inputClass =
-  "block w-full min-h-12 rounded-[var(--radius-md)] border bg-paper px-3.5 py-2.5 text-base outline-none transition-colors " +
-  "focus:border-ink focus:ring-2 focus:ring-gold/40 aria-[invalid=true]:border-danger";
+  "block w-full min-h-12 rounded-[var(--radius-md)] border bg-ink-soft px-3.5 py-2.5 text-base text-paper outline-none placeholder:text-paper/45 transition-colors " +
+  "focus:border-gold focus:ring-2 focus:ring-gold/40 aria-[invalid=true]:border-danger";
 
 export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: number; deliveryTime: string }) {
   const hydrated = useCartSync();
@@ -247,7 +247,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: numbe
           </div>
         </fieldset>
 
-        <section aria-labelledby="payment-title" className="rounded-[var(--radius-md)] border-2 border-ink p-5">
+        <section aria-labelledby="payment-title" className="rounded-2xl border border-gold/40 bg-ink-soft p-5">
           <h2 id="payment-title" className="font-sans text-base font-semibold text-muted">
             {ar.checkout.paymentTitle}
           </h2>
@@ -269,7 +269,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: numbe
         <ul className="mt-4 space-y-4 border-b border-line pb-5">
           {lines.map((l) => (
             <li key={l.productId} className="flex items-center gap-3">
-              <div className="niche-sm relative h-16 w-13 shrink-0 overflow-hidden bg-paper">
+              <div className="relative h-16 w-13 shrink-0 overflow-hidden rounded-lg bg-ink-soft">
                 {l.image ? <Image src={l.image} alt="" fill sizes="52px" className="object-cover" /> : null}
               </div>
               <div className="flex-1">

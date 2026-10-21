@@ -61,7 +61,7 @@ export default async function ShopPage({ searchParams }: PageProps<"/shop">) {
               type="search"
               defaultValue={q}
               placeholder={ar.shop.searchPlaceholder}
-              className="h-12 w-full rounded-[var(--radius-md)] border border-line bg-paper ps-10 pe-3 text-base outline-none focus:border-ink"
+              className="h-12 w-full rounded-[var(--radius-md)] border border-line bg-ink-soft ps-10 pe-3 text-base text-paper outline-none placeholder:text-paper/50 focus:border-gold"
             />
             {activeCategory ? <input type="hidden" name="category" value={activeCategory.slug} /> : null}
           </form>
@@ -113,7 +113,7 @@ function FilterChip({ href, active, children }: { href: string; active: boolean;
       aria-current={active ? "page" : undefined}
       className={cn(
         "inline-flex min-h-11 items-center rounded-full border px-4 text-sm font-medium transition-colors",
-        active ? "border-ink bg-ink text-paper" : "border-line text-ink hover:border-ink",
+        active ? "border-gold bg-gold text-ink" : "border-line text-paper hover:border-gold/60",
       )}
     >
       {children}

@@ -36,7 +36,7 @@ export function Toaster() {
           key={t.id}
           role={t.kind === "error" ? "alert" : "status"}
           className={cn(
-            "pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-[var(--radius-md)] border bg-paper px-4 py-3 shadow-[var(--shadow-lift)]",
+            "pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-[var(--radius-md)] border bg-paper px-4 py-3 shadow-[var(--shadow-lift)] night:border-paper/12 night:bg-ink-soft night:text-paper",
             "animate-[toast-in_220ms_var(--ease-out-soft)]",
             t.kind === "error" ? "border-danger/30" : "border-line",
           )}
@@ -48,7 +48,7 @@ export function Toaster() {
           )}
           <p className="flex-1 text-[0.95rem]">{t.message}</p>
           {t.action ? (
-            <Link href={t.action.href} onClick={() => dismiss(t.id)} className="shrink-0 font-semibold text-ink underline underline-offset-4">
+            <Link href={t.action.href} onClick={() => dismiss(t.id)} className="shrink-0 font-semibold text-ink underline underline-offset-4 night:text-gold-light">
               {t.action.label}
             </Link>
           ) : null}

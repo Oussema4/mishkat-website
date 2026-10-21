@@ -11,9 +11,9 @@ export default function StoreLoading() {
         <div className="h-5 w-full max-w-xl rounded-[var(--radius-sm)] bg-mist" />
         <div className="h-5 w-5/6 max-w-lg rounded-[var(--radius-sm)] bg-mist" />
         <div className="grid gap-8 pt-6 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="niche-sm aspect-[4/5] bg-mist" />
-          <div className="niche-sm hidden aspect-[4/5] bg-mist sm:block" />
-          <div className="niche-sm hidden aspect-[4/5] bg-mist lg:block" />
+          <div className="rounded-2xl aspect-[4/5] bg-mist" />
+          <div className="rounded-2xl hidden aspect-[4/5] bg-mist sm:block" />
+          <div className="rounded-2xl hidden aspect-[4/5] bg-mist lg:block" />
         </div>
       </div>
     </div>

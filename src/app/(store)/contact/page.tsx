@@ -25,12 +25,12 @@ export default async function ContactPage() {
     <div className="container-page py-10 md:py-16">
       <div className="max-w-2xl">
         <h1 className="text-4xl md:text-5xl">{ar.contact.title}</h1>
-        <p className="mt-3 text-lg text-muted">{ar.contact.lead}</p>
+        <p className="mt-3 text-lg text-paper/80">{ar.contact.lead}</p>
       </div>
 
       <div className="mt-10 grid gap-10 md:grid-cols-[1fr_1.2fr]">
         {s.whatsapp ? (
-          <div className="on-dark flex flex-col justify-between gap-8 rounded-[var(--radius-lg)] bg-ink p-8 text-paper">
+          <div className="on-dark flex flex-col justify-between gap-8 rounded-3xl border border-paper/10 bg-ink-soft p-8 text-paper">
             <div>
               <WhatsAppIcon className="size-10 text-gold" />
               <p className="mt-5 font-display text-3xl text-gold">{ar.contact.whatsapp}</p>
@@ -50,13 +50,13 @@ export default async function ContactPage() {
           </div>
         ) : null}
 
-        <ul className="divide-y divide-line border-y border-line">
+        <ul className="grid gap-2">
           {channels.map((c) => (
             <li key={c.label}>
               <a
                 href={c.href}
                 {...(c.external ? { target: "_blank", rel: "noopener" } : {})}
-                className="flex min-h-20 items-center gap-4 py-4 hover:[&_.value]:underline"
+                className="flex min-h-20 items-center gap-4 rounded-[var(--radius-md)] bg-mist px-5 py-4 transition-colors hover:bg-line/60 hover:[&_.value]:underline"
               >
                 <c.icon aria-hidden className="size-6 shrink-0 text-gold-deep" />
                 <span className="flex-1">
@@ -73,11 +73,11 @@ export default async function ContactPage() {
 
       <p className="mt-12 text-muted">
         لديك سؤال عن التوصيل أو الدفع؟ اطّلع على{" "}
-        <Link href="/faq" className="font-semibold text-ink underline underline-offset-4">
+        <Link href="/faq" className="font-semibold text-gold-light underline underline-offset-4">
           {ar.nav.faq}
         </Link>{" "}
         و
-        <Link href="/policies/delivery" className="font-semibold text-ink underline underline-offset-4">
+        <Link href="/policies/delivery" className="font-semibold text-gold-light underline underline-offset-4">
           {ar.policies.delivery}
         </Link>
         .

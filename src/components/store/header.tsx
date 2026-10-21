@@ -28,6 +28,17 @@ export function Header() {
   const hydrated = useCart((s) => s.hydrated);
   const count = hydrated ? cartCount(lines) : 0;
   const menuButton = useRef<HTMLButtonElement>(null);
+  // A black bar; on the homepage it is clear over the hero's light and darkens once the page
+  // scrolls under it.
+  const home = pathname === "/";
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    if (!home) return;
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [home]);
 
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
@@ -43,7 +54,10 @@ export function Header() {
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-ivory/95 backdrop-blur supports-[backdrop-filter]:bg-ivory/85">
+    <header className={cn(
+        "on-dark sticky top-0 z-40 text-paper transition-colors duration-300",
+        !home || scrolled || open ? "bg-ink/85 backdrop-blur-md" : "bg-transparent",
+      )}>
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-3 focus:z-50 focus:rounded-md focus:bg-ink focus:px-4 focus:py-2 focus:text-paper"
@@ -51,7 +65,7 @@ export function Header() {
         {ar.nav.skip}
       </a>
       <div className="container-page flex h-16 items-center justify-between gap-4 md:h-[4.5rem]">
-        <Logo />
+        <Logo tone="gold" />
 
         <nav aria-label="القائمة الرئيسية" className="hidden md:block">
           <ul className="flex items-center gap-1">
@@ -64,7 +78,7 @@ export function Header() {
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "relative inline-flex min-h-11 items-center px-3 text-[0.95rem] font-medium transition-colors",
-                      active ? "text-ink" : "text-muted hover:text-ink",
+                      active ? "text-paper" : "text-paper/65 hover:text-paper",
                     )}
                   >
                     {l.label}
@@ -79,7 +93,7 @@ export function Header() {
         <div className="flex items-center gap-1">
           <Link
             href="/cart"
-            className="relative inline-flex size-11 items-center justify-center rounded-full text-ink transition-colors hover:bg-mist"
+            className="relative inline-flex size-11 items-center justify-center rounded-full text-paper transition-colors hover:bg-paper/10"
             aria-label={count > 0 ? fill("السلة، فيها {n} قطع", { n: count }) : ar.nav.cart}
           >
             <ShoppingBag aria-hidden className="size-6" strokeWidth={1.5} />
@@ -95,7 +109,7 @@ export function Header() {
           <button
             ref={menuButton}
             type="button"
-            className="inline-flex size-11 items-center justify-center rounded-full hover:bg-mist md:hidden"
+            className="inline-flex size-11 items-center justify-center rounded-full hover:bg-paper/10 md:hidden"
             aria-expanded={open}
             aria-controls="mobile-menu"
             aria-label={open ? ar.nav.closeMenu : ar.nav.menu}
@@ -110,7 +124,7 @@ export function Header() {
         id="mobile-menu"
         aria-label="القائمة الرئيسية"
         hidden={!open}
-        className="border-t border-line bg-ivory md:hidden"
+        className="bg-ink-soft md:hidden"
       >
         <ul className="container-page flex flex-col py-2">
           {links.map((l) => {
@@ -122,7 +136,7 @@ export function Header() {
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex min-h-12 items-center border-s-2 ps-3 text-lg",
-                    active ? "border-gold font-semibold text-ink" : "border-transparent text-muted",
+                    active ? "border-gold font-semibold text-paper" : "border-transparent text-paper/65",
                   )}
                 >
                   {l.label}
