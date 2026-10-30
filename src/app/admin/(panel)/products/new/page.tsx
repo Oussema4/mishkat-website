@@ -18,7 +18,6 @@ export default async function NewProductPage() {
         كل المنتجات
       </Link>
       <h1 className="text-3xl">منتج جديد</h1>
-      <p className="text-muted">بعد الحفظ يمكنك إضافة صور المنتج.</p>
       <ProductForm categories={categories} />
     </div>
   );

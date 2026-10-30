@@ -32,6 +32,7 @@ export function ReviewsManager({ reviews }: { reviews: Review[] }) {
             name="image"
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            multiple
             required
             className="block w-full text-sm file:me-3 file:min-h-10 file:rounded-md file:border-0 file:bg-ink file:px-4 file:text-paper"
           />

@@ -88,7 +88,7 @@ export function ImageManager({ productId, images }: { productId: number; images:
         <input type="hidden" name="productId" value={productId} />
         <div>
           <label htmlFor="image" className="mb-1.5 block font-medium">
-            إضافة صورة
+            إضافة صور
           </label>
           <input
             ref={fileRef}
@@ -96,6 +96,7 @@ export function ImageManager({ productId, images }: { productId: number; images:
             name="image"
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            multiple
             required
             className="block w-full text-sm file:me-3 file:min-h-10 file:rounded-md file:border-0 file:bg-ink file:px-4 file:text-paper"
           />
@@ -106,7 +107,7 @@ export function ImageManager({ productId, images }: { productId: number; images:
           </label>
           <input id="new-alt" name="alt" placeholder="مثلًا: علبة سبيلي من الأمام" className={adminInput} />
         </div>
-        <SubmitButton>رفع الصورة</SubmitButton>
+        <SubmitButton>رفع الصور</SubmitButton>
         <div className="md:col-span-3">
           <FormMessage state={state} />
         </div>

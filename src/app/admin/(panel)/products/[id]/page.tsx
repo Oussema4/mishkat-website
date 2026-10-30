@@ -17,7 +17,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
   // client-side navigation, so a disabled or signed-out admin must be stopped here too.
   await requireAdmin();
   const { id } = await params;
-  const { created } = await searchParams;
+  const { created, upload } = await searchParams;
   const productId = Number(id);
   if (!Number.isInteger(productId)) notFound();
   const [product] = await db.select().from(products).where(eq(products.id, productId)).limit(1);
@@ -42,9 +42,13 @@ export default async function EditProductPage({ params, searchParams }: PageProp
           </Link>
         ) : null}
       </header>
-      {created ? (
+      {created && upload === "failed" ? (
+        <p role="alert" className="rounded-[var(--radius-md)] bg-danger-bg p-3 font-medium text-danger">
+          تمت إضافة المنتج، لكن تعذّر رفع بعض الصور. أضفها من قسم الصور أدناه.
+        </p>
+      ) : created ? (
         <p role="status" className="rounded-[var(--radius-md)] bg-success-bg p-3 font-medium text-success">
-          تمت إضافة المنتج. أضف صوره الآن.
+          {images.length > 0 ? "تمت إضافة المنتج وصوره." : "تمت إضافة المنتج. أضف صوره الآن."}
         </p>
       ) : null}
 

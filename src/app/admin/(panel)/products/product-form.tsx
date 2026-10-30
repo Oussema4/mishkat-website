@@ -1,14 +1,43 @@
 "use client";
 
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useState } from "react";
 import { AdminField, FormMessage, SubmitButton, adminInput, describe, keepValuesOnSubmit } from "@/components/admin/form-bits";
 import type { Category, Product } from "@/db/schema";
 import { formatFaq, formatLabelValues, formatSteps, formatTNDInput } from "@/lib/admin-format";
+import { uploadImages } from "@/components/admin/upload-action";
 import { cn } from "@/lib/site";
 import { saveProduct, type FormState } from "../../actions";
 
 export function ProductForm({ product, categories }: { product?: Product; categories: Category[] }) {
-  const [state, action, pending] = useActionState<FormState, FormData>(saveProduct, {});
+  const router = useRouter();
+  const [progress, setProgress] = useState<string | null>(null);
+
+  // Editing: a plain save. Creating: save the product first, then upload the chosen images to it
+  // (one request each, so the Server Action stays small), then open the new product.
+  const submit = async (prev: FormState, fd: FormData): Promise<FormState> => {
+    if (product) return saveProduct(prev, fd);
+    const files = fd.getAll("images").filter((f): f is File => f instanceof File && f.size > 0);
+    fd.delete("images");
+    fd.set("returnId", "1");
+    const saved = await saveProduct(prev, fd);
+    if (!saved.ok || !saved.productId) return saved;
+    const page = `/admin/products/${saved.productId}?created=1`;
+    if (files.length > 0) {
+      const alt = String(fd.get("name") ?? "").trim();
+      const uploaded = await uploadImages("product", files, { productId: String(saved.productId), alt }, (done, total) =>
+        setProgress(`جاري رفع الصور: ${done} من ${total}`),
+      );
+      if (!uploaded.ok) {
+        // The product exists now: open it so the remaining images can be added there.
+        router.push(`${page}&upload=failed`);
+        return { error: uploaded.error };
+      }
+    }
+    router.push(page);
+    return saved;
+  };
+  const [state, action, pending] = useActionState<FormState, FormData>(submit, {});
   const e = state.fieldErrors ?? {};
 
   return (
@@ -34,6 +63,20 @@ export function ProductForm({ product, categories }: { product?: Product; catego
           </AdminField>
         </div>
       </Section>
+
+      {product ? null : (
+        <Section title="صور المنتج">
+          <AdminField id="images" label="اختر صورة أو أكثر" hint="JPG أو PNG أو WebP، حتى 6 ميغابايت للصورة. الأولى تكون الصورة الرئيسية، ويمكن ترتيبها بعد الحفظ.">
+            <input
+              {...describe("images", { hint: true })}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              className="block w-full text-sm file:me-3 file:min-h-10 file:rounded-md file:border-0 file:bg-ink file:px-4 file:text-paper"
+            />
+          </AdminField>
+        </Section>
+      )}
 
       <Section title="السعر والمخزون">
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
@@ -106,6 +149,11 @@ export function ProductForm({ product, categories }: { product?: Product; catego
       <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center gap-4 border-t border-line bg-mist/95 px-4 py-3 backdrop-blur md:-mx-8 md:px-8">
         <SubmitButton pending={pending}>{product ? "حفظ التعديلات" : "إضافة المنتج"}</SubmitButton>
         <div className="flex-1">
+          {pending && progress ? (
+            <p role="status" className="text-sm font-medium text-muted">
+              {progress}
+            </p>
+          ) : null}
           <FormMessage state={state} />
         </div>
       </div>

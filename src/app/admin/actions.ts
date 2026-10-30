@@ -19,7 +19,14 @@ import { saveSettings } from "@/server/settings";
 import { clientIp, hit, isBlocked, reset } from "@/server/rate-limit";
 import { deleteImage } from "@/server/uploads";
 
-export type FormState = { ok?: boolean; error?: string; message?: string; fieldErrors?: Record<string, string> };
+export type FormState = {
+  ok?: boolean;
+  error?: string;
+  message?: string;
+  fieldErrors?: Record<string, string>;
+  /** Set when a new product was created and the form uploads its images itself before moving on. */
+  productId?: number;
+};
 
 /** Store pages are pre-rendered — refresh them after any catalogue/settings change. */
 function refreshStore() {
@@ -172,7 +179,11 @@ export async function saveProduct(_prev: FormState, form: FormData): Promise<For
 
   revalidatePath("/admin", "layout");
   refreshStore();
-  if (!id) redirect(`/admin/products/${productId}?created=1`);
+  if (!id) {
+    // The new-product form uploads the chosen images itself, then opens the product.
+    if (form.get("returnId")) return { ok: true, productId: productId!, message: "تمت إضافة المنتج." };
+    redirect(`/admin/products/${productId}?created=1`);
+  }
   return { ok: true, message: "تم حفظ المنتج." };
 }
 
