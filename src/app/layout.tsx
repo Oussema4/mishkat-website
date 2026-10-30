@@ -33,6 +33,8 @@ export const metadata: Metadata = {
     siteName: t.brand.name,
     images: [{ url: "/images/og/mishkat-og.jpg", width: 1200, height: 630, alt: "لعبة سبيلي من مشكاة" }],
   },
+  // Google Search Console ownership (HTML tag method): set GOOGLE_SITE_VERIFICATION in Vercel.
+  ...(process.env.GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } } : {}),
 };
 
 export const viewport: Viewport = {

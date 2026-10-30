@@ -6,10 +6,12 @@ import { ProductPurchase } from "@/components/store/add-to-cart";
 import { FaqList } from "@/components/store/faq-list";
 import { ProductGallery } from "@/components/store/product-gallery";
 import { buttonClass } from "@/components/ui/button";
+import { FrameWhenVisible } from "@/components/ui/in-view";
 import { Price } from "@/components/ui/price";
 import { StockBadge } from "@/components/ui/stock-badge";
 import { ar, fill } from "@/i18n/ar";
 import { formatTND, fromMillimes } from "@/lib/money";
+import { PRODUCT_CUTOUTS } from "@/lib/product-cutouts";
 import { siteUrl } from "@/lib/site";
 import { getActiveProducts, getProductBySlug } from "@/server/catalog";
 import { getSettings } from "@/server/settings";
@@ -27,12 +29,15 @@ export async function generateMetadata({ params }: PageProps<"/products/[slug]">
   const { slug } = await params;
   const product = await getProductBySlug(slug);
   if (!product) return {};
-  const image = product.images[0]?.url;
+  const title = product.tagline ? `${product.name}: ${product.tagline}` : product.name;
+  // The share card made for the product (1200×630 JPEG), else its first photo.
+  const og = PRODUCT_CUTOUTS[product.slug]?.og;
+  const image = og ? { url: og, width: 1200, height: 630, alt: product.name } : product.images[0]?.url;
   return {
-    title: `${product.name}: ${product.tagline}`,
+    title,
     description: product.shortDescription,
     alternates: { canonical: `/products/${product.slug}` },
-    openGraph: { title: product.name, description: product.shortDescription, images: image ? [image] : undefined },
+    openGraph: { type: "website", title, description: product.shortDescription, url: `/products/${product.slug}`, images: image ? [image] : undefined },
   };
 }
 
@@ -55,14 +60,27 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
     "@type": "Product",
     name: product.name,
     description: product.shortDescription,
-    image: product.images.map((i) => `${siteUrl()}${i.url.startsWith("/") ? i.url : `/${i.url}`}`),
+    // Uploaded images are full Blob URLs already; bundled ones are site paths.
+    image: product.images.map((i) => (/^https?:\/\//.test(i.url) ? i.url : `${siteUrl()}${i.url.startsWith("/") ? i.url : `/${i.url}`}`)),
     brand: { "@type": "Brand", name: "Mishkat مشكاة" },
     offers: {
       "@type": "Offer",
       priceCurrency: "TND",
       price: fromMillimes(product.price).toFixed(3),
       availability: product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      itemCondition: "https://schema.org/NewCondition",
       url: `${siteUrl()}/products/${product.slug}`,
+      // Delivery as the shop states it: one flat fee to every governorate, about 48 hours.
+      shippingDetails: {
+        "@type": "OfferShippingDetails",
+        shippingRate: { "@type": "MonetaryAmount", value: fromMillimes(settings.deliveryFee).toFixed(3), currency: "TND" },
+        shippingDestination: { "@type": "DefinedRegion", addressCountry: "TN" },
+        deliveryTime: {
+          "@type": "ShippingDeliveryTime",
+          handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 1, unitCode: "DAY" },
+          transitTime: { "@type": "QuantitativeValue", minValue: 1, maxValue: 2, unitCode: "DAY" },
+        },
+      },
     },
   };
 
@@ -186,11 +204,9 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
             {product.slug === "sabili" ? (
               <div className="mt-12 pb-6">
                 {/* The rules deck itself (public/rules/sabili.html); ?embed hides its "back" link and wheel paging. */}
-                <iframe
+                <FrameWhenVisible
                   src="/rules/sabili?embed"
                   title={ar.product.rulesDeckTitle}
-                  loading="lazy"
-                  allow="fullscreen"
                   className="aspect-video w-full rounded-[var(--radius-lg)] bg-[#0b0e2c]"
                 />
               </div>

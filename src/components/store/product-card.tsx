@@ -8,7 +8,8 @@ import { PRODUCT_CUTOUTS } from "@/lib/product-cutouts";
 import { buttonClass } from "@/components/ui/button";
 import type { ProductWithImages } from "@/server/catalog";
 
-export function ProductCard({ product }: { product: ProductWithImages }) {
+/** `priority`: the first card on a page is usually its largest element, so load its image first. */
+export function ProductCard({ product, priority = false }: { product: ProductWithImages; priority?: boolean }) {
   const image = product.images[0];
   const cutout = PRODUCT_CUTOUTS[product.slug];
   const href = `/products/${product.slug}`;
@@ -26,6 +27,7 @@ export function ProductCard({ product }: { product: ProductWithImages }) {
                 width={cutout.width}
                 height={cutout.height}
                 sizes="(min-width: 1024px) 300px, (min-width: 640px) 38vw, 80vw"
+                priority={priority}
                 className="h-auto w-[78%] transition-transform duration-500 ease-out group-hover:scale-[1.04]"
               />
             </>
@@ -35,6 +37,7 @@ export function ProductCard({ product }: { product: ProductWithImages }) {
               alt=""
               fill
               sizes="(min-width: 1024px) 360px, (min-width: 640px) 45vw, 92vw"
+              priority={priority}
               className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
             />
           ) : null}

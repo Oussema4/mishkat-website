@@ -97,8 +97,8 @@ export default async function ShopPage({ searchParams }: PageProps<"/shop">) {
         </div>
       ) : (
         <div className="mt-10 grid gap-x-8 gap-y-14 sm:grid-cols-2 lg:grid-cols-3">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
+          {products.map((p, i) => (
+            <ProductCard key={p.id} product={p} priority={i === 0} />
           ))}
         </div>
       )}

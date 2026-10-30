@@ -16,7 +16,12 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/policies/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const policy = POLICIES[slug as keyof typeof POLICIES];
-  return policy ? { title: policy.title, alternates: { canonical: `/policies/${slug}` } } : {};
+  if (!policy) return {};
+  // Each policy describes itself with the start of its own text (not the site-wide description,
+  // which Google would see as duplicated on every page).
+  const text = (await getSettings())[policy.key].replace(/\s+/g, " ").trim();
+  const description = text ? (text.length > 155 ? `${text.slice(0, 152).replace(/\s+\S*$/, "")}…` : text) : undefined;
+  return { title: policy.title, description, alternates: { canonical: `/policies/${slug}` } };
 }
 
 export default async function PolicyPage({ params }: PageProps<"/policies/[slug]">) {

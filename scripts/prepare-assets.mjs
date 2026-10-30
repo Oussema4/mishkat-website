@@ -118,6 +118,20 @@ async function boxCutout() {
     .extract({ left, top, width: Math.min(w, x1 + pad) - left, height: Math.min(h, y1 + pad) - top })
     .webp({ quality: 88, alphaQuality: 90 })
     .toFile(out("products", "sabili-box-cutout.webp"));
+
+  // Share card for the product page (Facebook, WhatsApp, Google): the box on Mishkat black with the
+  // lamp's gold glow behind it, 1200×630 JPEG (WebP previews are not shown everywhere).
+  await ensure(out("og"));
+  const glow = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630"><defs><radialGradient id="g" cx="50%" cy="50%" r="50%">` +
+      `<stop offset="0" stop-color="#d4a440" stop-opacity=".45"/><stop offset="1" stop-color="#d4a440" stop-opacity="0"/></radialGradient></defs>` +
+      `<rect width="1200" height="630" fill="#0b0b0b"/><ellipse cx="600" cy="320" rx="430" ry="300" fill="url(#g)"/></svg>`,
+  );
+  const box = await sharp(out("products", "sabili-box-cutout.webp")).resize({ height: 500 }).toBuffer({ resolveWithObject: true });
+  await sharp(glow)
+    .composite([{ input: box.data, left: Math.round((1200 - box.info.width) / 2), top: Math.round((630 - box.info.height) / 2) }])
+    .jpeg({ quality: 86 })
+    .toFile(out("og", "sabili-og.jpg"));
 }
 
 // ---------- Digital card artwork (print files supplied by Mishkat) ----------

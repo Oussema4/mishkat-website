@@ -211,6 +211,11 @@ body:has(.night) {
     display: none;
   }
 }
+/* <PauseOffscreen>: decorative motion stops while its block is scrolled out of view */
+[data-offscreen],
+[data-offscreen] * {
+  animation-play-state: paused !important;
+}
 
 /* <ReviewPile>: a gold neon frame. Two bright segments run around it (pathLength 1000: two dashes of
    160 per 500), the frame breathes a soft glow, and messages slide right → left through it. */

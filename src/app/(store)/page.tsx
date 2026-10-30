@@ -1,16 +1,18 @@
+import type { Metadata } from "next";
 import { HandHeart, MessageCircleQuestion, TrendingUp } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { FaqList } from "@/components/store/faq-list";
 import { KnowledgeMap } from "@/components/store/knowledge-map";
 import { ReviewPile } from "@/components/store/review-pile";
+import { PauseOffscreen } from "@/components/ui/in-view";
 import { ReviewWall } from "@/components/store/review-wall";
 import { ButtonLink } from "@/components/ui/button";
 import { Price } from "@/components/ui/price";
 import { Reveal } from "@/components/ui/reveal";
 import { ar, fill } from "@/i18n/ar";
 import { PRODUCT_CUTOUTS } from "@/lib/product-cutouts";
-import { cn } from "@/lib/site";
+import { cn, siteUrl } from "@/lib/site";
 import { getActiveProducts, getVisibleReviews } from "@/server/catalog";
 import { getSettings } from "@/server/settings";
 
@@ -22,6 +24,9 @@ import { getSettings } from "@/server/settings";
  *   →  the name's meaning  →  the catalogue  →  how a Mishkat game teaches
  *   →  what players wrote (messages arriving one by one)  →  questions  →  footer.
  */
+// The home page is the site root: one canonical URL whatever domain or query string it was reached by.
+export const metadata: Metadata = { alternates: { canonical: "/" } };
+
 export default async function HomePage() {
   const [products, reviews, settings] = await Promise.all([getActiveProducts(), getVisibleReviews(), getSettings()]);
 
@@ -29,34 +34,65 @@ export default async function HomePage() {
   const textLink = "inline-flex min-h-12 items-center font-semibold text-gold-light underline decoration-gold decoration-2 underline-offset-8 hover:text-paper";
   const panel = "rounded-3xl border border-paper/10 bg-ink-soft";
 
+  // Who Mishkat is, for Google: the store, its logo, how to reach it and its social profiles, all
+  // from the settings (nothing invented). The WebSite node ties the domain to the brand name.
+  const site = siteUrl();
+  const orgJsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "OnlineStore",
+        "@id": `${site}/#store`,
+        name: "مشكاة",
+        alternateName: "Mishkat",
+        url: site,
+        logo: `${site}/icon.png`,
+        image: `${site}/images/og/mishkat-og.jpg`,
+        description: ar.home.heroText,
+        ...(settings.email ? { email: settings.email } : {}),
+        ...(settings.phone ? { telephone: settings.phone } : {}),
+        sameAs: [settings.instagram, settings.facebook].filter(Boolean),
+        address: { "@type": "PostalAddress", addressCountry: "TN" },
+        areaServed: { "@type": "Country", name: "Tunisia" },
+        paymentAccepted: "Cash on delivery",
+        currenciesAccepted: "TND",
+      },
+      { "@type": "WebSite", "@id": `${site}/#website`, url: site, name: "مشكاة", alternateName: "Mishkat", inLanguage: "ar-TN", publisher: { "@id": `${site}/#store` } },
+    ],
+  };
+
   return (
     <div className="on-dark bg-ink text-paper">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd).replace(/</g, "\\u003c") }} />
       {/* ───── Hero: the slogan in the lamp's light ───── */}
-      {/* Pulled up under the translucent header so the light reaches the top of the screen */}
-      <section aria-labelledby="hero-title" className="relative isolate -mt-16 overflow-hidden md:-mt-[4.5rem]">
-        <div aria-hidden className="lamp-glow pointer-events-none absolute inset-0 -z-10" />
-        <div className="container-page pb-20 pt-32 text-center md:pb-28 md:pt-44">
-          <h1 id="hero-title" className="mx-auto max-w-4xl text-[2.6rem] leading-[1.3] sm:text-5xl lg:text-[4.25rem]">
-            {ar.home.heroTitle}
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-9 text-paper/80 md:text-xl md:leading-10">{ar.home.heroText}</p>
-          <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-            <ButtonLink href="/shop" variant="gold" size="lg" className="rounded-full px-8">
-              {ar.home.shopNow}
-            </ButtonLink>
-            <ButtonLink href="/contact" variant="ghost" size="lg" className="px-6 hover:bg-paper/10">
-              {ar.home.heroContact}
-            </ButtonLink>
-          </div>
+      {/* The hero's light and wires pause once it is scrolled away */}
+      <PauseOffscreen>
+        {/* Pulled up under the translucent header so the light reaches the top of the screen */}
+        <section aria-labelledby="hero-title" className="relative isolate -mt-16 overflow-hidden md:-mt-[4.5rem]">
+          <div aria-hidden className="lamp-glow pointer-events-none absolute inset-0 -z-10" />
+          <div className="container-page pb-20 pt-32 text-center md:pb-28 md:pt-44">
+            <h1 id="hero-title" className="mx-auto max-w-4xl text-[2.6rem] leading-[1.3] sm:text-5xl lg:text-[4.25rem]">
+              {ar.home.heroTitle}
+            </h1>
+            <p className="mx-auto mt-6 max-w-2xl text-lg leading-9 text-paper/80 md:text-xl md:leading-10">{ar.home.heroText}</p>
+            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+              <ButtonLink href="/shop" variant="gold" size="lg" className="rounded-full px-8">
+                {ar.home.shopNow}
+              </ButtonLink>
+              <ButtonLink href="/contact" variant="ghost" size="lg" className="px-6 hover:bg-paper/10">
+                {ar.home.heroContact}
+              </ButtonLink>
+            </div>
 
-          <div className="mt-16 md:mt-20">
-            <p className="sr-only">
-              {ar.home.heroFieldsLabel}: {ar.home.heroFields.join("، ")}
-            </p>
-            <KnowledgeMap fields={[...ar.home.heroFields]} />
+            <div className="mt-16 md:mt-20">
+              <p className="sr-only">
+                {ar.home.heroFieldsLabel}: {ar.home.heroFields.join("، ")}
+              </p>
+              <KnowledgeMap fields={[...ar.home.heroFields]} />
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </PauseOffscreen>
 
       {/* ───── The name ───── */}
       <section aria-labelledby="about-title" className="container-page grid gap-8 py-20 md:py-32 lg:grid-cols-12">
@@ -159,10 +195,12 @@ export default async function HomePage() {
               <p className="mt-4 max-w-md text-lg leading-8 text-paper/80">{ar.home.reviewsNote}</p>
             </div>
             <div className="lg:col-span-6 lg:col-start-7">
-              <ReviewPile
-                reviews={reviews}
-                labels={{ prev: ar.home.reviewsPrev, next: ar.home.reviewsNext, pause: ar.home.reviewsPause, play: ar.home.reviewsPlay }}
-              />
+              <PauseOffscreen>
+                <ReviewPile
+                  reviews={reviews}
+                  labels={{ prev: ar.home.reviewsPrev, next: ar.home.reviewsNext, pause: ar.home.reviewsPause, play: ar.home.reviewsPlay }}
+                />
+              </PauseOffscreen>
             </div>
           </div>
           <div className="container-page pb-20 md:pb-28">

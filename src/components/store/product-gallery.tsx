@@ -9,6 +9,9 @@ import { cn } from "@/lib/site";
 
 export function ProductGallery({ images, name, slug }: { images: ProductImage[]; name: string; slug: string }) {
   const [index, setIndex] = useState(0);
+  // Fade only when the visitor switches images: on load the main image must show at once (it is
+  // the page's largest element, and a fade from transparent delays it for Google's LCP).
+  const [switched, setSwitched] = useState(false);
   const current = images[index];
   // The first picture is the studio shot on white: on the black store it shows as its cutout.
   const cutout = index === 0 ? PRODUCT_CUTOUTS[slug] : undefined;
@@ -28,7 +31,7 @@ export function ProductGallery({ images, name, slug }: { images: ProductImage[];
               height={cutout.height}
               priority
               sizes="(min-width: 1024px) 440px, 76vw"
-              className="h-auto w-[80%] animate-[toast-in_200ms_ease-out]"
+              className={cn("h-auto w-[80%]", switched && "animate-[toast-in_200ms_ease-out]")}
             />
           </>
         ) : (
@@ -39,7 +42,7 @@ export function ProductGallery({ images, name, slug }: { images: ProductImage[];
             fill
             priority={index === 0}
             sizes="(min-width: 1024px) 560px, 92vw"
-            className="animate-[toast-in_200ms_ease-out] object-contain"
+            className={cn("object-contain", switched && "animate-[toast-in_200ms_ease-out]")}
           />
         )}
       </div>
@@ -49,7 +52,10 @@ export function ProductGallery({ images, name, slug }: { images: ProductImage[];
             <li key={img.id}>
               <button
                 type="button"
-                onClick={() => setIndex(i)}
+                onClick={() => {
+                  setSwitched(true);
+                  setIndex(i);
+                }}
                 aria-label={fill(ar.product.showImage, { n: i + 1 })}
                 aria-pressed={i === index}
                 className={cn(

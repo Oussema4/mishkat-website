@@ -15,13 +15,20 @@ const images = { card: await manifest("card-images.ts"), brand: await manifest("
 const outDir = path.join(root, "public", "rules");
 await mkdir(outDir, { recursive: true });
 
+// {{site}}: the public address for canonical and share tags (same order as src/lib/site.ts, with the
+// production domain as the default so a local build still writes the real address).
+const vercelHost = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+const site = (process.env.NEXT_PUBLIC_SITE_URL || (vercelHost ? `https://${vercelHost}` : "https://www.mishkattn.com")).replace(/\/$/, "");
+
 for (const name of await readdir(path.join(root, "slides"))) {
   if (!name.endsWith(".html")) continue;
-  const html = (await readFile(path.join(root, "slides", name), "utf8")).replace(/\{\{(card|brand):([\w-]+)\}\}/g, (_, kind, key) => {
-    const src = images[kind][key];
-    if (!src) throw new Error(`${name}: unknown image {{${kind}:${key}}}`);
-    return src;
-  });
+  const html = (await readFile(path.join(root, "slides", name), "utf8"))
+    .replace(/\{\{(card|brand):([\w-]+)\}\}/g, (_, kind, key) => {
+      const src = images[kind][key];
+      if (!src) throw new Error(`${name}: unknown image {{${kind}:${key}}}`);
+      return src;
+    })
+    .replaceAll("{{site}}", site);
   const out = name.replace(/-rules\.html$/, ".html");
   await writeFile(path.join(outDir, out), html);
   console.log(`public/rules/${out}`);
