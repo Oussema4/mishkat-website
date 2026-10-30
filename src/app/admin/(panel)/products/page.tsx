@@ -7,10 +7,14 @@ import { StockBadge } from "@/components/ui/stock-badge";
 import { db } from "@/db";
 import { productImages, products } from "@/db/schema";
 import { formatTND } from "@/lib/money";
+import { requireAdmin } from "@/server/auth";
 
 export const metadata = { title: "المنتجات" };
 
 export default async function AdminProductsPage() {
+  // Every admin page re-checks the session against the database: the layout does not re-run on
+  // client-side navigation, so a disabled or signed-out admin must be stopped here too.
+  await requireAdmin();
   const rows = await db
     .select({
       id: products.id,

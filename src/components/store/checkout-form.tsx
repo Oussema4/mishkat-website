@@ -127,6 +127,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: numbe
           setBanner(result.message);
           requestAnimationFrame(() => bannerRef.current?.focus());
         }
+        if (result.newKey) useCart.setState({ checkoutKey: null });
         if (result.refreshCart) await resyncCart().catch(() => undefined);
       } catch {
         submitting.current = false;

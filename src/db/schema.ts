@@ -56,6 +56,9 @@ export const productImages = sqliteTable("product_images", {
   sortOrder: integer("sort_order").notNull().default(0),
 });
 
+export const ADMIN_ROLES = ["owner", "admin"] as const;
+export type AdminRole = (typeof ADMIN_ROLES)[number];
+
 export const ORDER_STATUSES = ["new", "confirmed", "preparing", "shipped", "delivered", "cancelled"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
@@ -117,6 +120,8 @@ export const admins = sqliteTable(
     passwordHash: text("password_hash").notNull(),
     active: integer("active", { mode: "boolean" }).notNull().default(true),
     sessionVersion: integer("session_version").notNull().default(1),
+    /** "owner" can manage dashboard accounts; "admin" runs the shop (orders, products, settings). */
+    role: text("role", { enum: ADMIN_ROLES }).notNull().default("admin"),
     lastLoginAt: integer("last_login_at", { mode: "timestamp" }),
     ...timestamps,
   },
@@ -138,6 +143,17 @@ export const reviews = sqliteTable("reviews", {
   visible: integer("visible", { mode: "boolean" }).notNull().default(true),
   sortOrder: integer("sort_order").notNull().default(0),
   createdAt: timestamps.createdAt,
+});
+
+/**
+ * Shared counters for rate limits (login attempts, orders), so limits hold across every server
+ * instance instead of living in one instance's memory. One row per key, reset when the window ends.
+ */
+export const rateLimits = sqliteTable("rate_limits", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull().default(0),
+  /** Unix time in milliseconds when the current window ends. */
+  resetAt: integer("reset_at").notNull(),
 });
 
 export type Category = typeof categories.$inferSelect;

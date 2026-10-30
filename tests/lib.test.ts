@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { formatFaq, parseFaq, parseLabelValues, parseSteps, parseTND } from "@/lib/admin-format";
 import { formatTND } from "@/lib/money";
 import { computeTotals, discountPercent } from "@/lib/pricing";
 import { normalizeTunisianPhone, whatsappLink } from "@/lib/tunisia";
+import { SESSION_ABSOLUTE, SESSION_IDLE, signSession, verifySession } from "@/lib/session";
 import { checkoutSchema } from "@/lib/validation";
 
 describe("money", () => {
@@ -82,5 +83,32 @@ describe("admin text formats", () => {
       { title: "المرحلة 1", body: "شرح" },
       { title: "المرحلة 2", body: "شرح 2" },
     ]);
+  });
+});
+
+describe("admin sessions", () => {
+  beforeAll(() => {
+    process.env.AUTH_SECRET ??= "test-secret-test-secret-test-secret-123";
+  });
+
+  it("round-trips a session and keeps the original sign-in time when renewed", async () => {
+    const authTime = Math.floor(Date.now() / 1000) - 3600;
+    const token = await signSession({ adminId: 7, version: 3, authTime });
+    const s = await verifySession(token);
+    expect(s).toMatchObject({ adminId: 7, version: 3, authTime });
+    expect(s!.expiresAt - Math.floor(Date.now() / 1000)).toBeLessThanOrEqual(SESSION_IDLE);
+  });
+
+  it("refuses a session older than the absolute limit, even if freshly renewed", async () => {
+    const authTime = Math.floor(Date.now() / 1000) - SESSION_ABSOLUTE - 60;
+    expect(await verifySession(await signSession({ adminId: 7, version: 3, authTime }))).toBeNull();
+  });
+
+  it("refuses tampered tokens", async () => {
+    const token = await signSession({ adminId: 7, version: 3 });
+    const [h, p, sig] = token.split(".");
+    const forged = Buffer.from(JSON.stringify({ ...JSON.parse(Buffer.from(p, "base64url").toString()), sub: "1" })).toString("base64url");
+    expect(await verifySession(`${h}.${forged}.${sig}`)).toBeNull();
+    expect(await verifySession("not-a-token")).toBeNull();
   });
 });

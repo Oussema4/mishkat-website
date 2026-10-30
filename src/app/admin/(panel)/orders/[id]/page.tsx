@@ -12,8 +12,12 @@ import { formatDateTime } from "@/lib/dates";
 import { formatTND } from "@/lib/money";
 import { formatTunisianPhone, whatsappLink } from "@/lib/tunisia";
 import { StatusForm } from "./status-form";
+import { requireAdmin } from "@/server/auth";
 
 export default async function OrderDetailPage({ params }: PageProps<"/admin/orders/[id]">) {
+  // Every admin page re-checks the session against the database: the layout does not re-run on
+  // client-side navigation, so a disabled or signed-out admin must be stopped here too.
+  await requireAdmin();
   const { id } = await params;
   const orderId = Number(id);
   if (!Number.isInteger(orderId)) notFound();

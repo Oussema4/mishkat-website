@@ -22,7 +22,8 @@ export async function saveImage(file: File, folder: "products" | "reviews"): Pro
   let output: { data: Buffer; info: OutputInfo };
   try {
     const input = Buffer.from(await file.arrayBuffer());
-    output = await sharp(input)
+    // limitInputPixels: refuse decompression bombs (a tiny file that decodes to a gigantic image).
+    output = await sharp(input, { limitInputPixels: 40_000_000 })
       .rotate()
       .resize({ width: 1600, height: 1600, fit: "inside", withoutEnlargement: true })
       .webp({ quality: 82 })

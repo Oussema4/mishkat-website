@@ -7,23 +7,16 @@ import { ar } from "@/i18n/ar";
 import { checkoutSchema, fieldErrors } from "@/lib/validation";
 import { getCartSnapshot } from "@/server/catalog";
 import { createOrder } from "@/server/order-core";
+import { clientIp, hit } from "@/server/rate-limit";
 import { getSettings } from "@/server/settings";
 
 export type PlaceOrderResult =
   | { ok: true; token: string }
-  | { ok: false; errors?: Record<string, string>; message?: string; refreshCart?: boolean };
+  | { ok: false; errors?: Record<string, string>; message?: string; refreshCart?: boolean; newKey?: boolean };
 
-// Best-effort abuse guard (per server instance): max 8 orders per IP per 10 minutes.
-const recent = new Map<string, number[]>();
-function rateLimited(ip: string) {
-  const now = Date.now();
-  const windowMs = 10 * 60 * 1000;
-  const hits = (recent.get(ip) ?? []).filter((t) => now - t < windowMs);
-  if (hits.length >= 8) return true;
-  hits.push(now);
-  recent.set(ip, hits);
-  return false;
-}
+// Abuse guard shared by every server instance (counted in the database): max 8 orders per IP per
+// 10 minutes. Open orders per phone number are capped in createOrder.
+const orderLimit = (ip: string) => ({ key: `order:ip:${ip}`, max: 8, windowMs: 10 * 60 * 1000 });
 
 export async function placeOrder(input: unknown): Promise<PlaceOrderResult> {
   // Honeypot: real customers never fill this hidden field.
@@ -34,16 +27,23 @@ export async function placeOrder(input: unknown): Promise<PlaceOrderResult> {
   const parsed = checkoutSchema.safeParse(input);
   if (!parsed.success) return { ok: false, errors: fieldErrors(parsed.error) };
 
-  const h = await headers();
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "local";
-  if (rateLimited(ip)) {
-    return { ok: false, message: "أرسلت عدة طلبات خلال وقت قصير. انتظر بضع دقائق أو راسلنا على واتساب." };
-  }
-
   try {
+    const { allowed } = await hit(db, orderLimit(clientIp(await headers())));
+    if (!allowed) {
+      return { ok: false, message: "أرسلت عدة طلبات خلال وقت قصير. انتظر بضع دقائق أو راسلنا على واتساب." };
+    }
+
     const settings = await getSettings();
     const result = await createOrder(db, parsed.data, settings.deliveryFee);
-    if (!result.ok) return { ok: false, message: result.message, refreshCart: true };
+    if (!result.ok) {
+      return {
+        ok: false,
+        message: result.message,
+        // Stock/availability changed: re-sync the cart. A key already used by another order: retry with a fresh one.
+        refreshCart: result.code === "stock" || result.code === "unavailable",
+        newKey: result.code === "conflict",
+      };
+    }
     // Store pages are pre-rendered; refresh them so stock levels stay accurate.
     revalidatePath("/", "layout");
     return { ok: true, token: result.publicToken };

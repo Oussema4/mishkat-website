@@ -19,6 +19,12 @@ export function NewAdminForm() {
       <AdminField id="password" label="كلمة سر مؤقتة" hint="10 أحرف على الأقل. أرسلها للشخص بطريقة آمنة." error={e.password}>
         <input {...describe("password", { hint: true, error: e.password })} type="password" dir="ltr" required autoComplete="new-password" className={adminInput} />
       </AdminField>
+      <AdminField id="role" label="الصلاحية" hint="المالك وحده يضيف الحسابات ويوقفها.">
+        <select {...describe("role", { hint: true })} defaultValue="admin" className={adminInput}>
+          <option value="admin">مسؤول: الطلبات والمنتجات والإعدادات</option>
+          <option value="owner">مالك: كل شيء، مع إدارة الحسابات</option>
+        </select>
+      </AdminField>
       <SubmitButton>إنشاء الحساب</SubmitButton>
       <FormMessage state={state} />
     </form>

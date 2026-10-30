@@ -2,14 +2,17 @@
 
 import { Eye, EyeOff, Trash2 } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useActionState } from "react";
 import { FormMessage, SubmitButton } from "@/components/admin/form-bits";
+import { uploadAction } from "@/components/admin/upload-action";
 import type { Review } from "@/db/schema";
 import { cn } from "@/lib/site";
-import { deleteReview, toggleReview, uploadReview, type FormState } from "../../actions";
+import { deleteReview, toggleReview, type FormState } from "../../actions";
 
 export function ReviewsManager({ reviews }: { reviews: Review[] }) {
-  const [state, action] = useActionState<FormState, FormData>(uploadReview, {});
+  const router = useRouter();
+  const [state, action] = useActionState<FormState, FormData>(uploadAction("review", () => router.refresh()), {});
   return (
     <section aria-labelledby="reviews-title" className="rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">
       <h2 id="reviews-title" className="font-sans text-lg font-bold">

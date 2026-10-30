@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/db";
 import { admins } from "@/db/schema";
-import { SESSION_COOKIE, SESSION_MAX_AGE, signSession, verifySession } from "@/lib/session";
+import { SESSION_COOKIE, sessionCookieOptions, signSession, verifySession } from "@/lib/session";
 
 let dummyHash: Promise<string> | null = null;
 
@@ -27,13 +27,7 @@ export async function hashPassword(password: string) {
 export async function startSession(admin: { id: number; sessionVersion: number }) {
   const token = await signSession({ adminId: admin.id, version: admin.sessionVersion });
   const store = await cookies();
-  store.set(SESSION_COOKIE, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: SESSION_MAX_AGE,
-  });
+  store.set(SESSION_COOKIE, token, sessionCookieOptions);
 }
 
 export async function endSession() {
@@ -48,8 +42,14 @@ export const getCurrentAdmin = cache(async () => {
   if (!session) return null;
   const [admin] = await db.select().from(admins).where(eq(admins.id, session.adminId)).limit(1);
   if (!admin || !admin.active || admin.sessionVersion !== session.version) return null;
-  return { id: admin.id, name: admin.name, email: admin.email };
+  return { id: admin.id, name: admin.name, email: admin.email, role: admin.role };
 });
+
+/** The signed-in admin if they are an owner (allowed to manage dashboard accounts), else null. */
+export async function getCurrentOwner() {
+  const admin = await getCurrentAdmin();
+  return admin?.role === "owner" ? admin : null;
+}
 
 export async function requireAdmin() {
   const admin = await getCurrentAdmin();

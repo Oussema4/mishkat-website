@@ -10,13 +10,14 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { admins, categories, ORDER_STATUSES, productImages, products, reviews } from "@/db/schema";
+import { ADMIN_ROLES, admins, categories, ORDER_STATUSES, productImages, products, reviews } from "@/db/schema";
 import { parseFaq, parseLabelValues, parseLines, parseSteps, parseTND, slugify } from "@/lib/admin-format";
 import { normalizeTunisianPhone } from "@/lib/tunisia";
-import { endSession, getCurrentAdmin, hashPassword, requireAdmin, startSession, verifyPassword } from "@/server/auth";
+import { endSession, getCurrentAdmin, getCurrentOwner, hashPassword, requireAdmin, startSession, verifyPassword } from "@/server/auth";
 import { changeOrderStatus } from "@/server/order-core";
 import { saveSettings } from "@/server/settings";
-import { deleteImage, saveImage } from "@/server/uploads";
+import { clientIp, hit, isBlocked, reset } from "@/server/rate-limit";
+import { deleteImage } from "@/server/uploads";
 
 export type FormState = { ok?: boolean; error?: string; message?: string; fieldErrors?: Record<string, string> };
 
@@ -29,37 +30,46 @@ function refreshStore() {
 
 export type LoginState = { error?: string; email?: string };
 
-const loginAttempts = new Map<string, { count: number; until: number }>();
+// Failed sign-ins, counted in the database (shared by every server instance):
+//  - per account: a burst of guesses against one email locks that account for 15 minutes, from any IP;
+//  - per IP: one address can't spray a password across many emails.
+const LOGIN_WINDOW = 15 * 60 * 1000;
+const accountLimit = (email: string) => ({ key: `login:acct:${email}`, max: 8, windowMs: LOGIN_WINDOW });
+const ipLimit = (ip: string) => ({ key: `login:ip:${ip}`, max: 30, windowMs: LOGIN_WINDOW });
 
 export async function login(_prev: LoginState, form: FormData): Promise<LoginState> {
-  const email = String(form.get("email") ?? "").trim().toLowerCase();
-  const password = String(form.get("password") ?? "");
-  const h = await headers();
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
-  const key = `${ip}:${email}`;
-  const now = Date.now();
-  const attempt = loginAttempts.get(key);
-  if (attempt && attempt.until > now && attempt.count >= 5) {
-    return { error: "محاولات كثيرة. انتظر 15 دقيقة ثم أعد المحاولة.", email };
-  }
+  const email = String(form.get("email") ?? "").trim().toLowerCase().slice(0, 200);
+  const password = String(form.get("password") ?? "").slice(0, 200);
+  const ip = clientIp(await headers());
+  const tooMany = { error: "محاولات كثيرة. انتظر 15 دقيقة ثم أعد المحاولة.", email };
+  if ((await isBlocked(db, ipLimit(ip))) || (email && (await isBlocked(db, accountLimit(email))))) return tooMany;
 
   const [admin] = email ? await db.select().from(admins).where(eq(admins.email, email)).limit(1) : [];
   // Always run bcrypt so response time doesn't reveal whether the email exists.
   const valid = await verifyPassword(password, admin?.passwordHash);
 
   if (!admin || !admin.active || !valid) {
-    const next = attempt && attempt.until > now ? attempt.count + 1 : 1;
-    loginAttempts.set(key, { count: next, until: now + 15 * 60 * 1000 });
+    await hit(db, ipLimit(ip));
+    if (email) await hit(db, accountLimit(email));
     return { error: "البريد الإلكتروني أو كلمة السر غير صحيحة.", email };
   }
 
-  loginAttempts.delete(key);
+  await reset(db, accountLimit(email).key);
   await db.update(admins).set({ lastLoginAt: new Date() }).where(eq(admins.id, admin.id));
   await startSession(admin);
   redirect("/admin");
 }
 
 export async function logout() {
+  // Bumping the version kills this token everywhere, even if it was copied: deleting the cookie
+  // alone would leave it valid until it expires.
+  const me = await getCurrentAdmin();
+  if (me) {
+    await db
+      .update(admins)
+      .set({ sessionVersion: sql`${admins.sessionVersion} + 1`, updatedAt: new Date() })
+      .where(eq(admins.id, me.id));
+  }
   await endSession();
   redirect("/admin/login");
 }
@@ -166,24 +176,6 @@ export async function saveProduct(_prev: FormState, form: FormData): Promise<For
   return { ok: true, message: "تم حفظ المنتج." };
 }
 
-export async function uploadProductImage(_prev: FormState, form: FormData): Promise<FormState> {
-  await requireAdmin();
-  const productId = Number(form.get("productId"));
-  const alt = String(form.get("alt") ?? "").trim().slice(0, 200);
-  const file = form.get("image");
-  if (!Number.isInteger(productId) || !(file instanceof File)) return { error: "اختر صورة." };
-  const saved = await saveImage(file, "products");
-  if (!saved.ok) return { error: saved.error };
-  const [{ max }] = await db
-    .select({ max: sql<number>`coalesce(max(${productImages.sortOrder}), -1)` })
-    .from(productImages)
-    .where(eq(productImages.productId, productId));
-  await db.insert(productImages).values({ productId, url: saved.url, alt, sortOrder: Number(max) + 1 });
-  revalidatePath("/admin", "layout");
-  refreshStore();
-  return { ok: true, message: "تمت إضافة الصورة." };
-}
-
 export async function deleteProductImage(form: FormData) {
   await requireAdmin();
   const imageId = Number(form.get("imageId"));
@@ -278,25 +270,6 @@ export async function saveStoreSettings(_prev: FormState, form: FormData): Promi
 
 // ───────────── Reviews ─────────────
 
-export async function uploadReview(_prev: FormState, form: FormData): Promise<FormState> {
-  await requireAdmin();
-  const file = form.get("image");
-  if (!(file instanceof File)) return { error: "اختر صورة." };
-  const saved = await saveImage(file, "reviews");
-  if (!saved.ok) return { error: saved.error };
-  const [{ max }] = await db.select({ max: sql<number>`coalesce(max(${reviews.sortOrder}), 0)` }).from(reviews);
-  await db.insert(reviews).values({
-    imageUrl: saved.url,
-    width: saved.width,
-    height: saved.height,
-    alt: "رسالة من أحد عملاء مشكاة",
-    sortOrder: Number(max) + 1,
-  });
-  revalidatePath("/admin", "layout");
-  refreshStore();
-  return { ok: true, message: "تمت إضافة الرأي. تأكّد أن الصورة لا تُظهر اسم الشخص أو صورته." };
-}
-
 export async function toggleReview(form: FormData) {
   await requireAdmin();
   const id = Number(form.get("id"));
@@ -322,10 +295,15 @@ const newAdminSchema = z.object({
   name: z.string().trim().min(2, "اكتب الاسم").max(80),
   email: z.email("بريد إلكتروني غير صالح").trim().toLowerCase(),
   password: z.string().min(10, "كلمة السر 10 أحرف على الأقل").max(200),
+  role: z.enum(ADMIN_ROLES).default("admin"),
 });
+
+const OWNER_ONLY = "إدارة الحسابات للمالك فقط.";
 
 export async function createAdmin(_prev: FormState, form: FormData): Promise<FormState> {
   await requireAdmin();
+  // Only an owner manages accounts: one compromised shop admin can't create backdoor accounts or lock others out.
+  if (!(await getCurrentOwner())) return { error: OWNER_ONLY };
   const parsed = newAdminSchema.safeParse(Object.fromEntries(form.entries()));
   if (!parsed.success) {
     const fieldErrors: Record<string, string> = {};
@@ -338,13 +316,16 @@ export async function createAdmin(_prev: FormState, form: FormData): Promise<For
     name: parsed.data.name,
     email: parsed.data.email,
     passwordHash: await hashPassword(parsed.data.password),
+    role: parsed.data.role,
   });
   revalidatePath("/admin", "layout");
   return { ok: true, message: "تم إنشاء الحساب." };
 }
 
 export async function setAdminActive(form: FormData) {
-  const me = await requireAdmin();
+  await requireAdmin();
+  const me = await getCurrentOwner();
+  if (!me) return;
   const id = Number(form.get("id"));
   const active = form.get("active") === "1";
   if (id === me.id && !active) return; // never lock yourself out

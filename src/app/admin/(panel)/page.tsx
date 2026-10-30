@@ -9,10 +9,14 @@ import { formatDateTime } from "@/lib/dates";
 import { formatTND } from "@/lib/money";
 import { cn } from "@/lib/site";
 import { formatTunisianPhone } from "@/lib/tunisia";
+import { requireAdmin } from "@/server/auth";
 
 const PAGE_SIZE = 25;
 
 export default async function OrdersPage({ searchParams }: PageProps<"/admin">) {
+  // Every admin page re-checks the session against the database: the layout does not re-run on
+  // client-side navigation, so a disabled or signed-out admin must be stopped here too.
+  await requireAdmin();
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q.trim().slice(0, 80) : "";
   const status = ORDER_STATUSES.includes(params.status as OrderStatus) ? (params.status as OrderStatus) : null;

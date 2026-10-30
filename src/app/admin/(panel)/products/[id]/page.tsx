@@ -8,10 +8,14 @@ import { getCategories } from "@/server/catalog";
 import { ProductForm } from "../product-form";
 import { CategoryForm } from "./category-form";
 import { ImageManager } from "./image-manager";
+import { requireAdmin } from "@/server/auth";
 
 export const metadata = { title: "تعديل منتج" };
 
 export default async function EditProductPage({ params, searchParams }: PageProps<"/admin/products/[id]">) {
+  // Every admin page re-checks the session against the database: the layout does not re-run on
+  // client-side navigation, so a disabled or signed-out admin must be stopped here too.
+  await requireAdmin();
   const { id } = await params;
   const { created } = await searchParams;
   const productId = Number(id);

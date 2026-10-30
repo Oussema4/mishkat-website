@@ -28,10 +28,11 @@ const [existing] = await db.select().from(admins).where(eq(admins.email, email))
 if (existing) {
   await db
     .update(admins)
-    .set({ name, passwordHash, active: true, sessionVersion: sql`${admins.sessionVersion} + 1`, updatedAt: new Date() })
+    // Created from the server itself, so it is trusted with managing the other accounts.
+    .set({ name, passwordHash, role: "owner", active: true, sessionVersion: sql`${admins.sessionVersion} + 1`, updatedAt: new Date() })
     .where(eq(admins.id, existing.id));
   console.log(`✓ تم تحديث الحساب ${email}`);
 } else {
-  await db.insert(admins).values({ name, email, passwordHash });
+  await db.insert(admins).values({ name, email, passwordHash, role: "owner" });
   console.log(`✓ تم إنشاء الحساب ${email}`);
 }

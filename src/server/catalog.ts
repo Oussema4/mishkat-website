@@ -59,14 +59,11 @@ export const getVisibleReviews = cache(async () =>
 /** Fresh price/stock for cart lines (used to re-sync a cart saved in the browser). */
 export async function getCartSnapshot(ids: number[]) {
   if (ids.length === 0) return [];
+  // Active products only: this is a public endpoint, so hidden (draft) products must not leak their
+  // name or price. A cart line whose product is missing here is dropped by syncProducts.
   const rows = await db
-    .select({ id: products.id, name: products.name, price: products.price, stock: products.stock, status: products.status })
+    .select({ id: products.id, name: products.name, price: products.price, stock: products.stock })
     .from(products)
-    .where(inArray(products.id, ids));
-  return rows.map((r) => ({
-    productId: r.id,
-    name: r.name,
-    unitPrice: r.price,
-    maxQuantity: r.status === "active" ? r.stock : 0,
-  }));
+    .where(and(inArray(products.id, ids), eq(products.status, "active")));
+  return rows.map((r) => ({ productId: r.id, name: r.name, unitPrice: r.price, maxQuantity: r.stock }));
 }

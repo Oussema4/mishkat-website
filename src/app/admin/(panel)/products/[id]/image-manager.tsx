@@ -2,13 +2,16 @@
 
 import { ArrowLeft, ArrowRight, Trash2 } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useActionState, useRef } from "react";
 import { FormMessage, SubmitButton, adminInput } from "@/components/admin/form-bits";
+import { uploadAction } from "@/components/admin/upload-action";
 import type { ProductImage } from "@/db/schema";
-import { deleteProductImage, moveProductImage, updateImageAlt, uploadProductImage, type FormState } from "../../../actions";
+import { deleteProductImage, moveProductImage, updateImageAlt, type FormState } from "../../../actions";
 
 export function ImageManager({ productId, images }: { productId: number; images: ProductImage[] }) {
-  const [state, action] = useActionState<FormState, FormData>(uploadProductImage, {});
+  const router = useRouter();
+  const [state, action] = useActionState<FormState, FormData>(uploadAction("product", () => router.refresh()), {});
   const fileRef = useRef<HTMLInputElement>(null);
 
   return (

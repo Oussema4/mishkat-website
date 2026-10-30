@@ -3,7 +3,7 @@
  * against an in-memory database (see tests/orders.test.ts).
  */
 import { randomBytes } from "node:crypto";
-import { and, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, count, eq, gte, inArray, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import * as schema from "@/db/schema";
 import { orderItems, orders, orderStatusHistory, products, type OrderStatus } from "@/db/schema";
@@ -14,16 +14,20 @@ type Database = LibSQLDatabase<typeof schema>;
 
 export type CreateOrderResult =
   | { ok: true; publicToken: string; reference: string; duplicate: boolean }
-  | { ok: false; code: "unavailable" | "stock"; message: string };
+  | { ok: false; code: "unavailable" | "stock" | "limit" | "conflict"; message: string };
 
 class OrderError extends Error {
   constructor(
-    public code: "unavailable" | "stock",
+    public code: "unavailable" | "stock" | "limit" | "conflict",
     message: string,
   ) {
     super(message);
   }
 }
+
+/** Orders not yet shipped, delivered or cancelled. One phone number can hold only a few at once. */
+export const OPEN_STATUSES = ["new", "confirmed", "preparing"] as const;
+export const MAX_OPEN_ORDERS_PER_PHONE = 3;
 
 export function formatReference(id: number) {
   return `MSK-${String(id).padStart(6, "0")}`;
@@ -56,17 +60,28 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 8): Promise<T> {
 
 async function findByIdempotencyKey(db: Database, key: string) {
   const [existing] = await db
-    .select({ publicToken: orders.publicToken, reference: orders.reference })
+    .select({ publicToken: orders.publicToken, reference: orders.reference, phone: orders.phone })
     .from(orders)
     .where(eq(orders.idempotencyKey, key))
     .limit(1);
   return existing;
 }
 
+function sameCustomer(
+  existing: { publicToken: string; reference: string; phone: string },
+  phone: string,
+): CreateOrderResult {
+  if (existing.phone !== phone) {
+    return { ok: false, code: "conflict", message: "تعذّر تأكيد الطلب. أعد المحاولة." };
+  }
+  return { ok: true, publicToken: existing.publicToken, reference: existing.reference, duplicate: true };
+}
+
 export async function createOrder(db: Database, data: CheckoutData, deliveryFee: number): Promise<CreateOrderResult> {
-  // Same checkout submitted twice (double click, retry after timeout) → same order.
+  // Same checkout submitted twice (double click, retry after timeout) → same order. The secret link
+  // is only handed back to the same phone number, never to whoever happens to send the same key.
   const existing = await findByIdempotencyKey(db, data.idempotencyKey);
-  if (existing) return { ok: true, ...existing, duplicate: true };
+  if (existing) return sameCustomer(existing, data.phone);
 
   // Merge duplicate lines for the same product.
   const qtyById = new Map<number, number>();
@@ -76,11 +91,27 @@ export async function createOrder(db: Database, data: CheckoutData, deliveryFee:
     const result = await withRetry(() => db.transaction(async (tx) => {
       // A concurrent identical submit may have committed while we waited for the lock.
       const [already] = await tx
-        .select({ publicToken: orders.publicToken, reference: orders.reference })
+        .select({ publicToken: orders.publicToken, reference: orders.reference, phone: orders.phone })
         .from(orders)
         .where(eq(orders.idempotencyKey, data.idempotencyKey))
         .limit(1);
-      if (already) return { ...already, duplicate: true };
+      if (already) {
+        const same = sameCustomer(already, data.phone);
+        if (!same.ok) throw new OrderError(same.code, same.message);
+        return { publicToken: same.publicToken, reference: same.reference, duplicate: true };
+      }
+
+      // Fake cash-on-delivery orders cost nothing and take stock: cap the open orders per phone.
+      const [{ open }] = await tx
+        .select({ open: count() })
+        .from(orders)
+        .where(and(eq(orders.phone, data.phone), inArray(orders.status, OPEN_STATUSES)));
+      if (open >= MAX_OPEN_ORDERS_PER_PHONE) {
+        throw new OrderError(
+          "limit",
+          "لديك طلبات قيد المعالجة بهذا الرقم. راسلنا على واتساب إذا أردت تعديلها أو إضافة طلب جديد.",
+        );
+      }
 
       const ids = [...qtyById.keys()];
       const rows = await tx.select().from(products).where(and(inArray(products.id, ids), eq(products.status, "active")));
@@ -153,7 +184,7 @@ export async function createOrder(db: Database, data: CheckoutData, deliveryFee:
     if (isUniqueViolation(err)) {
       // A concurrent request with the same key won the race.
       const again = await findByIdempotencyKey(db, data.idempotencyKey);
-      if (again) return { ok: true, ...again, duplicate: true };
+      if (again) return sameCustomer(again, data.phone);
     }
     throw err;
   }

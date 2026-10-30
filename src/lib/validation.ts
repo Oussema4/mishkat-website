@@ -5,6 +5,7 @@ const trimmed = (min: number, max: number, minMsg: string, maxMsg = "النص ط
   z.string().trim().min(min, minMsg).max(max, maxMsg);
 
 export const MAX_QTY_PER_ITEM = 20;
+export const MAX_ITEMS_PER_ORDER = 20;
 
 export const checkoutSchema = z.object({
   firstName: trimmed(2, 60, "اكتب اسمك (حرفان على الأقل)"),
@@ -32,7 +33,11 @@ export const checkoutSchema = z.object({
       }),
     )
     .min(1, "سلتك فارغة")
-    .max(30),
+    .max(30)
+    // One order can't take the whole stock: larger quantities go through WhatsApp.
+    .refine((items) => items.reduce((n, i) => n + i.quantity, 0) <= MAX_ITEMS_PER_ORDER, {
+      message: `الحد الأقصى ${MAX_ITEMS_PER_ORDER} قطعة في الطلب الواحد. للكميات الأكبر راسلنا على واتساب.`,
+    }),
   idempotencyKey: z.string().min(16).max(64),
 });
 

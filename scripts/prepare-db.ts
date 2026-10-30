@@ -47,6 +47,7 @@ if (email && password) {
       name: process.env.INITIAL_ADMIN_NAME?.trim() || "مسؤول مشكاة",
       email,
       passwordHash: await bcrypt.hash(password, 12),
+      role: "owner", // the first account manages the others
     });
     console.log(`✓ First dashboard account created for ${email}`);
   }
