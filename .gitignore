@@ -27,3 +27,8 @@ public/uploads/
 
 # taste-skill inspector output
 .taste-skill/
+
+# Vercel CLI link and pulled env files (the example stays tracked)
+.vercel
+.env*
+!.env.example
