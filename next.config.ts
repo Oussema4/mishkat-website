@@ -1,8 +1,9 @@
 import type { NextConfig } from "next";
 
 /**
- * Host of OUR Vercel Blob store, read from its token (`vercel_blob_rw_<storeId>_…`), or set
- * explicitly with BLOB_PUBLIC_HOST. The image optimizer and the CSP only trust this store, never
+ * Host of OUR public Vercel Blob store: BLOB_PUBLIC_HOST (set in Vercel, Production), or derived
+ * from a classic token (`vercel_blob_rw_<storeId>_…`; newer tokens don't carry it, hence the
+ * variable). The image optimizer and the CSP only trust this store, never
  * `*.public.blob.vercel-storage.com` (that would let anyone's store be served through our domain).
  */
 function blobHost() {

@@ -34,8 +34,11 @@ export async function saveImage(file: File, folder: "products" | "reviews"): Pro
 
   const name = `${folder}/${Date.now()}-${randomBytes(5).toString("hex")}.webp`;
 
-  if (process.env.BLOB_READ_WRITE_TOKEN) {
-    const blob = await put(`mishkat/${name}`, output.data, { access: "public", contentType: "image/webp" });
+  // The token is passed explicitly: with OIDC on Vercel, @vercel/blob would otherwise prefer the
+  // store named by BLOB_STORE_ID, which can be a different (private) store.
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  if (token) {
+    const blob = await put(`mishkat/${name}`, output.data, { access: "public", contentType: "image/webp", token });
     return { ok: true, url: blob.url, width: output.info.width, height: output.info.height };
   }
 
@@ -51,8 +54,9 @@ export async function saveImage(file: File, folder: "products" | "reviews"): Pro
 /** Deletes an image previously stored by saveImage. Bundled images (/images/...) are never deleted. */
 export async function deleteImage(url: string) {
   try {
-    if (url.includes(".blob.vercel-storage.com") && process.env.BLOB_READ_WRITE_TOKEN) {
-      await del(url);
+    const token = process.env.BLOB_READ_WRITE_TOKEN;
+    if (url.includes(".blob.vercel-storage.com") && token) {
+      await del(url, { token });
     } else if (url.startsWith("/uploads/")) {
       const target = path.join(process.cwd(), "public", url);
       if (target.startsWith(path.join(process.cwd(), "public", "uploads"))) await unlink(target);
