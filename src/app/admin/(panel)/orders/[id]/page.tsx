@@ -71,7 +71,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
                 <dd className="flex gap-2 leading-7">
                   <MapPin aria-hidden className="mt-1 size-4 shrink-0 text-gold-deep" />
                   <span>
-                    {order.address}، {order.city}، {order.governorate}
+                    {[order.address, order.city, order.governorate].filter(Boolean).join("، ")}
                   </span>
                 </dd>
               </div>

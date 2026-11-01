@@ -17,16 +17,15 @@ import { cn } from "@/lib/site";
 import { GOVERNORATES } from "@/lib/tunisia";
 import { checkoutSchema } from "@/lib/validation";
 
-type FieldName = "firstName" | "lastName" | "phone" | "governorate" | "city" | "address" | "note";
+type FieldName = "firstName" | "lastName" | "phone" | "governorate" | "city" | "note";
 
-const FIELD_ORDER: FieldName[] = ["firstName", "lastName", "phone", "governorate", "city", "address", "note"];
+const FIELD_ORDER: FieldName[] = ["firstName", "lastName", "phone", "governorate", "city", "note"];
 const LABELS: Record<FieldName, string> = {
   firstName: ar.checkout.firstName,
   lastName: ar.checkout.lastName,
   phone: ar.checkout.phone,
   governorate: ar.checkout.governorate,
   city: ar.checkout.city,
-  address: ar.checkout.address,
   note: ar.checkout.note,
 };
 
@@ -145,7 +144,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: numbe
     name,
     "aria-invalid": errors[name] ? true : undefined,
     "aria-describedby":
-      [errors[name] ? `${name}-error` : null, name === "phone" || name === "address" ? `${name}-hint` : null].filter(Boolean).join(" ") ||
+      [errors[name] ? `${name}-error` : null, name === "phone" ? `${name}-hint` : null].filter(Boolean).join(" ") ||
       undefined,
     onBlur: (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
       if (e.target.value || errors[name]) validateField(name, e.target.value);
@@ -235,9 +234,6 @@ export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: numbe
               <input {...field("city")} type="text" autoComplete="address-level2" required maxLength={80} />
             </Field>
           </div>
-          <Field name="address" error={errors.address} hint={ar.checkout.addressHint}>
-            <textarea {...field("address")} autoComplete="street-address" required rows={3} maxLength={300} className={cn(field("address").className, "resize-y")} />
-          </Field>
           <Field name="note" error={errors.note} optional>
             <textarea {...field("note")} rows={2} maxLength={500} className={cn(field("note").className, "resize-y")} />
           </Field>

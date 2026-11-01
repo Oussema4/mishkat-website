@@ -131,8 +131,6 @@ export const ar = {
     governorate: "الولاية",
     chooseGovernorate: "اختر الولاية",
     city: "المدينة أو المنطقة",
-    address: "العنوان بالتفصيل",
-    addressHint: "الشارع، رقم المنزل أو العمارة، وعلامة قريبة إن وُجدت.",
     note: "ملاحظة (اختياري)",
     required: "مطلوب",
     summary: "ملخص الطلب",

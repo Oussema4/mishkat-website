@@ -23,7 +23,9 @@ export const checkoutSchema = z.object({
     }),
   governorate: z.enum(GOVERNORATES, { error: "اختر ولايتك من القائمة" }),
   city: trimmed(2, 80, "اكتب المدينة أو المنطقة"),
-  address: trimmed(6, 300, "اكتب العنوان بالتفصيل (الشارع، رقم المنزل، علامة قريبة)"),
+  // No street address at checkout (governorate + city are enough; the courier calls before delivery).
+  // Still accepted from older pages, and the dashboard shows it when present.
+  address: z.string().trim().max(300, "النص طويل جدًا").optional().default(""),
   note: z.string().trim().max(500, "الملاحظة طويلة جدًا").optional().default(""),
   items: z
     .array(

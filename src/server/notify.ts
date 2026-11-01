@@ -34,7 +34,7 @@ export async function notifyNewOrder(publicToken: string) {
     const lines = [
       `*${headline}*`,
       `*الحريف:* ${esc(`${order.firstName} ${order.lastName}`)} · ${order.phone}`,
-      `*العنوان:* ${esc(`${order.address}، ${order.city}، ${order.governorate}`)}`,
+      `*العنوان:* ${esc([order.address, order.city, order.governorate].filter(Boolean).join("، "))}`,
       `*الطلب:* ${items.map((i) => `${esc(i.productName)} × ${i.quantity} (${formatTND(i.lineTotal)})`).join("، ")}`,
       `*المجموع:* ${formatTND(order.subtotal)} + توصيل ${formatTND(order.deliveryFee)} = ${formatTND(order.total)} · الدفع عند الاستلام`,
       order.note ? `*ملاحظة:* ${esc(order.note)}` : null,
