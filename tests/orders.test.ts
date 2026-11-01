@@ -7,7 +7,7 @@ import { migrate } from "drizzle-orm/libsql/migrator";
 import { beforeEach, describe, expect, it } from "vitest";
 import { tuneLocalDatabase } from "@/db/config";
 import * as schema from "@/db/schema";
-import { changeOrderStatus, createOrder, MAX_OPEN_ORDERS_PER_PHONE } from "@/server/order-core";
+import { changeOrderStatus, createOrder, deleteOrders, MAX_OPEN_ORDERS_PER_PHONE } from "@/server/order-core";
 import { hit, isBlocked, reset } from "@/server/rate-limit";
 import { checkoutSchema, MAX_ITEMS_PER_ORDER, type CheckoutData } from "@/lib/validation";
 
@@ -127,6 +127,31 @@ describe("changeOrderStatus", () => {
 
     const history = await db.select().from(schema.orderStatusHistory).where(eq(schema.orderStatusHistory.orderId, order.id));
     expect(history.map((h) => h.toStatus)).toEqual(["new", "cancelled", "confirmed"]);
+  });
+});
+
+describe("deleteOrders", () => {
+  it("deletes orders with their lines and history, returning stock only once", async () => {
+    const open = await createOrder(db, input(), 8000); // 2 pieces, stock 5 → 3
+    const cancelled = await createOrder(db, input({ phone: "+216 22 333 444", items: [{ productId, quantity: 1 }] }), 8000); // → 2
+    expect(open.ok && cancelled.ok).toBe(true);
+    const all = await db.select().from(schema.orders);
+    await changeOrderStatus(db, all[1].id, "cancelled", admin); // already gives its piece back → 3
+    expect(await stock()).toBe(3);
+
+    expect(await deleteOrders(db, all.map((o) => o.id))).toBe(2);
+    expect(await stock()).toBe(5);
+    expect(await db.select().from(schema.orders)).toHaveLength(0);
+    expect(await db.select().from(schema.orderItems)).toHaveLength(0);
+    expect(await db.select().from(schema.orderStatusHistory)).toHaveLength(0);
+  });
+
+  it("doesn't return stock for shipped orders", async () => {
+    await createOrder(db, input(), 8000);
+    const [order] = await db.select().from(schema.orders);
+    await changeOrderStatus(db, order.id, "shipped", admin);
+    await deleteOrders(db, [order.id]);
+    expect(await stock()).toBe(3);
   });
 });
 

@@ -1,6 +1,7 @@
 import { and, count, desc, eq, like, or, sql, type SQL } from "drizzle-orm";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import Link from "next/link";
+import { BULK_FORM, BulkOrdersBar } from "@/components/admin/bulk-orders";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { db } from "@/db";
 import { ORDER_STATUSES, orders, products, type OrderStatus } from "@/db/schema";
@@ -9,6 +10,7 @@ import { formatDateTime } from "@/lib/dates";
 import { formatTND } from "@/lib/money";
 import { cn } from "@/lib/site";
 import { formatTunisianPhone } from "@/lib/tunisia";
+import { deleteSelectedOrders } from "@/app/admin/actions";
 import { requireAdmin } from "@/server/auth";
 
 const PAGE_SIZE = 25;
@@ -16,7 +18,9 @@ const PAGE_SIZE = 25;
 export default async function OrdersPage({ searchParams }: PageProps<"/admin">) {
   // Every admin page re-checks the session against the database: the layout does not re-run on
   // client-side navigation, so a disabled or signed-out admin must be stopped here too.
-  await requireAdmin();
+  const admin = await requireAdmin();
+  // Only the owner may delete orders (test orders, duplicates).
+  const canDelete = admin.role === "owner";
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q.trim().slice(0, 80) : "";
   const status = ORDER_STATUSES.includes(params.status as OrderStatus) ? (params.status as OrderStatus) : null;
@@ -122,11 +126,18 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
           {q || status ? "لا توجد طلبات تطابق البحث." : "لم تصل أي طلبات بعد."}
         </div>
       ) : (
+        <div className="space-y-3">
+        {canDelete ? <BulkOrdersBar key={rows.map((o) => o.id).join(",")} action={deleteSelectedOrders} /> : null}
         <div className="overflow-hidden rounded-[var(--radius-lg)] bg-paper shadow-[var(--shadow-soft)]">
           {/* Desktop table */}
           <table className="hidden w-full text-start md:table">
             <thead className="border-b border-line bg-mist/60 text-sm text-muted">
               <tr>
+                {canDelete ? (
+                  <th scope="col" className="w-12 px-4 py-3">
+                    <span className="sr-only">تحديد</span>
+                  </th>
+                ) : null}
                 <th scope="col" className="px-4 py-3 text-start font-medium">الطلب</th>
                 <th scope="col" className="px-4 py-3 text-start font-medium">الزبون</th>
                 <th scope="col" className="px-4 py-3 text-start font-medium">الولاية</th>
@@ -137,6 +148,11 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
             <tbody className="divide-y divide-line">
               {rows.map((o) => (
                 <tr key={o.id} className="group relative hover:bg-mist/50">
+                  {canDelete ? (
+                    <td className="relative z-10 w-12 px-4 py-3">
+                      <SelectBox id={o.id} reference={o.reference} />
+                    </td>
+                  ) : null}
                   <td className="px-4 py-3">
                     <Link href={`/admin/orders/${o.id}`} className="font-semibold tabular after:absolute after:inset-0" dir="ltr">
                       {o.reference}
@@ -167,8 +183,13 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
           {/* Mobile list */}
           <ul className="divide-y divide-line md:hidden">
             {rows.map((o) => (
-              <li key={o.id}>
-                <Link href={`/admin/orders/${o.id}`} className="block space-y-1 p-4 active:bg-mist">
+              <li key={o.id} className="flex items-stretch">
+                {canDelete ? (
+                  <div className="flex items-center ps-4">
+                    <SelectBox id={o.id} reference={o.reference} />
+                  </div>
+                ) : null}
+                <Link href={`/admin/orders/${o.id}`} className="block flex-1 space-y-1 p-4 active:bg-mist">
                   <div className="flex items-center justify-between gap-3">
                     <span dir="ltr" className="font-semibold tabular">
                       {o.reference}
@@ -187,6 +208,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
             ))}
           </ul>
         </div>
+        </div>
       )}
 
       {pages > 1 ? (
@@ -203,6 +225,19 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
 }
 
 /** Arabic number agreement: 1 طلب جديد، 2 طلبان، 3–10 طلبات، 11+ طلبًا. */
+function SelectBox({ id, reference }: { id: number; reference: string }) {
+  return (
+    <input
+      type="checkbox"
+      name="ids"
+      value={id}
+      form={BULK_FORM}
+      aria-label={`تحديد الطلب ${reference}`}
+      className="size-5 cursor-pointer accent-ink"
+    />
+  );
+}
+
 function newOrdersPhrase(n: number) {
   if (n === 1) return "طلب جديد واحد";
   if (n === 2) return "طلبان جديدان";

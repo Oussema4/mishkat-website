@@ -249,3 +249,32 @@ export async function changeOrderStatus(
     throw err;
   }
 }
+
+/**
+ * Deletes orders for good (test orders, duplicates). Items of an order that had not shipped and
+ * whose stock was not already returned (by cancelling) go back to stock first.
+ */
+export async function deleteOrders(db: Database, ids: number[]): Promise<number> {
+  if (ids.length === 0) return 0;
+  return withRetry(() => db.transaction(async (tx) => {
+    const found = await tx.select().from(orders).where(inArray(orders.id, ids));
+    if (found.length === 0) return 0;
+    const foundIds = found.map((o) => o.id);
+    const giveBack = new Set(
+      found.filter((o) => !o.stockRestored && (OPEN_STATUSES as readonly string[]).includes(o.status)).map((o) => o.id),
+    );
+    const items = await tx.select().from(orderItems).where(inArray(orderItems.orderId, foundIds));
+    for (const item of items) {
+      if (!item.productId || !giveBack.has(item.orderId)) continue;
+      await tx
+        .update(products)
+        .set({ stock: sql`${products.stock} + ${item.quantity}` })
+        .where(eq(products.id, item.productId));
+    }
+    // Children first: don't rely on SQLite enforcing ON DELETE CASCADE.
+    await tx.delete(orderItems).where(inArray(orderItems.orderId, foundIds));
+    await tx.delete(orderStatusHistory).where(inArray(orderStatusHistory.orderId, foundIds));
+    await tx.delete(orders).where(inArray(orders.id, foundIds));
+    return found.length;
+  }, { behavior: "immediate" }));
+}

@@ -15,7 +15,7 @@ import { parseBundles, parseFaq, parseLabelValues, parseLines, parseSteps, parse
 import { MAX_QTY_PER_ITEM } from "@/lib/validation";
 import { normalizeTunisianPhone } from "@/lib/tunisia";
 import { endSession, getCurrentAdmin, getCurrentOwner, hashPassword, requireAdmin, startSession, verifyPassword } from "@/server/auth";
-import { changeOrderStatus } from "@/server/order-core";
+import { changeOrderStatus, deleteOrders } from "@/server/order-core";
 import { saveSettings } from "@/server/settings";
 import { clientIp, hit, isBlocked, reset } from "@/server/rate-limit";
 import { deleteImage } from "@/server/uploads";
@@ -96,6 +96,21 @@ export async function updateOrderStatus(_prev: FormState, form: FormData): Promi
   revalidatePath("/admin", "layout");
   refreshStore();
   return { ok: true, message: "تم تحديث حالة الطلب." };
+}
+
+/** Deletes the orders ticked in the list. Owner only: this can't be undone. */
+export async function deleteSelectedOrders(form: FormData) {
+  await requireAdmin();
+  if (!(await getCurrentOwner())) return;
+  const ids = form
+    .getAll("ids")
+    .map(Number)
+    .filter((n) => Number.isInteger(n) && n > 0)
+    .slice(0, 200);
+  if (ids.length === 0) return;
+  await deleteOrders(db, ids);
+  revalidatePath("/admin", "layout");
+  refreshStore();
 }
 
 // ───────────── Products ─────────────
