@@ -1,4 +1,4 @@
-import type { ContentItem, FaqItem, HowToStep } from "@/db/schema";
+import type { Bundle, ContentItem, FaqItem, HowToStep } from "@/db/schema";
 
 /**
  * Plain-text formats used by the admin forms, so non-technical editors never touch JSON.
@@ -63,6 +63,22 @@ export function formatTNDInput(millimes: number | null | undefined): string {
   if (millimes === null || millimes === undefined) return "";
   const v = millimes / 1000;
   return Number.isInteger(v) ? String(v) : v.toFixed(3).replace(/0+$/, "");
+}
+
+/** Quantity offers, one per line: "2 = 100" (2 pieces for 100 TND). Null when a line can't be read. */
+export function parseBundles(text: string): Bundle[] | null {
+  const bundles: Bundle[] = [];
+  for (const line of parseLines(text)) {
+    const m = line.replace(/\s/g, "").match(/^(\d+)[=:](.+)$/);
+    const price = m ? parseTND(m[2]) : null;
+    if (!m || price === null || price <= 0) return null;
+    bundles.push({ quantity: Number(m[1]), price });
+  }
+  return bundles.sort((a, b) => a.quantity - b.quantity);
+}
+
+export function formatBundles(bundles: Bundle[]): string {
+  return bundles.map((b) => `${b.quantity} = ${formatTNDInput(b.price)}`).join("\n");
 }
 
 export function slugify(input: string): string {

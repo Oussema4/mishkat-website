@@ -71,6 +71,19 @@ describe("createOrder", () => {
     expect(await stock()).toBe(3);
   });
 
+  it("applies quantity offers on the server", async () => {
+    await db
+      .update(schema.products)
+      .set({ price: 59000, compareAtPrice: null, bundles: [{ quantity: 2, price: 100000 }, { quantity: 3, price: 150000 }] })
+      .where(eq(schema.products.id, productId));
+    const result = await createOrder(db, input({ items: [{ productId, quantity: 3 }] }), 8000);
+    expect(result.ok).toBe(true);
+    const [order] = await db.select().from(schema.orders);
+    expect(order).toMatchObject({ subtotal: 150000, total: 158000 });
+    const [item] = await db.select().from(schema.orderItems);
+    expect(item).toMatchObject({ unitPrice: 59000, quantity: 3, lineTotal: 150000 });
+  });
+
   it("never creates two orders for the same checkout (double submit)", async () => {
     const data = input();
     const [a, b] = await Promise.all([createOrder(db, data, 8000), createOrder(db, data, 8000)]);

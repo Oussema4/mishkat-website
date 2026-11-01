@@ -62,8 +62,8 @@ export async function getCartSnapshot(ids: number[]) {
   // Active products only: this is a public endpoint, so hidden (draft) products must not leak their
   // name or price. A cart line whose product is missing here is dropped by syncProducts.
   const rows = await db
-    .select({ id: products.id, name: products.name, price: products.price, stock: products.stock })
+    .select({ id: products.id, name: products.name, price: products.price, bundles: products.bundles, stock: products.stock })
     .from(products)
     .where(and(inArray(products.id, ids), eq(products.status, "active")));
-  return rows.map((r) => ({ productId: r.id, name: r.name, unitPrice: r.price, maxQuantity: r.stock }));
+  return rows.map((r) => ({ productId: r.id, name: r.name, unitPrice: r.price, bundles: r.bundles, maxQuantity: r.stock }));
 }

@@ -64,6 +64,7 @@ export const ar = {
     faqMore: "كل الأسئلة",
   },
   shop: {
+    offer: "{boxes} بـ{price}",
     title: "المتجر",
     lead: "ألعاب ومنتجات مشكاة التعليمية.",
     search: "ابحث عن منتج",
@@ -95,6 +96,9 @@ export const ar = {
     gallery: "صور المنتج",
     showImage: "عرض الصورة {n}",
     save: "وفّر {n}%",
+    offers: "اختر الكمية",
+    offerSave: "وفّر {amount}",
+    offerUnit: "{price} للعلبة",
     codNote: "الدفع نقدًا عند الاستلام · توصيل خلال {time}",
     rulesNote: "ملخّص من ورقة القواعد الموجودة داخل العلبة.",
     rulesDeck: "افتح العرض كاملًا",
@@ -112,6 +116,7 @@ export const ar = {
     checkout: "إتمام الطلب",
     continue: "مواصلة التسوّق",
     unitPrice: "سعر القطعة",
+    offerSaving: "وفّرت {amount} بعرض الكمية",
     maxReached: "هذه أقصى كمية متوفرة",
     loading: "جارٍ تحميل السلة…",
   },
@@ -192,4 +197,11 @@ export type Dictionary = typeof ar;
 /** Replaces {placeholders} in a dictionary string. */
 export function fill(template: string, values: Record<string, string | number>) {
   return template.replace(/\{(\w+)\}/g, (_, k) => String(values[k] ?? `{${k}}`));
+}
+
+/** Arabic count of boxes: علبة واحدة، علبتان، 3 علب… 11 علبة. */
+export function boxesLabel(n: number) {
+  if (n === 1) return "علبة واحدة";
+  if (n === 2) return "علبتان";
+  return n <= 10 ? `${n} علب` : `${n} علبة`;
 }

@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { formatFaq, parseFaq, parseLabelValues, parseSteps, parseTND } from "@/lib/admin-format";
+import { formatBundles, formatFaq, parseBundles, parseFaq, parseLabelValues, parseSteps, parseTND } from "@/lib/admin-format";
 import { formatTND } from "@/lib/money";
-import { computeTotals, discountPercent } from "@/lib/pricing";
+import { bundleTotal, computeTotals, discountPercent } from "@/lib/pricing";
 import { normalizeTunisianPhone, whatsappLink } from "@/lib/tunisia";
 import { SESSION_ABSOLUTE, SESSION_IDLE, signSession, verifySession } from "@/lib/session";
 import { checkoutSchema } from "@/lib/validation";
@@ -25,6 +25,15 @@ describe("pricing", () => {
   it("adds delivery once per non-empty order", () => {
     expect(computeTotals([{ unitPrice: 48000, quantity: 2 }], 8000)).toEqual({ subtotal: 96000, deliveryFee: 8000, total: 104000 });
     expect(computeTotals([], 8000).total).toBe(0);
+  });
+  it("prices quantities with the cheapest mix of offers", () => {
+    const offers = [
+      { quantity: 2, price: 100000 },
+      { quantity: 3, price: 150000 },
+    ];
+    expect([1, 2, 3, 4, 5, 7].map((q) => bundleTotal(59000, q, offers))).toEqual([59000, 100000, 150000, 200000, 250000, 350000]);
+    expect(bundleTotal(59000, 3, [])).toBe(177000);
+    expect(computeTotals([{ unitPrice: 59000, quantity: 2, bundles: offers }], 8000).total).toBe(108000);
   });
   it("computes the discount badge", () => {
     expect(discountPercent(48000, 59000)).toBe(19);
@@ -67,6 +76,15 @@ describe("checkout validation", () => {
 });
 
 describe("admin text formats", () => {
+  it("reads quantity offers", () => {
+    expect(parseBundles("3 = 150\n2=100,5")).toEqual([
+      { quantity: 2, price: 100500 },
+      { quantity: 3, price: 150000 },
+    ]);
+    expect(parseBundles("")).toEqual([]);
+    expect(parseBundles("2 بـ 100")).toBeNull();
+    expect(formatBundles([{ quantity: 2, price: 100000 }])).toBe("2 = 100");
+  });
   it("round-trips FAQ blocks", () => {
     const faq = [
       { q: "سؤال أول؟", a: "جواب أول." },

@@ -3,7 +3,8 @@ import Link from "next/link";
 import { AddToCartButton } from "@/components/store/add-to-cart";
 import { Price } from "@/components/ui/price";
 import { StockBadge } from "@/components/ui/stock-badge";
-import { ar } from "@/i18n/ar";
+import { ar, boxesLabel, fill } from "@/i18n/ar";
+import { formatTND } from "@/lib/money";
 import { PRODUCT_CUTOUTS } from "@/lib/product-cutouts";
 import { buttonClass } from "@/components/ui/button";
 import type { ProductWithImages } from "@/server/catalog";
@@ -56,6 +57,11 @@ export function ProductCard({ product, priority = false }: { product: ProductWit
         <p className="mt-2 leading-7 text-muted">{product.shortDescription}</p>
         <div className="mt-4">
           <Price price={product.price} compareAt={product.compareAtPrice} />
+          {product.bundles.length > 0 ? (
+            <p className="mt-1 text-sm font-medium text-gold-deep tabular">
+              {product.bundles.map((b) => fill(ar.shop.offer, { boxes: boxesLabel(b.quantity), price: formatTND(b.price) })).join(" · ")}
+            </p>
+          ) : null}
         </div>
         <div className="mt-5 grid grid-cols-2 gap-2">
           <Link href={href} className={buttonClass("primary", "md")}>
@@ -69,6 +75,7 @@ export function ProductCard({ product, priority = false }: { product: ProductWit
               price: product.price,
               stock: product.stock,
               image: image?.url ?? "",
+              bundles: product.bundles,
             }}
           />
         </div>

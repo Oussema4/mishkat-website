@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import type { Bundle } from "@/db/schema";
 import { MAX_QTY_PER_ITEM } from "./validation";
 
 /** A cart line keeps a display snapshot; prices are always re-checked by the server at checkout. */
@@ -11,6 +12,8 @@ export type CartLine = {
   name: string;
   image: string;
   unitPrice: number; // millimes
+  /** Quantity offers (2 for 100…); missing on carts saved before offers existed. */
+  bundles?: Bundle[];
   quantity: number;
   maxQuantity: number;
 };
@@ -24,7 +27,7 @@ type CartState = {
   setQuantity: (productId: number, quantity: number) => void;
   remove: (productId: number) => void;
   clear: () => void;
-  syncProducts: (fresh: { productId: number; unitPrice: number; maxQuantity: number; name: string }[]) => void;
+  syncProducts: (fresh: { productId: number; unitPrice: number; bundles: Bundle[]; maxQuantity: number; name: string }[]) => void;
   ensureCheckoutKey: () => string;
 };
 
@@ -64,10 +67,10 @@ export const useCart = create<CartState>()(
       syncProducts: (fresh) =>
         set((s) => ({
           lines: s.lines
-            .map((l) => {
+            .map((l): CartLine | null => {
               const f = fresh.find((x) => x.productId === l.productId);
               if (!f || f.maxQuantity <= 0) return null;
-              return { ...l, name: f.name, unitPrice: f.unitPrice, maxQuantity: f.maxQuantity, quantity: clampQty(l.quantity, f.maxQuantity) };
+              return { ...l, name: f.name, unitPrice: f.unitPrice, bundles: f.bundles, maxQuantity: f.maxQuantity, quantity: clampQty(l.quantity, f.maxQuantity) };
             })
             .filter((l): l is CartLine => l !== null),
         })),

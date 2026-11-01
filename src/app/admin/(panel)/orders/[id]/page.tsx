@@ -121,7 +121,10 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
                     <td className="py-3 font-medium">{i.productName}</td>
                     <td className="py-3">{i.quantity}</td>
                     <td className="py-3">{formatTND(i.unitPrice)}</td>
-                    <td className="py-3 text-end">{formatTND(i.lineTotal)}</td>
+                    <td className="py-3 text-end">
+                      {formatTND(i.lineTotal)}
+                      {i.lineTotal < i.unitPrice * i.quantity ? <span className="block text-xs text-muted">بعرض الكمية</span> : null}
+                    </td>
                   </tr>
                 ))}
               </tbody>

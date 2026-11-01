@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useActionState, useState } from "react";
 import { AdminField, FormMessage, SubmitButton, adminInput, describe, keepValuesOnSubmit } from "@/components/admin/form-bits";
 import type { Category, Product } from "@/db/schema";
-import { formatFaq, formatLabelValues, formatSteps, formatTNDInput } from "@/lib/admin-format";
+import { formatBundles, formatFaq, formatLabelValues, formatSteps, formatTNDInput } from "@/lib/admin-format";
 import { uploadImages } from "@/components/admin/upload-action";
 import { cn } from "@/lib/site";
 import { saveProduct, type FormState } from "../../actions";
@@ -88,6 +88,21 @@ export function ProductForm({ product, categories }: { product?: Product; catego
               {...describe("compareAtPrice", { error: e.compareAtPrice })}
               defaultValue={formatTNDInput(product?.compareAtPrice)}
               inputMode="decimal"
+              dir="ltr"
+              className={adminInput}
+            />
+          </AdminField>
+          <AdminField
+            id="bundles"
+            label="عروض الكمية (اختياري)"
+            hint="عرض في كل سطر: العدد = السعر الجملي. مثلًا 2 = 100 ثم 3 = 150. في صفحة المنتج يكون أول عرض مختارًا من البداية."
+            error={e.bundles}
+            className="sm:col-span-2"
+          >
+            <textarea
+              {...describe("bundles", { hint: true, error: e.bundles })}
+              defaultValue={formatBundles(product?.bundles ?? [])}
+              rows={3}
               dir="ltr"
               className={adminInput}
             />

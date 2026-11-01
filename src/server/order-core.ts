@@ -7,7 +7,7 @@ import { and, count, eq, gte, inArray, sql } from "drizzle-orm";
 import type { LibSQLDatabase } from "drizzle-orm/libsql";
 import * as schema from "@/db/schema";
 import { orderItems, orders, orderStatusHistory, products, type OrderStatus } from "@/db/schema";
-import { computeTotals } from "@/lib/pricing";
+import { computeTotals, lineTotal } from "@/lib/pricing";
 import type { CheckoutData } from "@/lib/validation";
 
 type Database = LibSQLDatabase<typeof schema>;
@@ -119,7 +119,7 @@ export async function createOrder(db: Database, data: CheckoutData, deliveryFee:
         throw new OrderError("unavailable", "أحد المنتجات في سلتك لم يعد متوفرًا. حدّث السلة ثم أعد المحاولة.");
       }
 
-      const lines = rows.map((p) => ({ product: p, quantity: qtyById.get(p.id)!, unitPrice: p.price }));
+      const lines = rows.map((p) => ({ product: p, quantity: qtyById.get(p.id)!, unitPrice: p.price, bundles: p.bundles }));
 
       for (const line of lines) {
         const updated = await tx
@@ -171,7 +171,7 @@ export async function createOrder(db: Database, data: CheckoutData, deliveryFee:
           productName: l.product.name,
           unitPrice: l.unitPrice,
           quantity: l.quantity,
-          lineTotal: l.unitPrice * l.quantity,
+          lineTotal: lineTotal(l),
         })),
       );
       await tx.insert(orderStatusHistory).values({ orderId: order.id, fromStatus: null, toStatus: "new", adminName: "الموقع" });

@@ -53,6 +53,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
     price: product.price,
     stock: product.stock,
     image: product.images[0]?.url ?? "",
+    bundles: product.bundles,
   };
 
   const jsonLd = {
@@ -258,13 +259,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
 
       {/* Mobile sticky order bar */}
       <div className="sticky bottom-0 z-30 bg-mist px-4 py-3 md:hidden">
-        <div className="flex items-center gap-4">
-          <div className="shrink-0">
-            <span className="block text-sm text-muted">{product.name}</span>
-            <span className="font-bold tabular">{formatTND(product.price)}</span>
-          </div>
-          <ProductPurchase product={cartProduct} sticky />
-        </div>
+        <ProductPurchase product={cartProduct} sticky />
       </div>
     </>
   );

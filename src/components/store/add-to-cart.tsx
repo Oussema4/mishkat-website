@@ -2,11 +2,14 @@
 
 import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { create } from "zustand";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
-import { ar, fill } from "@/i18n/ar";
+import { ar, boxesLabel, fill } from "@/i18n/ar";
+import type { Bundle } from "@/db/schema";
 import { useCart } from "@/lib/cart-store";
+import { formatTND } from "@/lib/money";
+import { bundleTotal } from "@/lib/pricing";
 import { MAX_QTY_PER_ITEM } from "@/lib/validation";
 import { cn } from "@/lib/site";
 
@@ -17,10 +20,11 @@ export type CartProduct = {
   price: number;
   stock: number;
   image: string;
+  bundles: Bundle[];
 };
 
 function toLine(p: CartProduct) {
-  return { productId: p.id, slug: p.slug, name: p.name, unitPrice: p.price, image: p.image, maxQuantity: p.stock };
+  return { productId: p.id, slug: p.slug, name: p.name, unitPrice: p.price, bundles: p.bundles, image: p.image, maxQuantity: p.stock };
 }
 
 /** Compact button for product cards. */
@@ -77,12 +81,90 @@ export function QuantityStepper({
   );
 }
 
-/** Quantity + "add to cart" + "order now" block for the product page. */
+/** The choices shown on the product page: one box, then each quantity offer (2 for 100…). */
+function offerChoices(p: CartProduct) {
+  if (p.bundles.length === 0) return [];
+  const quantities = [...new Set([1, ...p.bundles.map((b) => b.quantity)])].sort((a, b) => a - b);
+  return quantities.map((quantity) => ({ quantity, total: bundleTotal(p.price, quantity, p.bundles), regular: p.price * quantity }));
+}
+
+/** Pre-selected quantity: the first offer (2 boxes for Sabili) when there is enough stock. */
+function defaultQuantity(p: CartProduct) {
+  const first = Math.min(...p.bundles.map((b) => b.quantity));
+  return Number.isFinite(first) && first <= p.stock ? first : 1;
+}
+
+/** The chosen quantity is shared by the purchase block and the phone's sticky order bar. */
+const useChosen = create<{ qty: Record<number, number>; choose: (id: number, n: number) => void }>((set) => ({
+  qty: {},
+  choose: (id, n) => set((s) => ({ qty: { ...s.qty, [id]: n } })),
+}));
+
+function useQuantity(p: CartProduct): [number, (n: number) => void] {
+  const qty = useChosen((s) => s.qty[p.id]) ?? defaultQuantity(p);
+  const choose = useChosen((s) => s.choose);
+  return [qty, (n) => choose(p.id, n)];
+}
+
+function OfferPicker({ product, value, onChange }: { product: CartProduct; value: number; onChange: (n: number) => void }) {
+  const choices = offerChoices(product);
+  return (
+    <fieldset>
+      <legend className="font-medium">{ar.product.offers}</legend>
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+        {choices.map((c) => {
+          const saved = c.regular - c.total;
+          const unavailable = c.quantity > product.stock;
+          return (
+            <label
+              key={c.quantity}
+              className={cn(
+                "relative flex cursor-pointer flex-col gap-1 rounded-[var(--radius-md)] border border-line bg-ink-soft p-4 transition-colors",
+                "hover:border-gold/60 has-[:checked]:border-gold has-[:checked]:bg-gold/10 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-gold",
+                unavailable && "cursor-not-allowed opacity-45 hover:border-line",
+              )}
+            >
+              <input
+                type="radio"
+                name={`offer-${product.id}`}
+                value={c.quantity}
+                checked={value === c.quantity}
+                disabled={unavailable}
+                onChange={() => onChange(c.quantity)}
+                className="sr-only"
+              />
+              <span className="font-semibold">{boxesLabel(c.quantity)}</span>
+              <span className="text-2xl font-bold tabular">{formatTND(c.total)}</span>
+              {saved > 0 ? (
+                <>
+                  <span className="text-sm text-muted tabular">
+                    <span className="line-through">
+                      <span className="sr-only">بدلًا من </span>
+                      {formatTND(c.regular)}
+                    </span>
+                    {" · "}
+                    {fill(ar.product.offerUnit, { price: formatTND(Math.round(c.total / c.quantity)) })}
+                  </span>
+                  <span className="mt-1 self-start rounded-full bg-gold px-2.5 py-0.5 text-sm font-semibold text-ink tabular">
+                    {fill(ar.product.offerSave, { amount: formatTND(saved) })}
+                  </span>
+                </>
+              ) : null}
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+/** Quantity (or quantity offers) + "add to cart" + "order now" block for the product page. */
 export function ProductPurchase({ product, sticky = false }: { product: CartProduct; sticky?: boolean }) {
-  const [qty, setQty] = useState(1);
+  const [qty, setQty] = useQuantity(product);
   const add = useCart((s) => s.add);
   const router = useRouter();
   const out = product.stock <= 0;
+  const hasOffers = product.bundles.length > 0;
 
   const addToCart = (goToCheckout: boolean) => {
     add(toLine(product), qty);
@@ -92,20 +174,30 @@ export function ProductPurchase({ product, sticky = false }: { product: CartProd
 
   if (sticky) {
     return (
-      <Button type="button" variant="primary" disabled={out} onClick={() => addToCart(true)} className="flex-1">
-        {out ? ar.shop.outOfStock : ar.product.orderNow}
-      </Button>
+      <div className="flex items-center gap-4">
+        <div className="shrink-0">
+          <span className="block text-sm text-muted">{hasOffers ? `${product.name} · ${boxesLabel(qty)}` : product.name}</span>
+          <span className="font-bold tabular">{formatTND(bundleTotal(product.price, qty, product.bundles))}</span>
+        </div>
+        <Button type="button" variant="primary" disabled={out} onClick={() => addToCart(true)} className="flex-1">
+          {out ? ar.shop.outOfStock : ar.product.orderNow}
+        </Button>
+      </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <span id="qty-label" className="font-medium">
-          {ar.product.quantity}
-        </span>
-        <QuantityStepper value={qty} max={product.stock} onChange={setQty} label={ar.product.quantity} />
-      </div>
+      {hasOffers ? (
+        <OfferPicker product={product} value={qty} onChange={setQty} />
+      ) : (
+        <div className="flex items-center gap-4">
+          <span id="qty-label" className="font-medium">
+            {ar.product.quantity}
+          </span>
+          <QuantityStepper value={qty} max={product.stock} onChange={setQty} label={ar.product.quantity} />
+        </div>
+      )}
       <div className="grid gap-3 sm:grid-cols-2">
         <Button type="button" variant="primary" size="lg" disabled={out} onClick={() => addToCart(true)}>
           {out ? ar.shop.outOfStock : ar.product.orderNow}

@@ -18,6 +18,8 @@ export const categories = sqliteTable("categories", {
 export type FaqItem = { q: string; a: string };
 export type ContentItem = { label: string; value: string };
 export type HowToStep = { title: string; body: string };
+/** Quantity offer: `quantity` pieces together cost `price` millimes (e.g. 2 for 100 TND). */
+export type Bundle = { quantity: number; price: number };
 
 export const products = sqliteTable(
   "products",
@@ -30,6 +32,7 @@ export const products = sqliteTable(
     description: text("description").notNull().default(""),
     price: integer("price").notNull(),
     compareAtPrice: integer("compare_at_price"),
+    bundles: text("bundles", { mode: "json" }).$type<Bundle[]>().notNull().default(sql`'[]'`),
     stock: integer("stock").notNull().default(0),
     status: text("status", { enum: ["active", "hidden"] }).notNull().default("active"),
     categoryId: integer("category_id").references(() => categories.id, { onDelete: "set null" }),

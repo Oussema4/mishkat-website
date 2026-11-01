@@ -4,7 +4,7 @@ import { ShoppingBag, Trash2 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { QuantityStepper } from "@/components/store/add-to-cart";
-import { OrderTotals } from "@/components/store/order-summary";
+import { LinePrice, OfferSaving, OrderTotals } from "@/components/store/order-summary";
 import { useCartSync } from "@/components/store/use-cart-sync";
 import { ButtonLink } from "@/components/ui/button";
 import { ar, fill } from "@/i18n/ar";
@@ -57,8 +57,9 @@ export function CartView({ deliveryFee }: { deliveryFee: number }) {
                   <p className="text-sm text-muted tabular">
                     {ar.cart.unitPrice}: {formatTND(line.unitPrice)}
                   </p>
+                  <OfferSaving line={line} />
                 </div>
-                <p className="font-bold tabular">{formatTND(line.unitPrice * line.quantity)}</p>
+                <LinePrice line={line} className="font-bold" />
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <QuantityStepper

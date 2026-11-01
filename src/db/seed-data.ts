@@ -1,4 +1,4 @@
-import type { ContentItem, FaqItem, HowToStep } from "./schema";
+import type { Bundle, ContentItem, FaqItem, HowToStep } from "./schema";
 
 /**
  * Initial catalogue. Only facts confirmed by Mishkat (price, contents, age) and
@@ -17,8 +17,13 @@ export const SABILI = {
     "الأسئلة موزّعة على خمسة مجالات: العقيدة، القرآن، الفقه، السيرة النبوية، والتاريخ الإسلامي. البطاقات الملوّنة للأسئلة السهلة، والصفراء للأسئلة الأصعب.",
     "وفي النهاية لا يخرج الفائز بالنقاط فقط: يوزّع على الخاسرين بطاقات «حسنة» و«موعظة»، فيصير اللعب نفسه عملًا تؤجر عليه.",
   ].join("\n\n"),
-  price: 48000,
-  compareAtPrice: 59000,
+  price: 59000,
+  compareAtPrice: null,
+  // 2 for 100 TND, 3 for 144 TND.
+  bundles: [
+    { quantity: 2, price: 100000 },
+    { quantity: 3, price: 144000 },
+  ] satisfies Bundle[],
   stock: 100,
   ageRange: "9 سنوات فما فوق",
   players: "",

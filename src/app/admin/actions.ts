@@ -11,7 +11,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
 import { ADMIN_ROLES, admins, categories, ORDER_STATUSES, productImages, products, reviews } from "@/db/schema";
-import { parseFaq, parseLabelValues, parseLines, parseSteps, parseTND, slugify } from "@/lib/admin-format";
+import { parseBundles, parseFaq, parseLabelValues, parseLines, parseSteps, parseTND, slugify } from "@/lib/admin-format";
+import { MAX_QTY_PER_ITEM } from "@/lib/validation";
 import { normalizeTunisianPhone } from "@/lib/tunisia";
 import { endSession, getCurrentAdmin, getCurrentOwner, hashPassword, requireAdmin, startSession, verifyPassword } from "@/server/auth";
 import { changeOrderStatus } from "@/server/order-core";
@@ -141,6 +142,18 @@ export async function saveProduct(_prev: FormState, form: FormData): Promise<For
     fieldErrors.compareAtPrice = "السعر قبل التخفيض يجب أن يكون أكبر من السعر الحالي (أو اتركه فارغًا)";
   }
 
+  // Quantity offers: each one a real saving on buying that many pieces one by one.
+  const bundles = parseBundles(String(raw.bundles ?? ""));
+  if (bundles === null) {
+    fieldErrors.bundles = "اكتب كل عرض في سطر بالشكل: العدد = السعر، مثل 2 = 100";
+  } else if (bundles.some((b) => !Number.isInteger(b.quantity) || b.quantity < 2 || b.quantity > MAX_QTY_PER_ITEM)) {
+    fieldErrors.bundles = `عدد القطع في العرض بين 2 و${MAX_QTY_PER_ITEM}`;
+  } else if (new Set(bundles.map((b) => b.quantity)).size !== bundles.length) {
+    fieldErrors.bundles = "كل عدد يُكتب مرة واحدة فقط";
+  } else if (price !== null && bundles.some((b) => b.price >= price * b.quantity)) {
+    fieldErrors.bundles = "سعر العرض يجب أن يكون أقل من سعر نفس العدد بالقطعة";
+  }
+
   if (!parsed.success || Object.keys(fieldErrors).length > 0) {
     return { error: "راجع الحقول المظلّلة.", fieldErrors };
   }
@@ -158,6 +171,7 @@ export async function saveProduct(_prev: FormState, form: FormData): Promise<For
     categoryId: data.categoryId || null,
     price: price!,
     compareAtPrice,
+    bundles: bundles!,
     contents: parseLabelValues(String(raw.contents ?? "")),
     howToPlay: parseSteps(String(raw.howToPlay ?? "")),
     benefits: parseLines(String(raw.benefits ?? "")),

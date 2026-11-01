@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 import { placeOrder } from "@/app/actions/store";
-import { OrderTotals } from "@/components/store/order-summary";
+import { LinePrice, OrderTotals } from "@/components/store/order-summary";
 import { resyncCart, useCartSync } from "@/components/store/use-cart-sync";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { ar, fill } from "@/i18n/ar";
@@ -279,7 +279,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: numbe
                   {fill("{q} × {p}", { q: l.quantity, p: formatTND(l.unitPrice) })}
                 </p>
               </div>
-              <p className="font-semibold tabular">{formatTND(l.unitPrice * l.quantity)}</p>
+              <LinePrice line={l} className="font-semibold" />
             </li>
           ))}
         </ul>
