@@ -158,6 +158,47 @@ function OfferPicker({ product, value, onChange }: { product: CartProduct; value
   );
 }
 
+/** The same choices, small enough for the phone's sticky order bar. */
+function OfferChips({ product, value, onChange }: { product: CartProduct; value: number; onChange: (n: number) => void }) {
+  const choices = offerChoices(product);
+  return (
+    <fieldset>
+      <legend className="sr-only">{ar.product.offers}</legend>
+      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${choices.length}, minmax(0, 1fr))` }}>
+        {choices.map((c) => {
+          const saved = c.regular - c.total;
+          const unavailable = c.quantity > product.stock;
+          return (
+            <label
+              key={c.quantity}
+              className={cn(
+                "flex min-h-14 cursor-pointer flex-col items-center justify-center rounded-[var(--radius-md)] border border-line bg-ink-soft px-1 py-1.5 text-center leading-tight transition-colors",
+                "has-[:checked]:border-gold has-[:checked]:bg-gold/15 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-gold",
+                unavailable && "cursor-not-allowed opacity-45",
+              )}
+            >
+              <input
+                type="radio"
+                name={`offer-bar-${product.id}`}
+                value={c.quantity}
+                checked={value === c.quantity}
+                disabled={unavailable}
+                onChange={() => onChange(c.quantity)}
+                className="sr-only"
+              />
+              <span className="text-xs text-paper/80">{boxesLabel(c.quantity)}</span>
+              <span className="font-bold tabular">{formatTND(c.total)}</span>
+              {saved > 0 ? (
+                <span className="text-[0.7rem] font-semibold text-gold tabular">{fill(ar.product.offerSave, { amount: formatTND(saved) })}</span>
+              ) : null}
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
 /** Quantity (or quantity offers) + "add to cart" + "order now" block for the product page. */
 export function ProductPurchase({ product, sticky = false }: { product: CartProduct; sticky?: boolean }) {
   const [qty, setQty] = useQuantity(product);
@@ -172,12 +213,30 @@ export function ProductPurchase({ product, sticky = false }: { product: CartProd
     else toast.success(fill("أُضيفت «{name}» إلى السلة", { name: product.name }), { href: "/cart", label: "عرض السلة" });
   };
 
+  if (sticky && hasOffers) {
+    // On phones the offers stay in view from the first screen: one box is as visible as the packs.
+    return (
+      <div className="space-y-2">
+        <OfferChips product={product} value={qty} onChange={setQty} />
+        <Button type="button" variant="primary" disabled={out} onClick={() => addToCart(true)} className="w-full">
+          {out ? (
+            ar.shop.outOfStock
+          ) : (
+            <>
+              {ar.product.orderNow} · <span className="tabular">{formatTND(bundleTotal(product.price, qty, product.bundles))}</span>
+            </>
+          )}
+        </Button>
+      </div>
+    );
+  }
+
   if (sticky) {
     return (
       <div className="flex items-center gap-4">
         <div className="shrink-0">
-          <span className="block text-sm text-muted">{hasOffers ? `${product.name} · ${boxesLabel(qty)}` : product.name}</span>
-          <span className="font-bold tabular">{formatTND(bundleTotal(product.price, qty, product.bundles))}</span>
+          <span className="block text-sm text-muted">{product.name}</span>
+          <span className="font-bold tabular">{formatTND(product.price * qty)}</span>
         </div>
         <Button type="button" variant="primary" disabled={out} onClick={() => addToCart(true)} className="flex-1">
           {out ? ar.shop.outOfStock : ar.product.orderNow}
