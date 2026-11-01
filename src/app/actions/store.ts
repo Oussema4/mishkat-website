@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { ar } from "@/i18n/ar";
@@ -8,6 +9,7 @@ import { checkoutSchema, fieldErrors } from "@/lib/validation";
 import { getCartSnapshot } from "@/server/catalog";
 import { createOrder } from "@/server/order-core";
 import { clientIp, hit } from "@/server/rate-limit";
+import { notifyNewOrder } from "@/server/notify";
 import { getSettings } from "@/server/settings";
 
 export type PlaceOrderResult =
@@ -46,6 +48,8 @@ export async function placeOrder(input: unknown): Promise<PlaceOrderResult> {
     }
     // Store pages are pre-rendered; refresh them so stock levels stay accurate.
     revalidatePath("/", "layout");
+    // Phone alert for the shop, sent after the customer gets their answer (a resubmit is not a new order).
+    if (!result.duplicate) after(() => notifyNewOrder(result.publicToken));
     return { ok: true, token: result.publicToken };
   } catch (err) {
     console.error("placeOrder failed", err);
