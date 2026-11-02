@@ -142,7 +142,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
         <div className="space-y-6">
           <section aria-labelledby="status-title" className="rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">
             <h2 id="status-title" className="font-sans text-lg font-bold">
-              تغيير الحالة
+              حالة الطلب
             </h2>
             <StatusForm orderId={order.id} current={order.status} />
           </section>
