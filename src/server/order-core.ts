@@ -151,6 +151,7 @@ export async function createOrder(db: Database, data: CheckoutData, deliveryFee:
           phone: data.phone,
           governorate: data.governorate,
           city: data.city,
+          communeId: data.communeId ?? null,
           address: data.address,
           note: data.note ?? "",
           subtotal: totals.subtotal,

@@ -16,6 +16,7 @@ import { MAX_QTY_PER_ITEM } from "@/lib/validation";
 import { normalizeTunisianPhone } from "@/lib/tunisia";
 import { endSession, getCurrentAdmin, getCurrentOwner, hashPassword, requireAdmin, startSession, verifyPassword } from "@/server/auth";
 import { changeOrderStatus, deleteOrders } from "@/server/order-core";
+import { maystroEnabled, maystroWebhookUrl, registerWebhook, sendOrderToMaystro, syncOrderFromMaystro } from "@/server/maystro";
 import { saveSettings } from "@/server/settings";
 import { clientIp, hit, isBlocked, reset } from "@/server/rate-limit";
 import { deleteImage } from "@/server/uploads";
@@ -93,9 +94,43 @@ export async function updateOrderStatus(_prev: FormState, form: FormData): Promi
   }
   const result = await changeOrderStatus(db, orderId, status as (typeof ORDER_STATUSES)[number], admin);
   if (!result.ok) return { error: result.message };
+  // Confirming hands the parcel to Maystro (once; a confirmed order already sent is left alone).
+  let message = "تم تحديث حالة الطلب.";
+  if (status === "confirmed" && maystroEnabled()) {
+    const sent = await sendOrderToMaystro(orderId);
+    message = sent.ok
+      ? `تم تأكيد الطلب وإرساله إلى Maystro${sent.tracking ? ` (رقم التتبّع ${sent.tracking})` : ""}.`
+      : `تم تأكيد الطلب، لكن لم يُرسل إلى Maystro: ${sent.message}`;
+  }
   revalidatePath("/admin", "layout");
   refreshStore();
-  return { ok: true, message: "تم تحديث حالة الطلب." };
+  return { ok: true, message };
+}
+
+export async function sendToMaystro(_prev: FormState, form: FormData): Promise<FormState> {
+  await requireAdmin();
+  const orderId = Number(form.get("orderId"));
+  if (!Number.isInteger(orderId)) return { error: "بيانات غير صالحة." };
+  const sent = await sendOrderToMaystro(orderId);
+  revalidatePath("/admin", "layout");
+  return sent.ok ? { ok: true, message: "تم إرسال الطلب إلى Maystro." } : { error: sent.message };
+}
+
+export async function refreshFromMaystro(_prev: FormState, form: FormData): Promise<FormState> {
+  await requireAdmin();
+  const orderId = Number(form.get("orderId"));
+  if (!Number.isInteger(orderId)) return { error: "بيانات غير صالحة." };
+  const synced = await syncOrderFromMaystro(orderId);
+  revalidatePath("/admin", "layout");
+  refreshStore();
+  return synced.ok ? { ok: true, message: "تم تحديث الحالة من Maystro." } : { error: synced.message };
+}
+
+export async function connectMaystroWebhook(_prev: FormState): Promise<FormState> {
+  await requireAdmin();
+  if (!(await getCurrentOwner())) return { error: "ربط Maystro للمالك فقط." };
+  const result = await registerWebhook(maystroWebhookUrl());
+  return result.ok ? { ok: true, message: result.message } : { error: result.message };
 }
 
 /** Deletes the orders ticked in the list. Owner only: this can't be undone. */
@@ -187,6 +222,8 @@ export async function saveProduct(_prev: FormState, form: FormData): Promise<For
     price: price!,
     compareAtPrice,
     bundles: bundles!,
+    // Only when the form showed the Maystro field (Maystro connected): never wipe the link otherwise.
+    ...(form.has("maystroProductId") ? { maystroProductId: String(raw.maystroProductId).trim().slice(0, 64) || null } : {}),
     contents: parseLabelValues(String(raw.contents ?? "")),
     howToPlay: parseSteps(String(raw.howToPlay ?? "")),
     benefits: parseLines(String(raw.benefits ?? "")),

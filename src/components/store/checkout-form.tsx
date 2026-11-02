@@ -14,7 +14,8 @@ import { useCart } from "@/lib/cart-store";
 import { formatTND } from "@/lib/money";
 import { computeTotals } from "@/lib/pricing";
 import { cn } from "@/lib/site";
-import { GOVERNORATES } from "@/lib/tunisia";
+import { MAYSTRO_WILAYAS, type Commune } from "@/lib/maystro";
+import { GOVERNORATES, type Governorate } from "@/lib/tunisia";
 import { checkoutSchema } from "@/lib/validation";
 
 type FieldName = "firstName" | "lastName" | "phone" | "governorate" | "city" | "note";
@@ -33,7 +34,19 @@ const inputClass =
   "block w-full min-h-12 rounded-[var(--radius-md)] border bg-ink-soft px-3.5 py-2.5 text-base text-paper outline-none placeholder:text-paper/45 transition-colors " +
   "focus:border-gold focus:ring-2 focus:ring-gold/40 aria-[invalid=true]:border-danger";
 
-export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: number; deliveryTime: string }) {
+export function CheckoutForm({
+  deliveryFee,
+  deliveryTime,
+  communes,
+}: {
+  deliveryFee: number;
+  deliveryTime: string;
+  communes: Commune[] | null;
+}) {
+  const [governorate, setGovernorate] = useState("");
+  const [communeId, setCommuneId] = useState("");
+  const wilaya = MAYSTRO_WILAYAS[governorate as Governorate]?.code;
+  const cityOptions = communes && wilaya ? communes.filter((c) => c.wilaya === wilaya) : [];
   const hydrated = useCartSync();
   const lines = useCart((s) => s.lines);
   const router = useRouter();
@@ -86,6 +99,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: numbe
 
     const payload = {
       ...values,
+      ...(communeId ? { communeId: Number(communeId) } : {}),
       company: String(form.get("company") ?? ""),
       items: cart.lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
       idempotencyKey: cart.ensureCheckoutKey(),
@@ -219,7 +233,16 @@ export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: numbe
           <legend className="mb-5 font-display text-2xl font-bold">{ar.checkout.addressSection}</legend>
           <div className="grid gap-5 sm:grid-cols-2">
             <Field name="governorate" error={errors.governorate}>
-              <select {...field("governorate")} autoComplete="address-level1" required defaultValue="">
+              <select
+                {...field("governorate")}
+                autoComplete="address-level1"
+                required
+                value={governorate}
+                onChange={(e) => {
+                  setGovernorate(e.target.value);
+                  setCommuneId("");
+                }}
+              >
                 <option value="" disabled>
                   {ar.checkout.chooseGovernorate}
                 </option>
@@ -231,7 +254,31 @@ export function CheckoutForm({ deliveryFee, deliveryTime }: { deliveryFee: numbe
               </select>
             </Field>
             <Field name="city" error={errors.city}>
-              <input {...field("city")} type="text" autoComplete="address-level2" required maxLength={80} />
+              {communes ? (
+                // Maystro's delegations for the chosen governorate; the id goes to the server, the name is the city.
+                <>
+                  <select
+                    {...field("city")}
+                    name="communeId"
+                    required
+                    value={communeId}
+                    disabled={!governorate}
+                    onChange={(e) => setCommuneId(e.target.value)}
+                  >
+                    <option value="" disabled>
+                      {governorate ? ar.checkout.chooseCity : ar.checkout.chooseGovernorateFirst}
+                    </option>
+                    {cityOptions.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  <input type="hidden" name="city" value={cityOptions.find((c) => String(c.id) === communeId)?.name ?? ""} />
+                </>
+              ) : (
+                <input {...field("city")} type="text" autoComplete="address-level2" required maxLength={80} />
+              )}
             </Field>
           </div>
           <Field name="note" error={errors.note} optional>

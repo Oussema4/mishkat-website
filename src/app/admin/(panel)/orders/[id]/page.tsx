@@ -11,6 +11,9 @@ import { ar } from "@/i18n/ar";
 import { formatDateTime } from "@/lib/dates";
 import { formatTND } from "@/lib/money";
 import { formatTunisianPhone, whatsappLink } from "@/lib/tunisia";
+import { maystroStatusLabel } from "@/lib/maystro";
+import { maystroEnabled } from "@/server/maystro";
+import { MaystroPanel } from "./maystro-panel";
 import { StatusForm } from "./status-form";
 import { requireAdmin } from "@/server/auth";
 
@@ -142,6 +145,21 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
               تغيير الحالة
             </h2>
             <StatusForm orderId={order.id} current={order.status} />
+          </section>
+
+          <section aria-labelledby="maystro-title" className="rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">
+            <h2 id="maystro-title" className="font-sans text-lg font-bold">
+              التوصيل عبر Maystro
+            </h2>
+            <MaystroPanel
+              orderId={order.id}
+              enabled={maystroEnabled()}
+              state={order.maystroState}
+              tracking={order.maystroTracking}
+              statusLabel={maystroStatusLabel(order.maystroStatus)}
+              error={order.maystroError}
+              syncedAt={order.maystroSyncedAt ? formatDateTime(order.maystroSyncedAt) : null}
+            />
           </section>
 
           <section aria-labelledby="history-title" className="rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">

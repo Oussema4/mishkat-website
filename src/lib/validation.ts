@@ -22,7 +22,9 @@ export const checkoutSchema = z.object({
       return n;
     }),
   governorate: z.enum(GOVERNORATES, { error: "اختر ولايتك من القائمة" }),
-  city: trimmed(2, 80, "اكتب المدينة أو المنطقة"),
+  city: trimmed(2, 80, "اختر المعتمدية"),
+  /** Maystro delegation id from the checkout list (absent when the list couldn't be loaded). */
+  communeId: z.number().int().positive().optional(),
   // No street address at checkout (governorate + city are enough; the courier calls before delivery).
   // Still accepted from older pages, and the dashboard shows it when present.
   address: z.string().trim().max(300, "النص طويل جدًا").optional().default(""),

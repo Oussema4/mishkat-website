@@ -9,7 +9,16 @@ import { uploadImages } from "@/components/admin/upload-action";
 import { cn } from "@/lib/site";
 import { saveProduct, type FormState } from "../../actions";
 
-export function ProductForm({ product, categories }: { product?: Product; categories: Category[] }) {
+export function ProductForm({
+  product,
+  categories,
+  maystroProducts = null,
+}: {
+  product?: Product;
+  categories: Category[];
+  /** Maystro's catalogue when connected; the link field is shown only then. */
+  maystroProducts?: { id: string; name: string; displayId: number | null }[] | null;
+}) {
   const router = useRouter();
   const [progress, setProgress] = useState<string | null>(null);
 
@@ -107,6 +116,24 @@ export function ProductForm({ product, categories }: { product?: Product; catego
               className={adminInput}
             />
           </AdminField>
+          {maystroProducts ? (
+            <AdminField
+              id="maystroProductId"
+              label="المنتج في Maystro"
+              hint="نفس المنتج كما هو مسجّل في مخزن Maystro. بدونه لا يُرسل الطلب إلى التوصيل."
+              error={e.maystroProductId}
+              className="sm:col-span-2"
+            >
+              <select {...describe("maystroProductId", { hint: true, error: e.maystroProductId })} defaultValue={product?.maystroProductId ?? ""} className={adminInput}>
+                <option value="">غير مربوط</option>
+                {maystroProducts.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.displayId ? `${m.name} (#${m.displayId})` : m.name}
+                  </option>
+                ))}
+              </select>
+            </AdminField>
+          ) : null}
           <AdminField id="stock" label="الكمية في المخزون" error={e.stock}>
             <input {...describe("stock", { error: e.stock })} type="number" min={0} defaultValue={product?.stock ?? 0} dir="ltr" required className={adminInput} />
           </AdminField>

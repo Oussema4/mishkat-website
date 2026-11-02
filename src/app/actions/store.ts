@@ -5,10 +5,12 @@ import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { ar } from "@/i18n/ar";
+import { findCommune } from "@/lib/maystro";
 import { checkoutSchema, fieldErrors } from "@/lib/validation";
 import { getCartSnapshot } from "@/server/catalog";
 import { createOrder } from "@/server/order-core";
 import { clientIp, hit } from "@/server/rate-limit";
+import { getCommunes } from "@/server/maystro";
 import { notifyNewOrder } from "@/server/notify";
 import { getSettings } from "@/server/settings";
 
@@ -28,6 +30,14 @@ export async function placeOrder(input: unknown): Promise<PlaceOrderResult> {
 
   const parsed = checkoutSchema.safeParse(input);
   if (!parsed.success) return { ok: false, errors: fieldErrors(parsed.error) };
+
+  // The delegation must be one of Maystro's for the chosen governorate; its name becomes the city.
+  const communes = await getCommunes();
+  if (communes) {
+    const commune = parsed.data.communeId ? findCommune(communes, parsed.data.communeId, parsed.data.governorate) : null;
+    if (!commune) return { ok: false, errors: { city: "اختر المعتمدية من القائمة" } };
+    parsed.data.city = commune.name;
+  }
 
   try {
     const { allowed } = await hit(db, orderLimit(clientIp(await headers())));

@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, Package, Settings, ShoppingCart, Users } from "lucide-react";
+import { ExternalLink, Package, Settings, ShoppingCart, Truck, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/site";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/site";
 const items = [
   { href: "/admin", label: "الطلبات", icon: ShoppingCart, match: (p: string) => p === "/admin" || p.startsWith("/admin/orders") },
   { href: "/admin/products", label: "المنتجات", icon: Package, match: (p: string) => p.startsWith("/admin/products") },
+  { href: "/admin/maystro", label: "التوصيل (Maystro)", icon: Truck, match: (p: string) => p.startsWith("/admin/maystro") },
   { href: "/admin/settings", label: "الإعدادات والمحتوى", icon: Settings, match: (p: string) => p.startsWith("/admin/settings") },
   { href: "/admin/team", label: "المسؤولون", icon: Users, match: (p: string) => p.startsWith("/admin/team") },
 ];

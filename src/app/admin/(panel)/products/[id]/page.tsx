@@ -9,6 +9,7 @@ import { ProductForm } from "../product-form";
 import { CategoryForm } from "./category-form";
 import { ImageManager } from "./image-manager";
 import { requireAdmin } from "@/server/auth";
+import { listMaystroProducts, maystroEnabled } from "@/server/maystro";
 
 export const metadata = { title: "تعديل منتج" };
 
@@ -22,9 +23,11 @@ export default async function EditProductPage({ params, searchParams }: PageProp
   if (!Number.isInteger(productId)) notFound();
   const [product] = await db.select().from(products).where(eq(products.id, productId)).limit(1);
   if (!product) notFound();
-  const [images, categories] = await Promise.all([
+  const [images, categories, maystroProducts] = await Promise.all([
     db.select().from(productImages).where(eq(productImages.productId, productId)).orderBy(asc(productImages.sortOrder), asc(productImages.id)),
     getCategories(),
+    // The Maystro catalogue to link this product to (null when Maystro is not connected or unreachable).
+    maystroEnabled() ? listMaystroProducts().catch(() => null) : Promise.resolve(null),
   ]);
 
   return (
@@ -53,7 +56,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
       ) : null}
 
       <ImageManager productId={product.id} images={images} />
-      <ProductForm product={product} categories={categories} />
+      <ProductForm product={product} categories={categories} maystroProducts={maystroProducts} />
       <CategoryForm />
     </div>
   );

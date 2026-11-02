@@ -33,6 +33,8 @@ export const products = sqliteTable(
     price: integer("price").notNull(),
     compareAtPrice: integer("compare_at_price"),
     bundles: text("bundles", { mode: "json" }).$type<Bundle[]>().notNull().default(sql`'[]'`),
+    /** The same product in the Maystro warehouse (UUID): required to ship it through Maystro. */
+    maystroProductId: text("maystro_product_id"),
     stock: integer("stock").notNull().default(0),
     status: text("status", { enum: ["active", "hidden"] }).notNull().default("active"),
     categoryId: integer("category_id").references(() => categories.id, { onDelete: "set null" }),
@@ -65,6 +67,9 @@ export type AdminRole = (typeof ADMIN_ROLES)[number];
 export const ORDER_STATUSES = ["new", "confirmed", "preparing", "shipped", "delivered", "cancelled"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
+/** none: not sent · sent: parcel created at Maystro · failed: refused or unreachable (see maystroError). */
+export const MAYSTRO_STATES = ["none", "sent", "failed"] as const;
+
 export const orders = sqliteTable(
   "orders",
   {
@@ -85,6 +90,15 @@ export const orders = sqliteTable(
     paymentMethod: text("payment_method", { enum: ["cod"] }).notNull().default("cod"),
     status: text("status", { enum: ORDER_STATUSES }).notNull().default("new"),
     stockRestored: integer("stock_restored", { mode: "boolean" }).notNull().default(false),
+    /** Maystro delegation (commune) id chosen at checkout; null for orders placed before. */
+    communeId: integer("commune_id"),
+    // Delivery through Maystro: the parcel created there, its tracking number and last known status.
+    maystroState: text("maystro_state", { enum: MAYSTRO_STATES }).notNull().default("none"),
+    maystroOrderId: text("maystro_order_id"),
+    maystroTracking: text("maystro_tracking"),
+    maystroStatus: integer("maystro_status"),
+    maystroError: text("maystro_error"),
+    maystroSyncedAt: integer("maystro_synced_at", { mode: "timestamp" }),
     ...timestamps,
   },
   (t) => [index("orders_status_idx").on(t.status), index("orders_created_idx").on(t.createdAt), index("orders_phone_idx").on(t.phone)],
