@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { CARRIER_IDS } from "../lib/carriers";
 
 /** Money is stored as integer millimes (1 TND = 1000 millimes) to avoid float errors. */
 
@@ -92,6 +93,8 @@ export const orders = sqliteTable(
     stockRestored: integer("stock_restored", { mode: "boolean" }).notNull().default(false),
     /** Maystro delegation (commune) id chosen at checkout; null for orders placed before. */
     communeId: integer("commune_id"),
+    /** How the order is delivered, chosen in the dashboard (src/lib/carriers.ts); null = not chosen yet. */
+    carrier: text("carrier", { enum: CARRIER_IDS }),
     // Delivery through Maystro: the parcel created there, its tracking number and last known status.
     maystroState: text("maystro_state", { enum: MAYSTRO_STATES }).notNull().default("none"),
     maystroOrderId: text("maystro_order_id"),

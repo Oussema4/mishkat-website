@@ -13,7 +13,7 @@ import { formatTND } from "@/lib/money";
 import { formatTunisianPhone, whatsappLink } from "@/lib/tunisia";
 import { maystroStatusLabel } from "@/lib/maystro";
 import { maystroEnabled } from "@/server/maystro";
-import { MaystroPanel } from "./maystro-panel";
+import { DeliveryPanel } from "./delivery-panel";
 import { StatusForm } from "./status-form";
 import { requireAdmin } from "@/server/auth";
 
@@ -147,18 +147,23 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
             <StatusForm orderId={order.id} current={order.status} />
           </section>
 
-          <section aria-labelledby="maystro-title" className="rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">
-            <h2 id="maystro-title" className="font-sans text-lg font-bold">
-              التوصيل عبر Maystro
+          <section aria-labelledby="delivery-title" className="rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">
+            <h2 id="delivery-title" className="font-sans text-lg font-bold">
+              التوصيل
             </h2>
-            <MaystroPanel
+            <DeliveryPanel
               orderId={order.id}
-              enabled={maystroEnabled()}
-              state={order.maystroState}
-              tracking={order.maystroTracking}
-              statusLabel={maystroStatusLabel(order.maystroStatus)}
-              error={order.maystroError}
-              syncedAt={order.maystroSyncedAt ? formatDateTime(order.maystroSyncedAt) : null}
+              carrier={order.carrier}
+              confirmed={order.status === "confirmed"}
+              cancelled={order.status === "cancelled"}
+              maystro={{
+                enabled: maystroEnabled(),
+                state: order.maystroState,
+                tracking: order.maystroTracking,
+                statusLabel: maystroStatusLabel(order.maystroStatus),
+                error: order.maystroError,
+                syncedAt: order.maystroSyncedAt ? formatDateTime(order.maystroSyncedAt) : null,
+              }}
             />
           </section>
 

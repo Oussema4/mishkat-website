@@ -10,12 +10,13 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { ADMIN_ROLES, admins, categories, ORDER_STATUSES, productImages, products, reviews } from "@/db/schema";
+import { ADMIN_ROLES, admins, categories, ORDER_STATUSES, orders, productImages, products, reviews } from "@/db/schema";
 import { parseBundles, parseFaq, parseLabelValues, parseLines, parseSteps, parseTND, slugify } from "@/lib/admin-format";
 import { MAX_QTY_PER_ITEM } from "@/lib/validation";
 import { normalizeTunisianPhone } from "@/lib/tunisia";
 import { endSession, getCurrentAdmin, getCurrentOwner, hashPassword, requireAdmin, startSession, verifyPassword } from "@/server/auth";
 import { changeOrderStatus, deleteOrders } from "@/server/order-core";
+import { carrierById } from "@/lib/carriers";
 import { maystroEnabled, maystroWebhookUrl, registerWebhook, sendOrderToMaystro, syncOrderFromMaystro } from "@/server/maystro";
 import { saveSettings } from "@/server/settings";
 import { clientIp, hit, isBlocked, reset } from "@/server/rate-limit";
@@ -94,26 +95,43 @@ export async function updateOrderStatus(_prev: FormState, form: FormData): Promi
   }
   const result = await changeOrderStatus(db, orderId, status as (typeof ORDER_STATUSES)[number], admin);
   if (!result.ok) return { error: result.message };
-  // Confirming hands the parcel to Maystro (once; a confirmed order already sent is left alone).
-  let message = "تم تحديث حالة الطلب.";
-  if (status === "confirmed" && maystroEnabled()) {
+  revalidatePath("/admin", "layout");
+  refreshStore();
+  return { ok: true, message: "تم تحديث حالة الطلب." };
+}
+
+/**
+ * Applies the delivery method chosen on the order page. Maystro creates a real parcel there (once);
+ * "manual" only records the choice. Maystro is only for orders whose status is "confirmed".
+ */
+export async function chooseDelivery(_prev: FormState, form: FormData): Promise<FormState> {
+  await requireAdmin();
+  const orderId = Number(form.get("orderId"));
+  const carrier = carrierById(String(form.get("carrier")));
+  if (!Number.isInteger(orderId) || !carrier) return { error: "اختر طريقة التوصيل." };
+  const [order] = await db.select({ status: orders.status, maystroState: orders.maystroState }).from(orders).where(eq(orders.id, orderId)).limit(1);
+  if (!order) return { error: "الطلب غير موجود." };
+  if (order.maystroState === "sent") return { error: "هذا الطلب أُرسل إلى Maystro من قبل." };
+  if (order.status === "cancelled") return { error: "الطلب ملغى." };
+
+  let message: string;
+  if (carrier.id === "maystro") {
+    if (!maystroEnabled()) return { error: "Maystro غير مربوط (ينقص MAYSTRO_TOKEN)." };
+    // A parcel is only created for an order the shop has confirmed with the customer.
+    if (order.status !== "confirmed") return { error: "اجعل حالة الطلب «تم تأكيد الطلب» أولًا، ثم أرسله إلى Maystro." };
     const sent = await sendOrderToMaystro(orderId);
-    message = sent.ok
-      ? `تم تأكيد الطلب وإرساله إلى Maystro${sent.tracking ? ` (رقم التتبّع ${sent.tracking})` : ""}.`
-      : `تم تأكيد الطلب، لكن لم يُرسل إلى Maystro: ${sent.message}`;
+    if (!sent.ok) {
+      revalidatePath("/admin", "layout");
+      return { error: sent.message };
+    }
+    message = `تم إرسال الطلب إلى Maystro${sent.tracking ? ` (رقم التتبّع ${sent.tracking})` : ""}.`;
+  } else {
+    message = `تم حفظ طريقة التوصيل: ${carrier.name}.`;
   }
+  await db.update(orders).set({ carrier: carrier.id, updatedAt: new Date() }).where(eq(orders.id, orderId));
   revalidatePath("/admin", "layout");
   refreshStore();
   return { ok: true, message };
-}
-
-export async function sendToMaystro(_prev: FormState, form: FormData): Promise<FormState> {
-  await requireAdmin();
-  const orderId = Number(form.get("orderId"));
-  if (!Number.isInteger(orderId)) return { error: "بيانات غير صالحة." };
-  const sent = await sendOrderToMaystro(orderId);
-  revalidatePath("/admin", "layout");
-  return sent.ok ? { ok: true, message: "تم إرسال الطلب إلى Maystro." } : { error: sent.message };
 }
 
 export async function refreshFromMaystro(_prev: FormState, form: FormData): Promise<FormState> {

@@ -25,7 +25,7 @@ export default async function MaystroPage() {
     <div className="max-w-3xl space-y-6">
       <header>
         <h1 className="text-3xl">التوصيل عبر Maystro</h1>
-        <p className="mt-1 text-muted">كل طلب تؤكّده يُرسل إلى Maystro تلقائيًا، وحالته تتحدّث وحدها.</p>
+        <p className="mt-1 text-muted">في صفحة كل طلب تختار طريقة التوصيل. إذا اخترت Maystro يُرسل الطرد إليهم، وحالته تتحدّث وحدها.</p>
       </header>
 
       <section className="rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">
