@@ -1,3 +1,4 @@
+import { SABILI_TRANSLATIONS } from "./sabili-translations";
 import type { Bundle, ContentItem, FaqItem, HowToStep } from "./schema";
 
 /**
@@ -24,6 +25,7 @@ export const SABILI = {
     { quantity: 2, price: 100000 },
     { quantity: 3, price: 144000 },
   ] satisfies Bundle[],
+  translations: SABILI_TRANSLATIONS,
   stock: 100,
   ageRange: "9 سنوات فما فوق",
   players: "",

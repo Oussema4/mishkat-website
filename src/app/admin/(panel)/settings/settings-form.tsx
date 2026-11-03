@@ -66,6 +66,37 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
         </AdminField>
       </Card>
 
+      <Card title="الترجمة (الفرنسية والإنجليزية)">
+        <p className="-mt-2 mb-4 text-sm leading-6 text-muted">
+          مدة التوصيل والسياسات والأسئلة كما تظهر في صفحات /fr و /en. أي حقل يُترك فارغًا يظهر بالعربية. إذا غيّرت النص العربي، غيّر الترجمة أيضًا.
+        </p>
+        <div className="space-y-3">
+          {(["fr", "en"] as const).map((lang) => {
+            const v = settings.translations?.[lang] ?? {};
+            const id = (field: string) => `${lang}.${field}`;
+            return (
+              <details key={lang} className="rounded-[var(--radius-md)] border border-line p-4 open:pb-5" open={lang === "fr"}>
+                <summary className="cursor-pointer font-semibold">{lang === "fr" ? "Français" : "English"}</summary>
+                <div dir="ltr" lang={lang} className="mt-4 grid gap-5 text-start">
+                  <AdminField id={id("deliveryTime")} label="Delivery time">
+                    <input {...describe(id("deliveryTime"), {})} defaultValue={v.deliveryTime ?? ""} className={adminInput} />
+                  </AdminField>
+                  <AdminField id={id("policyDelivery")} label="Delivery policy">
+                    <textarea {...describe(id("policyDelivery"), {})} defaultValue={v.policyDelivery ?? ""} rows={5} className={adminInput} />
+                  </AdminField>
+                  <AdminField id={id("policyReturns")} label="Exchange and return policy">
+                    <textarea {...describe(id("policyReturns"), {})} defaultValue={v.policyReturns ?? ""} rows={5} className={adminInput} />
+                  </AdminField>
+                  <AdminField id={id("faq")} label="FAQ">
+                    <textarea {...describe(id("faq"), {})} defaultValue={formatFaq(v.faq ?? [])} rows={10} className={adminInput} />
+                  </AdminField>
+                </div>
+              </details>
+            );
+          })}
+        </div>
+      </Card>
+
       <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center gap-4 border-t border-line bg-mist/95 px-4 py-3 backdrop-blur md:-mx-8 md:px-8">
         <SubmitButton pending={pending}>حفظ الإعدادات</SubmitButton>
         <div className="flex-1">

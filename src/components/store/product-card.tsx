@@ -3,17 +3,19 @@ import Link from "next/link";
 import { AddToCartButton } from "@/components/store/add-to-cart";
 import { Price } from "@/components/ui/price";
 import { StockBadge } from "@/components/ui/stock-badge";
-import { ar, boxesLabel, fill } from "@/i18n/ar";
+import { fill } from "@/i18n/ar";
+import { getDictionary, localePath, type Locale } from "@/i18n/config";
 import { formatTND } from "@/lib/money";
 import { PRODUCT_CUTOUTS } from "@/lib/product-cutouts";
 import { buttonClass } from "@/components/ui/button";
 import type { ProductWithImages } from "@/server/catalog";
 
 /** `priority`: the first card on a page is usually its largest element, so load its image first. */
-export function ProductCard({ product, priority = false }: { product: ProductWithImages; priority?: boolean }) {
+export function ProductCard({ product, priority = false, locale }: { product: ProductWithImages; priority?: boolean; locale: Locale }) {
+  const t = getDictionary(locale);
   const image = product.images[0];
   const cutout = PRODUCT_CUTOUTS[product.slug];
-  const href = `/products/${product.slug}`;
+  const href = localePath(locale, `/products/${product.slug}`);
   return (
     <article className="group flex flex-col">
       <Link href={href} className="block" tabIndex={-1} aria-hidden>
@@ -51,21 +53,21 @@ export function ProductCard({ product, priority = false }: { product: ProductWit
               {product.name}
             </Link>
           </h2>
-          <StockBadge stock={product.stock} className="mt-1.5 shrink-0" />
+          <StockBadge stock={product.stock} className="mt-1.5 shrink-0" locale={locale} />
         </div>
         {product.tagline ? <p className="mt-1 font-medium text-paper">{product.tagline}</p> : null}
         <p className="mt-2 leading-7 text-muted">{product.shortDescription}</p>
         <div className="mt-4">
-          <Price price={product.price} compareAt={product.compareAtPrice} />
+          <Price price={product.price} compareAt={product.compareAtPrice} locale={locale} />
           {product.bundles.length > 0 ? (
             <p className="mt-1 text-sm font-medium text-gold-deep tabular">
-              {product.bundles.map((b) => fill(ar.shop.offer, { boxes: boxesLabel(b.quantity), price: formatTND(b.price) })).join(" · ")}
+              {product.bundles.map((b) => fill(t.shop.offer, { boxes: t.boxes(b.quantity), price: formatTND(b.price, locale) })).join(" · ")}
             </p>
           ) : null}
         </div>
         <div className="mt-5 grid grid-cols-2 gap-2">
           <Link href={href} className={buttonClass("primary", "md")}>
-            {ar.shop.details}
+            {t.shop.details}
           </Link>
           <AddToCartButton
             product={{

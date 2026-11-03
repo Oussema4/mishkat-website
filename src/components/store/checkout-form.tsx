@@ -4,31 +4,32 @@ import { CircleAlert, LoaderCircle, Wallet } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { placeOrder } from "@/app/actions/store";
 import { LinePrice, OrderTotals } from "@/components/store/order-summary";
 import { resyncCart, useCartSync } from "@/components/store/use-cart-sync";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { ar, fill } from "@/i18n/ar";
+import { fill, type Dictionary } from "@/i18n/ar";
+import { useI18n } from "@/i18n/client";
 import { useCart } from "@/lib/cart-store";
 import { formatTND } from "@/lib/money";
 import { computeTotals } from "@/lib/pricing";
 import { cn } from "@/lib/site";
 import { MAYSTRO_WILAYAS, type Commune } from "@/lib/maystro";
 import { GOVERNORATES, type Governorate } from "@/lib/tunisia";
-import { checkoutSchema } from "@/lib/validation";
+import { checkoutSchemaFor } from "@/lib/validation";
 
 type FieldName = "firstName" | "lastName" | "phone" | "governorate" | "city" | "note";
 
 const FIELD_ORDER: FieldName[] = ["firstName", "lastName", "phone", "governorate", "city", "note"];
-const LABELS: Record<FieldName, string> = {
-  firstName: ar.checkout.firstName,
-  lastName: ar.checkout.lastName,
-  phone: ar.checkout.phone,
-  governorate: ar.checkout.governorate,
-  city: ar.checkout.city,
-  note: ar.checkout.note,
-};
+const labels = (t: Dictionary): Record<FieldName, string> => ({
+  firstName: t.checkout.firstName,
+  lastName: t.checkout.lastName,
+  phone: t.checkout.phone,
+  governorate: t.checkout.governorate,
+  city: t.checkout.city,
+  note: t.checkout.note,
+});
 
 const inputClass =
   "block w-full min-h-12 rounded-[var(--radius-md)] border bg-ink-soft px-3.5 py-2.5 text-base text-paper outline-none placeholder:text-paper/45 transition-colors " +
@@ -43,6 +44,8 @@ export function CheckoutForm({
   deliveryTime: string;
   communes: Commune[] | null;
 }) {
+  const { t, locale, href } = useI18n();
+  const checkoutSchema = useMemo(() => checkoutSchemaFor(t.validation), [t]);
   const [governorate, setGovernorate] = useState("");
   const [communeId, setCommuneId] = useState("");
   const wilaya = MAYSTRO_WILAYAS[governorate as Governorate]?.code;
@@ -62,9 +65,9 @@ export function CheckoutForm({
     return (
       <div role="status" className="mt-10 flex flex-col items-start gap-4 rounded-[var(--radius-lg)] bg-success-bg p-8 text-success">
         <LoaderCircle aria-hidden className="size-8 animate-spin" />
-        <p className="text-xl font-semibold">تم حفظ طلبك. جارٍ فتح صفحة التأكيد…</p>
-        <Link href={`/order/${placedToken}`} className="font-semibold underline underline-offset-4">
-          افتح صفحة التأكيد
+        <p className="text-xl font-semibold">{t.checkout.saved}</p>
+        <Link href={href(`/order/${placedToken}`)} className="font-semibold underline underline-offset-4">
+          {t.checkout.openConfirmation}
         </Link>
       </div>
     );
@@ -77,8 +80,8 @@ export function CheckoutForm({
   if (lines.length === 0) {
     return (
       <div className="mt-10 flex flex-col items-start gap-5 rounded-[var(--radius-lg)] bg-mist p-8 md:p-12">
-        <p className="text-xl">{ar.cart.empty}</p>
-        <ButtonLink href="/shop">{ar.cart.emptyCta}</ButtonLink>
+        <p className="text-xl">{t.cart.empty}</p>
+        <ButtonLink href={href("/shop")}>{t.cart.emptyCta}</ButtonLink>
       </div>
     );
   }
@@ -124,11 +127,11 @@ export function CheckoutForm({
     submitting.current = true;
     startTransition(async () => {
       try {
-        const result = await placeOrder(payload);
+        const result = await placeOrder(payload, locale);
         if (result.ok) {
           // The cart is cleared by the confirmation page once it renders.
           setPlacedToken(result.token);
-          router.replace(`/order/${result.token}`);
+          router.replace(href(`/order/${result.token}`));
           return;
         }
         submitting.current = false;
@@ -141,10 +144,10 @@ export function CheckoutForm({
           requestAnimationFrame(() => bannerRef.current?.focus());
         }
         if (result.newKey) useCart.setState({ checkoutKey: null });
-        if (result.refreshCart) await resyncCart().catch(() => undefined);
+        if (result.refreshCart) await resyncCart(locale).catch(() => undefined);
       } catch {
         submitting.current = false;
-        setBanner(ar.checkout.networkError);
+        setBanner(t.checkout.networkError);
         requestAnimationFrame(() => bannerRef.current?.focus());
       }
     });
@@ -178,7 +181,7 @@ export function CheckoutForm({
           >
             <p className="flex items-center gap-2 font-semibold text-danger">
               <CircleAlert aria-hidden className="size-5" />
-              {ar.checkout.errorsTitle}
+              {t.checkout.errorsTitle}
             </p>
             <ul className="mt-2 list-disc space-y-1 ps-6">
               {errorList.map((e) => (
@@ -205,7 +208,7 @@ export function CheckoutForm({
         ) : null}
 
         <fieldset className="space-y-5">
-          <legend className="mb-5 font-display text-2xl font-bold">{ar.checkout.contactSection}</legend>
+          <legend className="mb-5 font-display text-2xl font-bold">{t.checkout.contactSection}</legend>
           <div className="grid gap-5 sm:grid-cols-2">
             <Field name="firstName" error={errors.firstName}>
               <input {...field("firstName")} type="text" autoComplete="given-name" required maxLength={60} />
@@ -214,7 +217,7 @@ export function CheckoutForm({
               <input {...field("lastName")} type="text" autoComplete="family-name" required maxLength={60} />
             </Field>
           </div>
-          <Field name="phone" error={errors.phone} hint={ar.checkout.phoneHint}>
+          <Field name="phone" error={errors.phone} hint={t.checkout.phoneHint}>
             <input
               {...field("phone")}
               type="tel"
@@ -224,13 +227,13 @@ export function CheckoutForm({
               placeholder="92 123 456"
               required
               maxLength={20}
-              className={cn(field("phone").className, "text-end tabular")}
+              className={cn(field("phone").className, "tabular rtl:text-end")}
             />
           </Field>
         </fieldset>
 
         <fieldset className="space-y-5">
-          <legend className="mb-5 font-display text-2xl font-bold">{ar.checkout.addressSection}</legend>
+          <legend className="mb-5 font-display text-2xl font-bold">{t.checkout.addressSection}</legend>
           <div className="grid gap-5 sm:grid-cols-2">
             <Field name="governorate" error={errors.governorate}>
               <select
@@ -244,11 +247,11 @@ export function CheckoutForm({
                 }}
               >
                 <option value="" disabled>
-                  {ar.checkout.chooseGovernorate}
+                  {t.checkout.chooseGovernorate}
                 </option>
                 {GOVERNORATES.map((g) => (
                   <option key={g} value={g}>
-                    {g}
+                    {locale === "ar" ? g : MAYSTRO_WILAYAS[g].name}
                   </option>
                 ))}
               </select>
@@ -266,7 +269,7 @@ export function CheckoutForm({
                     onChange={(e) => setCommuneId(e.target.value)}
                   >
                     <option value="" disabled>
-                      {governorate ? ar.checkout.chooseCity : ar.checkout.chooseGovernorateFirst}
+                      {governorate ? t.checkout.chooseCity : t.checkout.chooseGovernorateFirst}
                     </option>
                     {cityOptions.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -293,21 +296,21 @@ export function CheckoutForm({
 
         <section aria-labelledby="payment-title" className="rounded-2xl border border-gold/40 bg-ink-soft p-5">
           <h2 id="payment-title" className="font-sans text-base font-semibold text-muted">
-            {ar.checkout.paymentTitle}
+            {t.checkout.paymentTitle}
           </h2>
           <p className="mt-2 flex items-center gap-3 text-lg font-bold">
             <Wallet aria-hidden className="size-6 text-gold-deep" strokeWidth={1.5} />
-            {ar.checkout.paymentCod}
+            {t.checkout.paymentCod}
           </p>
-          <p className="mt-1 text-muted">{ar.checkout.paymentCodBody}</p>
+          <p className="mt-1 text-muted">{t.checkout.paymentCodBody}</p>
         </section>
       </div>
 
-      <aside aria-label={ar.checkout.summary} className="rounded-[var(--radius-lg)] bg-mist p-6 lg:sticky lg:top-24">
+      <aside aria-label={t.checkout.summary} className="rounded-[var(--radius-lg)] bg-mist p-6 lg:sticky lg:top-24">
         <div className="flex items-center justify-between">
-          <h2 className="font-sans text-lg font-bold">{ar.checkout.summary}</h2>
-          <Link href="/cart" className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
-            {ar.checkout.edit}
+          <h2 className="font-sans text-lg font-bold">{t.checkout.summary}</h2>
+          <Link href={href("/cart")} className="inline-flex min-h-11 items-center text-sm font-medium underline underline-offset-4">
+            {t.checkout.edit}
           </Link>
         </div>
         <ul className="mt-4 space-y-4 border-b border-line pb-5">
@@ -319,31 +322,31 @@ export function CheckoutForm({
               <div className="flex-1">
                 <p className="font-semibold">{l.name}</p>
                 <p className="text-sm text-muted tabular">
-                  {fill("{q} × {p}", { q: l.quantity, p: formatTND(l.unitPrice) })}
+                  {fill("{q} × {p}", { q: l.quantity, p: formatTND(l.unitPrice, locale) })}
                 </p>
               </div>
-              <LinePrice line={l} className="font-semibold" />
+              <LinePrice line={l} className="font-semibold" locale={locale} />
             </li>
           ))}
         </ul>
         <div className="mt-5">
-          <OrderTotals {...totals} />
+          <OrderTotals {...totals} locale={locale} />
         </div>
-        <p className="mt-4 text-sm text-muted">{fill("التوصيل خلال {time} تقريبًا لكل الولايات.", { time: deliveryTime })}</p>
+        <p className="mt-4 text-sm text-muted">{fill(t.checkout.deliveryNote, { time: deliveryTime })}</p>
         <Button type="submit" size="lg" className="mt-6 w-full" disabled={pending} aria-disabled={pending}>
           {pending ? (
             <>
               <LoaderCircle aria-hidden className="size-5 animate-spin" />
-              {ar.checkout.sending}
+              {t.checkout.sending}
             </>
           ) : (
             <>
-              {ar.checkout.confirm} · <span className="tabular">{formatTND(totals.total)}</span>
+              {t.checkout.confirm} · <span className="tabular">{formatTND(totals.total, locale)}</span>
             </>
           )}
         </Button>
         <p className="sr-only" aria-live="polite">
-          {pending ? ar.checkout.sending : ""}
+          {pending ? t.checkout.sending : ""}
         </p>
       </aside>
     </form>
@@ -363,16 +366,17 @@ function Field({
   optional?: boolean;
   children: React.ReactNode;
 }) {
+  const { t } = useI18n();
   return (
     <div>
       <label htmlFor={name} className="mb-1.5 flex items-baseline gap-1 font-medium">
-        {LABELS[name]}
+        {labels(t)[name]}
         {optional ? null : (
           <>
             <span aria-hidden className="text-danger">
               *
             </span>
-            <span className="sr-only">({ar.checkout.required})</span>
+            <span className="sr-only">({t.checkout.required})</span>
           </>
         )}
       </label>

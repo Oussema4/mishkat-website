@@ -4,9 +4,10 @@ import { headers } from "next/headers";
 import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
-import { ar } from "@/i18n/ar";
+import { fill } from "@/i18n/ar";
+import { getDictionary, isLocale, type Locale } from "@/i18n/config";
 import { findCommune } from "@/lib/maystro";
-import { checkoutSchema, fieldErrors } from "@/lib/validation";
+import { checkoutSchemaFor, fieldErrors } from "@/lib/validation";
 import { getCartSnapshot } from "@/server/catalog";
 import { createOrder } from "@/server/order-core";
 import { clientIp, hit } from "@/server/rate-limit";
@@ -22,54 +23,61 @@ export type PlaceOrderResult =
 // 10 minutes. Open orders per phone number are capped in createOrder.
 const orderLimit = (ip: string) => ({ key: `order:ip:${ip}`, max: 8, windowMs: 10 * 60 * 1000 });
 
-export async function placeOrder(input: unknown): Promise<PlaceOrderResult> {
+export async function placeOrder(input: unknown, lang?: unknown): Promise<PlaceOrderResult> {
+  const locale: Locale = isLocale(lang) ? lang : "ar";
+  const t = getDictionary(locale);
   // Honeypot: real customers never fill this hidden field.
   if (typeof input === "object" && input && "company" in input && (input as { company?: string }).company) {
-    return { ok: false, message: ar.checkout.serverError };
+    return { ok: false, message: t.checkout.serverError };
   }
 
-  const parsed = checkoutSchema.safeParse(input);
+  const parsed = checkoutSchemaFor(t.validation).safeParse(input);
   if (!parsed.success) return { ok: false, errors: fieldErrors(parsed.error) };
 
   // The delegation must be one of Maystro's for the chosen governorate; its name becomes the city.
   const communes = await getCommunes();
   if (communes) {
     const commune = parsed.data.communeId ? findCommune(communes, parsed.data.communeId, parsed.data.governorate) : null;
-    if (!commune) return { ok: false, errors: { city: "اختر المعتمدية من القائمة" } };
+    if (!commune) return { ok: false, errors: { city: t.validation.cityList } };
     parsed.data.city = commune.name;
   }
 
   try {
     const { allowed } = await hit(db, orderLimit(clientIp(await headers())));
     if (!allowed) {
-      return { ok: false, message: "أرسلت عدة طلبات خلال وقت قصير. انتظر بضع دقائق أو راسلنا على واتساب." };
+      return { ok: false, message: t.checkout.tooManyOrders };
     }
 
     const settings = await getSettings();
     const result = await createOrder(db, parsed.data, settings.deliveryFee);
     if (!result.ok) {
+      const e = t.orderErrors;
+      const message =
+        result.code === "stock" && result.detail
+          ? fill(result.detail.left > 0 ? e.stock : e.soldOut, { name: result.detail.name, n: result.detail.left })
+          : e[result.code === "stock" ? "unavailable" : result.code];
       return {
         ok: false,
-        message: result.message,
+        message,
         // Stock/availability changed: re-sync the cart. A key already used by another order: retry with a fresh one.
         refreshCart: result.code === "stock" || result.code === "unavailable",
         newKey: result.code === "conflict",
       };
     }
     // Store pages are pre-rendered; refresh them so stock levels stay accurate.
-    revalidatePath("/", "layout");
+    revalidatePath("/[lang]", "layout");
     // Phone alert for the shop, sent after the customer gets their answer (a resubmit is not a new order).
     if (!result.duplicate) after(() => notifyNewOrder(result.publicToken));
     return { ok: true, token: result.publicToken };
   } catch (err) {
     console.error("placeOrder failed", err);
-    return { ok: false, message: ar.checkout.serverError };
+    return { ok: false, message: t.checkout.serverError };
   }
 }
 
 /** Fresh prices and stock for the products in a browser-saved cart. */
-export async function refreshCart(productIds: unknown) {
+export async function refreshCart(productIds: unknown, lang?: unknown) {
   if (!Array.isArray(productIds)) return [];
   const ids = productIds.filter((n): n is number => Number.isInteger(n) && n > 0).slice(0, 30);
-  return getCartSnapshot(ids);
+  return getCartSnapshot(ids, isLocale(lang) ? lang : "ar");
 }

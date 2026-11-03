@@ -19,6 +19,19 @@ export const categories = sqliteTable("categories", {
 export type FaqItem = { q: string; a: string };
 export type ContentItem = { label: string; value: string };
 export type HowToStep = { title: string; body: string };
+export type ProductText = {
+  name: string;
+  tagline: string;
+  shortDescription: string;
+  description: string;
+  ageRange: string;
+  players: string;
+  contents: ContentItem[];
+  howToPlay: HowToStep[];
+  benefits: string[];
+  faq: FaqItem[];
+};
+export type ProductTranslations = { fr?: Partial<ProductText>; en?: Partial<ProductText> };
 /** Quantity offer: `quantity` pieces together cost `price` millimes (e.g. 2 for 100 TND). */
 export type Bundle = { quantity: number; price: number };
 
@@ -34,6 +47,8 @@ export const products = sqliteTable(
     price: integer("price").notNull(),
     compareAtPrice: integer("compare_at_price"),
     bundles: text("bundles", { mode: "json" }).$type<Bundle[]>().notNull().default(sql`'[]'`),
+    /** French and English versions of the texts; a missing field falls back to Arabic. */
+    translations: text("translations", { mode: "json" }).$type<ProductTranslations>().notNull().default(sql`'{}'`),
     /** The same product in the Maystro warehouse (UUID): required to ship it through Maystro. */
     maystroProductId: text("maystro_product_id"),
     stock: integer("stock").notNull().default(0),

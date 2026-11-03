@@ -10,7 +10,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { ADMIN_ROLES, admins, categories, ORDER_STATUSES, orders, productImages, products, reviews } from "@/db/schema";
+import { ADMIN_ROLES, admins, categories, ORDER_STATUSES, orders, productImages, products, reviews, type ProductText } from "@/db/schema";
 import { parseBundles, parseFaq, parseLabelValues, parseLines, parseSteps, parseTND, slugify } from "@/lib/admin-format";
 import { MAX_QTY_PER_ITEM } from "@/lib/validation";
 import { normalizeTunisianPhone } from "@/lib/tunisia";
@@ -33,7 +33,7 @@ export type FormState = {
 
 /** Store pages are pre-rendered — refresh them after any catalogue/settings change. */
 function refreshStore() {
-  revalidatePath("/", "layout");
+  revalidatePath("/[lang]", "layout");
 }
 
 // ───────────── Auth ─────────────
@@ -168,6 +168,26 @@ export async function deleteSelectedOrders(form: FormData) {
 
 // ───────────── Products ─────────────
 
+/** One language of a product's texts from the form, keeping only the filled fields. */
+function readTranslation(form: FormData, lang: "fr" | "en"): Partial<ProductText> {
+  const text = (field: string, max: number) => String(form.get(`${lang}.${field}`) ?? "").trim().slice(0, max);
+  const out: Partial<ProductText> = {};
+  const set = <K extends keyof ProductText>(key: K, value: ProductText[K]) => {
+    if (Array.isArray(value) ? value.length > 0 : value) out[key] = value;
+  };
+  set("name", text("name", 120));
+  set("tagline", text("tagline", 160));
+  set("shortDescription", text("shortDescription", 400));
+  set("description", text("description", 5000));
+  set("ageRange", text("ageRange", 80));
+  set("players", text("players", 80));
+  set("contents", parseLabelValues(text("contents", 5000)));
+  set("howToPlay", parseSteps(text("howToPlay", 8000)));
+  set("benefits", parseLines(text("benefits", 5000)));
+  set("faq", parseFaq(text("faq", 8000)));
+  return out;
+}
+
 const productSchema = z.object({
   name: z.string().trim().min(1, "اسم المنتج مطلوب").max(120),
   slug: z
@@ -246,6 +266,8 @@ export async function saveProduct(_prev: FormState, form: FormData): Promise<For
     howToPlay: parseSteps(String(raw.howToPlay ?? "")),
     benefits: parseLines(String(raw.benefits ?? "")),
     faq: parseFaq(String(raw.faq ?? "")),
+    // French and English texts (fields "fr.name", "en.faq"…); empty ones fall back to Arabic on the site.
+    ...(form.has("fr.name") ? { translations: { fr: readTranslation(form, "fr"), en: readTranslation(form, "en") } } : {}),
     featured: raw.featured === "on",
     updatedAt: new Date(),
   };
@@ -358,6 +380,12 @@ export async function saveStoreSettings(_prev: FormState, form: FormData): Promi
     policyDelivery: String(form.get("policyDelivery") ?? "").slice(0, 6000),
     policyReturns: String(form.get("policyReturns") ?? "").slice(0, 6000),
     faq: parseFaq(String(form.get("faq") ?? "")),
+    translations: Object.fromEntries(
+      (["fr", "en"] as const).map((lang) => {
+        const text = (key: string, max: number) => String(form.get(`${lang}.${key}`) ?? "").trim().slice(0, max);
+        return [lang, { deliveryTime: text("deliveryTime", 40), policyDelivery: text("policyDelivery", 6000), policyReturns: text("policyReturns", 6000), faq: parseFaq(text("faq", 12000)) }];
+      }),
+    ),
   });
   refreshStore();
   return { ok: true, message: "تم حفظ الإعدادات." };

@@ -10,7 +10,9 @@ import { ReviewWall } from "@/components/store/review-wall";
 import { ButtonLink } from "@/components/ui/button";
 import { Price } from "@/components/ui/price";
 import { Reveal } from "@/components/ui/reveal";
-import { ar, fill } from "@/i18n/ar";
+import { fill } from "@/i18n/ar";
+import { LOCALE_INFO } from "@/i18n/config";
+import { pageAlternates, pageLocale, type LangParams } from "@/i18n/server";
 import { PRODUCT_CUTOUTS } from "@/lib/product-cutouts";
 import { cn, siteUrl } from "@/lib/site";
 import { getActiveProducts, getVisibleReviews } from "@/server/catalog";
@@ -24,11 +26,15 @@ import { getSettings } from "@/server/settings";
  *   →  the name's meaning  →  the catalogue  →  how a Mishkat game teaches
  *   →  what players wrote (messages arriving one by one)  →  questions  →  footer.
  */
-// The home page is the site root: one canonical URL whatever domain or query string it was reached by.
-export const metadata: Metadata = { alternates: { canonical: "/" } };
+// The home page is the site root: one canonical URL per language whatever domain or query string it was reached by.
+export async function generateMetadata({ params }: LangParams): Promise<Metadata> {
+  const { locale } = await pageLocale(params);
+  return { alternates: pageAlternates(locale, "/") };
+}
 
-export default async function HomePage() {
-  const [products, reviews, settings] = await Promise.all([getActiveProducts(), getVisibleReviews(), getSettings()]);
+export default async function HomePage({ params }: LangParams) {
+  const { locale, t, href } = await pageLocale(params);
+  const [products, reviews, settings] = await Promise.all([getActiveProducts(locale), getVisibleReviews(), getSettings(locale)]);
 
   const beatIcons = [MessageCircleQuestion, TrendingUp, HandHeart];
   const textLink = "inline-flex min-h-12 items-center font-semibold text-gold-light underline decoration-gold decoration-2 underline-offset-8 hover:text-paper";
@@ -48,7 +54,7 @@ export default async function HomePage() {
         url: site,
         logo: `${site}/icon.png`,
         image: `${site}/images/og/mishkat-og.jpg`,
-        description: ar.home.heroText,
+        description: t.home.heroText,
         ...(settings.email ? { email: settings.email } : {}),
         ...(settings.phone ? { telephone: settings.phone } : {}),
         sameAs: [settings.instagram, settings.facebook].filter(Boolean),
@@ -57,7 +63,7 @@ export default async function HomePage() {
         paymentAccepted: "Cash on delivery",
         currenciesAccepted: "TND",
       },
-      { "@type": "WebSite", "@id": `${site}/#website`, url: site, name: "مشكاة", alternateName: "Mishkat", inLanguage: "ar-TN", publisher: { "@id": `${site}/#store` } },
+      { "@type": "WebSite", "@id": `${site}/#website`, url: site, name: "مشكاة", alternateName: "Mishkat", inLanguage: LOCALE_INFO[locale].htmlLang, publisher: { "@id": `${site}/#store` } },
     ],
   };
 
@@ -72,23 +78,23 @@ export default async function HomePage() {
           <div aria-hidden className="lamp-glow pointer-events-none absolute inset-0 -z-10" />
           <div className="container-page pb-20 pt-32 text-center md:pb-28 md:pt-44">
             <h1 id="hero-title" className="mx-auto max-w-4xl text-[2.6rem] leading-[1.3] sm:text-5xl lg:text-[4.25rem]">
-              {ar.home.heroTitle}
+              {t.home.heroTitle}
             </h1>
-            <p className="mx-auto mt-6 max-w-2xl text-lg leading-9 text-paper/80 md:text-xl md:leading-10">{ar.home.heroText}</p>
+            <p className="mx-auto mt-6 max-w-2xl text-lg leading-9 text-paper/80 md:text-xl md:leading-10">{t.home.heroText}</p>
             <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
-              <ButtonLink href="/shop" variant="gold" size="lg" className="rounded-full px-8">
-                {ar.home.shopNow}
+              <ButtonLink href={href("/shop")} variant="gold" size="lg" className="rounded-full px-8">
+                {t.home.shopNow}
               </ButtonLink>
-              <ButtonLink href="/contact" variant="ghost" size="lg" className="px-6 hover:bg-paper/10">
-                {ar.home.heroContact}
+              <ButtonLink href={href("/contact")} variant="ghost" size="lg" className="px-6 hover:bg-paper/10">
+                {t.home.heroContact}
               </ButtonLink>
             </div>
 
             <div className="mt-16 md:mt-20">
               <p className="sr-only">
-                {ar.home.heroFieldsLabel}: {ar.home.heroFields.join("، ")}
+                {t.home.heroFieldsLabel}: {t.home.heroFields.join(t.common.listSeparator)}
               </p>
-              <KnowledgeMap fields={[...ar.home.heroFields]} />
+              <KnowledgeMap fields={[...t.home.heroFields]} />
             </div>
           </div>
         </section>
@@ -97,11 +103,11 @@ export default async function HomePage() {
       {/* ───── The name ───── */}
       <section aria-labelledby="about-title" className="container-page grid gap-8 py-20 md:py-32 lg:grid-cols-12">
         <h2 id="about-title" className="text-4xl text-gold-light md:text-5xl lg:col-span-4">
-          {ar.home.aboutTitle}
+          {t.home.aboutTitle}
         </h2>
         <Reveal className="lg:col-span-7 lg:col-start-6">
-          <p className="text-2xl leading-[1.8] text-paper md:text-[1.75rem]">{ar.home.aboutText}</p>
-          <p className="mt-6 text-base text-paper/65">{ar.home.aboutVerse}</p>
+          <p className="text-2xl leading-[1.8] text-paper md:text-[1.75rem]">{t.home.aboutText}</p>
+          <p className="mt-6 text-base text-paper/65">{t.home.aboutVerse}</p>
         </Reveal>
       </section>
 
@@ -110,10 +116,10 @@ export default async function HomePage() {
         <section aria-labelledby="products-title" className="container-page pb-20 md:pb-32">
           <div className="flex flex-wrap items-baseline justify-between gap-4">
             <h2 id="products-title" className="text-4xl md:text-5xl">
-              {ar.home.productsTitle}
+              {t.home.productsTitle}
             </h2>
-            <Link href="/shop" className={textLink}>
-              {ar.home.productsAll}
+            <Link href={href("/shop")} className={textLink}>
+              {t.home.productsAll}
             </Link>
           </div>
 
@@ -130,15 +136,15 @@ export default async function HomePage() {
                     </h3>
                     <p className="mt-4 max-w-md text-lg leading-8 text-paper/85">{p.shortDescription}</p>
                     <div className="mt-6">
-                      <Price price={p.price} compareAt={p.compareAtPrice} tone="dark" size="lg" />
+                      <Price price={p.price} compareAt={p.compareAtPrice} tone="dark" size="lg" locale={locale} />
                     </div>
-                    <ButtonLink href={`/products/${p.slug}`} variant="gold" size="lg" className="mt-7 rounded-full px-8">
-                      {fill(ar.home.productCta, { name: p.name })}
+                    <ButtonLink href={href(`/products/${p.slug}`)} variant="gold" size="lg" className="mt-7 rounded-full px-8">
+                      {fill(t.home.productCta, { name: p.name })}
                     </ButtonLink>
                   </Reveal>
                   {cover ? (
                     <Link
-                      href={`/products/${p.slug}`}
+                      href={href(`/products/${p.slug}`)}
                       tabIndex={-1}
                       aria-hidden
                       className="group relative isolate grid aspect-[4/3] place-items-center overflow-hidden rounded-2xl bg-ink md:col-span-6"
@@ -165,10 +171,10 @@ export default async function HomePage() {
       {/* ───── How a Mishkat game teaches ───── */}
       <section aria-labelledby="how-title" className="container-page pb-20 md:pb-32">
         <h2 id="how-title" className="max-w-2xl text-4xl md:text-5xl">
-          {ar.home.howTitle}
+          {t.home.howTitle}
         </h2>
         <Reveal as="ul" className="mt-10 grid gap-4 md:mt-12 md:grid-cols-3">
-          {ar.home.howItems.map((item, i) => {
+          {t.home.howItems.map((item, i) => {
             const Icon = beatIcons[i];
             return (
               <li key={item.title} className={`${panel} group p-7 transition-colors duration-300 hover:border-gold/40 md:p-8`}>
@@ -190,21 +196,21 @@ export default async function HomePage() {
           <div className="container-page grid items-center gap-12 py-20 md:py-28 lg:grid-cols-12">
             <div className="lg:col-span-5">
               <h2 id="reviews-title" className="text-4xl md:text-5xl">
-                {ar.home.reviewsTitle}
+                {t.home.reviewsTitle}
               </h2>
-              <p className="mt-4 max-w-md text-lg leading-8 text-paper/80">{ar.home.reviewsNote}</p>
+              <p className="mt-4 max-w-md text-lg leading-8 text-paper/80">{t.home.reviewsNote}</p>
             </div>
             <div className="lg:col-span-6 lg:col-start-7">
               <PauseOffscreen>
                 <ReviewPile
                   reviews={reviews}
-                  labels={{ prev: ar.home.reviewsPrev, next: ar.home.reviewsNext, pause: ar.home.reviewsPause, play: ar.home.reviewsPlay }}
+                  labels={{ prev: t.home.reviewsPrev, next: t.home.reviewsNext, pause: t.home.reviewsPause, play: t.home.reviewsPlay }}
                 />
               </PauseOffscreen>
             </div>
           </div>
           <div className="container-page pb-20 md:pb-28">
-            <ReviewWall reviews={reviews} initial={0} showAllLabel={fill(ar.home.reviewsAll, { count: String(reviews.length) })} />
+            <ReviewWall reviews={reviews} initial={0} labels={{ zoom: t.home.reviewZoom, dialog: t.home.reviewDialog, close: t.common.close }} showAllLabel={fill(t.home.reviewsAll, { count: String(reviews.length) })} />
           </div>
         </section>
       ) : null}
@@ -215,10 +221,10 @@ export default async function HomePage() {
           <div className="md:col-span-4">
             <div className="md:sticky md:top-28">
               <h2 id="faq-title" className="text-4xl md:text-5xl">
-                {ar.home.faqTitle}
+                {t.home.faqTitle}
               </h2>
-              <Link href="/faq" className={`${textLink} mt-4`}>
-                {ar.home.faqMore}
+              <Link href={href("/faq")} className={`${textLink} mt-4`}>
+                {t.home.faqMore}
               </Link>
             </div>
           </div>

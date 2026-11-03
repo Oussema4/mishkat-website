@@ -3,11 +3,13 @@
 import Image from "next/image";
 import { useState } from "react";
 import type { ProductImage } from "@/db/schema";
-import { ar, fill } from "@/i18n/ar";
+import { fill } from "@/i18n/ar";
+import { useI18n } from "@/i18n/client";
 import { PRODUCT_CUTOUTS } from "@/lib/product-cutouts";
 import { cn } from "@/lib/site";
 
 export function ProductGallery({ images, name, slug }: { images: ProductImage[]; name: string; slug: string }) {
+  const { t, locale } = useI18n();
   const [index, setIndex] = useState(0);
   // Fade only when the visitor switches images: on load the main image must show at once (it is
   // the page's largest element, and a fade from transparent delays it for Google's LCP).
@@ -26,7 +28,7 @@ export function ProductGallery({ images, name, slug }: { images: ProductImage[];
             <Image
               key="cutout"
               src={cutout.src}
-              alt={current.alt || name}
+              alt={(locale === "ar" && current.alt) || name}
               width={cutout.width}
               height={cutout.height}
               priority
@@ -38,7 +40,7 @@ export function ProductGallery({ images, name, slug }: { images: ProductImage[];
           <Image
             key={current.id}
             src={current.url}
-            alt={current.alt || name}
+            alt={(locale === "ar" && current.alt) || name}
             fill
             priority={index === 0}
             sizes="(min-width: 1024px) 560px, 92vw"
@@ -47,7 +49,7 @@ export function ProductGallery({ images, name, slug }: { images: ProductImage[];
         )}
       </div>
       {images.length > 1 ? (
-        <ul aria-label={ar.product.gallery} className="mt-4 grid grid-cols-6 gap-2">
+        <ul aria-label={t.product.gallery} className="mt-4 grid grid-cols-6 gap-2">
           {images.map((img, i) => (
             <li key={img.id}>
               <button
@@ -56,7 +58,7 @@ export function ProductGallery({ images, name, slug }: { images: ProductImage[];
                   setSwitched(true);
                   setIndex(i);
                 }}
-                aria-label={fill(ar.product.showImage, { n: i + 1 })}
+                aria-label={fill(t.product.showImage, { n: i + 1 })}
                 aria-pressed={i === index}
                 className={cn(
                   "relative block aspect-square w-full overflow-hidden rounded-[var(--radius-sm)] border-2 bg-mist transition-colors",

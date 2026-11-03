@@ -269,6 +269,25 @@ body:has(.night) {
     transform: translateX(-65%);
   }
 }
+/* French and English pages read left to right: messages travel the other way */
+[dir="ltr"] .msg-in {
+  animation-name: msg-in-ltr;
+}
+[dir="ltr"] .msg-out {
+  animation-name: msg-out-ltr;
+}
+@keyframes msg-in-ltr {
+  from {
+    opacity: 0;
+    transform: translateX(-65%);
+  }
+}
+@keyframes msg-out-ltr {
+  to {
+    opacity: 0;
+    transform: translateX(65%);
+  }
+}
 
 /* <Reveal>: a block's children rise in one after another as it enters (see reveal.tsx) */
 [data-reveal="armed"] > * {

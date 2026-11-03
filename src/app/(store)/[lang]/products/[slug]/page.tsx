@@ -9,7 +9,8 @@ import { buttonClass } from "@/components/ui/button";
 import { FrameWhenVisible } from "@/components/ui/in-view";
 import { Price } from "@/components/ui/price";
 import { StockBadge } from "@/components/ui/stock-badge";
-import { ar, fill } from "@/i18n/ar";
+import { fill } from "@/i18n/ar";
+import { pageAlternates, pageLocale } from "@/i18n/server";
 import { formatTND, fromMillimes } from "@/lib/money";
 import { PRODUCT_CUTOUTS } from "@/lib/product-cutouts";
 import { siteUrl } from "@/lib/site";
@@ -25,9 +26,12 @@ export async function generateStaticParams() {
   return products.map((p) => ({ slug: p.slug }));
 }
 
-export async function generateMetadata({ params }: PageProps<"/products/[slug]">): Promise<Metadata> {
+type Props = { params: Promise<{ lang: string; slug: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const { locale, href } = await pageLocale(params);
+  const product = await getProductBySlug(slug, locale);
   if (!product) return {};
   const title = product.tagline ? `${product.name}: ${product.tagline}` : product.name;
   // The share card made for the product (1200×630 JPEG), else its first photo.
@@ -36,14 +40,15 @@ export async function generateMetadata({ params }: PageProps<"/products/[slug]">
   return {
     title,
     description: product.shortDescription,
-    alternates: { canonical: `/products/${product.slug}` },
-    openGraph: { type: "website", title, description: product.shortDescription, url: `/products/${product.slug}`, images: image ? [image] : undefined },
+    alternates: pageAlternates(locale, `/products/${product.slug}`),
+    openGraph: { type: "website", title, description: product.shortDescription, url: href(`/products/${product.slug}`), images: image ? [image] : undefined },
   };
 }
 
-export default async function ProductPage({ params }: PageProps<"/products/[slug]">) {
+export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
-  const [product, settings] = await Promise.all([getProductBySlug(slug), getSettings()]);
+  const { locale, t, href } = await pageLocale(params);
+  const [product, settings] = await Promise.all([getProductBySlug(slug, locale), getSettings(locale)]);
   if (!product) notFound();
 
   const cartProduct = {
@@ -70,7 +75,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
       price: fromMillimes(product.price).toFixed(3),
       availability: product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       itemCondition: "https://schema.org/NewCondition",
-      url: `${siteUrl()}/products/${product.slug}`,
+      url: `${siteUrl()}${href(`/products/${product.slug}`)}`,
       // Delivery as the shop states it: one flat fee to every governorate, about 48 hours.
       shippingDetails: {
         "@type": "OfferShippingDetails",
@@ -86,25 +91,25 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
   };
 
   const details = [
-    product.ageRange ? { label: ar.product.age, value: product.ageRange } : null,
-    product.players ? { label: ar.product.players, value: product.players } : null,
+    product.ageRange ? { label: t.product.age, value: product.ageRange } : null,
+    product.players ? { label: t.product.players, value: product.players } : null,
   ].filter((d): d is { label: string; value: string } => d !== null);
 
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
 
-      <nav aria-label="مسار التصفح" className="container-page pt-6 text-sm text-muted">
+      <nav aria-label={t.nav.breadcrumb} className="container-page pt-6 text-sm text-muted">
         <ol className="flex flex-wrap items-center gap-2">
           <li>
-            <Link href="/" className="hover:text-paper">
-              {ar.nav.home}
+            <Link href={href("/")} className="hover:text-paper">
+              {t.nav.home}
             </Link>
           </li>
           <li aria-hidden>/</li>
           <li>
-            <Link href="/shop" className="hover:text-paper">
-              {ar.nav.shop}
+            <Link href={href("/shop")} className="hover:text-paper">
+              {t.nav.shop}
             </Link>
           </li>
           <li aria-hidden>/</li>
@@ -124,8 +129,8 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
           <p className="mt-4 max-w-prose text-lg leading-8 text-paper/80">{product.shortDescription}</p>
 
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
-            <Price price={product.price} compareAt={product.compareAtPrice} size="lg" showSave />
-            <StockBadge stock={product.stock} />
+            <Price price={product.price} compareAt={product.compareAtPrice} size="lg" showSave locale={locale} />
+            <StockBadge stock={product.stock} locale={locale} />
           </div>
 
           {details.length > 0 ? (
@@ -146,11 +151,11 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
           <ul className="mt-8 space-y-3 rounded-[var(--radius-md)] bg-mist p-5 text-[0.95rem]">
             <li className="flex items-center gap-3">
               <Wallet aria-hidden className="size-5 shrink-0 text-gold-deep" strokeWidth={1.5} />
-              {ar.checkout.paymentCod}
+              {t.checkout.paymentCod}
             </li>
             <li className="flex items-center gap-3">
               <Truck aria-hidden className="size-5 shrink-0 text-gold-deep" strokeWidth={1.5} />
-              {fill("توصيل لكل الولايات خلال {time} · {fee}", { time: settings.deliveryTime, fee: formatTND(settings.deliveryFee) })}
+              {fill(t.product.delivery, { time: settings.deliveryTime, fee: formatTND(settings.deliveryFee, locale) })}
             </li>
           </ul>
         </div>
@@ -160,7 +165,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
       <section>
         <div className="container-page grid gap-12 py-14 md:grid-cols-[1.3fr_1fr] md:py-20">
           <div>
-            <h2 className="text-3xl">{ar.product.description}</h2>
+            <h2 className="text-3xl">{t.product.description}</h2>
             <div className="prose-ar mt-5 max-w-prose text-lg leading-9">
               {product.description.split(/\n{2,}/).map((p, i) => (
                 <p key={i}>{p}</p>
@@ -169,7 +174,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
           </div>
           {product.contents.length > 0 ? (
             <div>
-              <h2 className="text-3xl">{ar.product.contents}</h2>
+              <h2 className="text-3xl">{t.product.contents}</h2>
               <dl className="mt-5 grid gap-2">
                 {product.contents.map((c) => (
                   <div key={c.label} className="rounded-[var(--radius-md)] bg-mist px-5 py-4">
@@ -190,15 +195,15 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
             <div className="flex flex-wrap items-end justify-between gap-6">
               <div>
                 <h2 id="how-to-play-title" className="text-3xl md:text-4xl">
-                  {ar.product.howToPlay}
+                  {t.product.howToPlay}
                 </h2>
-                <p className="mt-3 text-paper/70">{ar.product.rulesNote}</p>
+                <p className="mt-3 text-paper/70">{t.product.rulesNote}</p>
               </div>
               {product.slug === "sabili" ? (
                 // A static page in public/rules (built by scripts/build-slides.mjs), so a plain <a>, not <Link>.
                 <a href="/rules/sabili" className={buttonClass("gold", "lg", "rounded-full px-8")}>
                   <Presentation aria-hidden className="size-5" strokeWidth={1.5} />
-                  {ar.product.rulesDeck}
+                  {t.product.rulesDeck}
                 </a>
               ) : null}
             </div>
@@ -207,7 +212,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
                 {/* The rules deck itself (public/rules/sabili.html); ?embed hides its "back" link and wheel paging. */}
                 <FrameWhenVisible
                   src="/rules/sabili?embed"
-                  title={ar.product.rulesDeckTitle}
+                  title={t.product.rulesDeckTitle}
                   className="aspect-video w-full rounded-[var(--radius-lg)] bg-[#0b0e2c]"
                 />
               </div>
@@ -236,7 +241,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
       <section className="container-page grid gap-14 py-16 md:grid-cols-2 md:py-24">
         {product.benefits.length > 0 ? (
           <div>
-            <h2 className="text-3xl">{ar.product.benefits}</h2>
+            <h2 className="text-3xl">{t.product.benefits}</h2>
             <ul className="mt-6 space-y-4">
               {product.benefits.map((b) => (
                 <li key={b} className="flex gap-3 leading-8">
@@ -249,7 +254,7 @@ export default async function ProductPage({ params }: PageProps<"/products/[slug
         ) : null}
         {product.faq.length > 0 ? (
           <div>
-            <h2 className="text-3xl">{ar.product.faq}</h2>
+            <h2 className="text-3xl">{t.product.faq}</h2>
             <div className="mt-4">
               <FaqList items={product.faq} />
             </div>

@@ -6,6 +6,16 @@ export const ar = {
     nameLatin: "Mishkat",
     slogan: "ليكن لعبك عملًا تؤجر عليه",
     mission: "نبسّط ونجعل التعلّم تجربة ممتعة وتفاعلية.",
+    homeLabel: "{name}، الصفحة الرئيسية",
+  },
+  meta: {
+    title: "مشكاة | ألعاب تعليمية إسلامية في تونس",
+    description:
+      "مشكاة تصنع ألعابًا تعليمية إسلامية تبسّط الدين وتجعل تعلّمه ممتعًا. اطلب لعبة سبيلي مع توصيل لكل ولايات تونس والدفع عند الاستلام.",
+    ogAlt: "لعبة سبيلي من مشكاة",
+    shop: "تسوّق ألعاب مشكاة التعليمية الإسلامية، ومنها لعبة سبيلي. توصيل لكل ولايات تونس والدفع عند الاستلام.",
+    contact: "تواصل مع مشكاة عبر واتساب أو الهاتف أو البريد الإلكتروني أو إنستغرام.",
+    faq: "أجوبة عن الطلب والدفع عند الاستلام والتوصيل ولعبة سبيلي.",
   },
   nav: {
     home: "الرئيسية",
@@ -14,9 +24,13 @@ export const ar = {
     faq: "الأسئلة الشائعة",
     contact: "تواصل معنا",
     cart: "السلة",
+    cartCount: "السلة، فيها {n} قطع",
     menu: "القائمة",
     closeMenu: "إغلاق القائمة",
+    mainMenu: "القائمة الرئيسية",
+    breadcrumb: "مسار التصفح",
     skip: "تخطَّ إلى المحتوى",
+    language: "اللغة",
   },
   home: {
     // Hero: the brand, not one product
@@ -59,6 +73,8 @@ export const ar = {
     reviewsNext: "الرسالة التالية",
     reviewsPause: "إيقاف تقليب الرسائل",
     reviewsPlay: "تشغيل تقليب الرسائل",
+    reviewZoom: "تكبير الرسالة {n}",
+    reviewDialog: "رسالة من أحد العملاء",
     // Questions
     faqTitle: "أسئلة شائعة",
     faqMore: "كل الأسئلة",
@@ -69,12 +85,14 @@ export const ar = {
     lead: "ألعاب ومنتجات مشكاة التعليمية.",
     search: "ابحث عن منتج",
     searchPlaceholder: "مثلًا: سبيلي",
+    categories: "تصنيفات المنتجات",
     all: "الكل",
     empty: "لا توجد منتجات تطابق بحثك.",
     clear: "مسح البحث",
     details: "التفاصيل",
     addToCart: "أضف إلى السلة",
-    added: "أُضيف إلى السلة",
+    added: "أُضيفت «{name}» إلى السلة",
+    viewCart: "عرض السلة",
     inStock: "متوفر",
     lowStock: "بقيت {n} قطع فقط",
     outOfStock: "نفد من المخزون",
@@ -96,9 +114,11 @@ export const ar = {
     gallery: "صور المنتج",
     showImage: "عرض الصورة {n}",
     save: "وفّر {n}%",
+    insteadOf: "بدلًا من ",
     offers: "اختر الكمية",
     offerSave: "وفّر {amount}",
     offerUnit: "{price} للعلبة",
+    delivery: "توصيل لكل الولايات خلال {time} · {fee}",
     codNote: "الدفع نقدًا عند الاستلام · توصيل خلال {time}",
     rulesNote: "ملخّص من ورقة القواعد الموجودة داخل العلبة.",
     rulesDeck: "افتح العرض كاملًا",
@@ -110,6 +130,7 @@ export const ar = {
     emptyCta: "تصفّح المتجر",
     remove: "حذف",
     removeItem: "حذف {name} من السلة",
+    quantityOf: "كمية {name}",
     subtotal: "المجموع الفرعي",
     delivery: "التوصيل",
     total: "المجموع",
@@ -139,12 +160,38 @@ export const ar = {
     paymentTitle: "طريقة الدفع",
     paymentCod: "الدفع نقدًا عند الاستلام",
     paymentCodBody: "تدفع ثمن الطلب للموزّع عند وصوله إليك. لا حاجة لأي بطاقة بنكية.",
+    deliveryNote: "التوصيل خلال {time} تقريبًا لكل الولايات.",
     confirm: "تأكيد الطلب",
     sending: "جارٍ إرسال الطلب…",
+    saved: "تم حفظ طلبك. جارٍ فتح صفحة التأكيد…",
+    openConfirmation: "افتح صفحة التأكيد",
     errorsTitle: "يرجى تصحيح ما يلي:",
     networkError: "تعذّر إرسال الطلب. تحقّق من اتصالك بالإنترنت ثم أعد المحاولة، سلتك محفوظة.",
     serverError: "حدث خطأ أثناء حفظ الطلب ولم يُسجَّل. أعد المحاولة بعد قليل أو راسلنا على واتساب.",
+    tooManyOrders: "أرسلت عدة طلبات خلال وقت قصير. انتظر بضع دقائق أو راسلنا على واتساب.",
     edit: "تعديل السلة",
+  },
+  /** Form checks, shown under each field. */
+  validation: {
+    tooLong: "النص طويل جدًا",
+    firstName: "اكتب اسمك (حرفان على الأقل)",
+    lastName: "اكتب لقبك (حرفان على الأقل)",
+    phone: "اكتب رقم هاتف تونسي من 8 أرقام، مثل 92 123 456",
+    governorate: "اختر ولايتك من القائمة",
+    city: "اختر المعتمدية",
+    cityList: "اختر المعتمدية من القائمة",
+    noteTooLong: "الملاحظة طويلة جدًا",
+    maxPerItem: "الحد الأقصى {n} قطعة لكل منتج",
+    emptyCart: "سلتك فارغة",
+    maxPerOrder: "الحد الأقصى {n} قطعة في الطلب الواحد. للكميات الأكبر راسلنا على واتساب.",
+  },
+  /** Why an order could not be saved. */
+  orderErrors: {
+    conflict: "تعذّر تأكيد الطلب. أعد المحاولة.",
+    limit: "لديك طلبات قيد المعالجة بهذا الرقم. راسلنا على واتساب إذا أردت تعديلها أو إضافة طلب جديد.",
+    unavailable: "أحد المنتجات في سلتك لم يعد متوفرًا. حدّث السلة ثم أعد المحاولة.",
+    stock: "الكمية المتوفرة من «{name}» هي {n} فقط. عدّل الكمية ثم أعد المحاولة.",
+    soldOut: "«{name}» نفد من المخزون حاليًا.",
   },
   confirmation: {
     title: "تم استلام طلبك",
@@ -161,10 +208,18 @@ export const ar = {
     title: "تواصل معنا",
     lead: "لأي سؤال عن منتجاتنا أو طلبك، نحن هنا.",
     whatsapp: "راسلنا على واتساب",
+    whatsappLabel: "واتساب",
+    whatsappLead: "نردّ على أسئلتك قبل الطلب وبعده.",
+    whatsappMessage: "السلام عليكم، عندي سؤال عن منتجات مشكاة",
     phone: "الهاتف",
     email: "البريد الإلكتروني",
     instagram: "إنستغرام",
     facebook: "فيسبوك",
+    moreLead: "لديك سؤال عن التوصيل أو الدفع؟ اطّلع على",
+    moreAnd: "و",
+  },
+  faq: {
+    orderSection: "الطلب والتوصيل",
   },
   policies: {
     delivery: "سياسة التوصيل",
@@ -177,6 +232,12 @@ export const ar = {
     follow: "تابعنا",
     rights: "جميع الحقوق محفوظة.",
   },
+  notFound: {
+    title: "الصفحة غير موجودة",
+    body: "ربما تغيّر الرابط أو حُذفت الصفحة. يمكنك العودة إلى المتجر ومتابعة التسوّق.",
+    shop: "تصفّح المتجر",
+    home: "الصفحة الرئيسية",
+  },
   status: {
     new: "طلب جديد",
     confirmed: "تم تأكيد الطلب",
@@ -187,9 +248,13 @@ export const ar = {
   } satisfies Record<OrderStatus, string>,
   common: {
     close: "إغلاق",
+    closeToast: "إغلاق التنبيه",
     loading: "جارٍ التحميل…",
     tnd: "د.ت",
+    listSeparator: "، ",
   },
+  /** Arabic count of boxes: علبة واحدة، علبتان، 3 علب… 11 علبة. */
+  boxes: (n: number) => (n === 1 ? "علبة واحدة" : n === 2 ? "علبتان" : n <= 10 ? `${n} علب` : `${n} علبة`),
 };
 
 export type Dictionary = typeof ar;
@@ -199,9 +264,5 @@ export function fill(template: string, values: Record<string, string | number>) 
   return template.replace(/\{(\w+)\}/g, (_, k) => String(values[k] ?? `{${k}}`));
 }
 
-/** Arabic count of boxes: علبة واحدة، علبتان، 3 علب… 11 علبة. */
-export function boxesLabel(n: number) {
-  if (n === 1) return "علبة واحدة";
-  if (n === 2) return "علبتان";
-  return n <= 10 ? `${n} علب` : `${n} علبة`;
-}
+/** @deprecated use the dictionary's `boxes` (per language). Kept for the dashboard. */
+export const boxesLabel = ar.boxes;

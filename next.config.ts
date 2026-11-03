@@ -49,7 +49,27 @@ const nextConfig: NextConfig = {
   // Server Actions keep the default 1 MB body limit: image uploads go through /admin/upload instead.
   // Presentations are static pages built into public/rules/ (scripts/build-slides.mjs); serve them without ".html".
   async rewrites() {
-    return [{ source: "/rules/:deck", destination: "/rules/:deck.html" }];
+    return {
+      // Arabic is the store's default language and lives at the root: /shop is served by /ar/shop.
+      // French and English keep their prefix (/fr/…, /en/…). Everything that isn't a store page
+      // (dashboard, API, files, Next's own assets) is left alone.
+      beforeFiles: [
+        { source: "/", destination: "/ar" },
+        {
+          source: "/:path((?!(?:ar|fr|en|admin|api|_next|images|uploads|rules)(?:/|$))(?!.*\\.[a-z0-9]+$).+)",
+          destination: "/ar/:path",
+        },
+      ],
+      afterFiles: [{ source: "/rules/:deck", destination: "/rules/:deck.html" }],
+      fallback: [],
+    };
+  },
+  async redirects() {
+    // One address per page: /ar/… is the same page as the root.
+    return [
+      { source: "/ar", destination: "/", permanent: true },
+      { source: "/ar/:path*", destination: "/:path*", permanent: true },
+    ];
   },
   async headers() {
     return [

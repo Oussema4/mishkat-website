@@ -7,12 +7,14 @@ import { QuantityStepper } from "@/components/store/add-to-cart";
 import { LinePrice, OfferSaving, OrderTotals } from "@/components/store/order-summary";
 import { useCartSync } from "@/components/store/use-cart-sync";
 import { ButtonLink } from "@/components/ui/button";
-import { ar, fill } from "@/i18n/ar";
+import { fill } from "@/i18n/ar";
+import { useI18n } from "@/i18n/client";
 import { useCart } from "@/lib/cart-store";
 import { formatTND } from "@/lib/money";
 import { computeTotals } from "@/lib/pricing";
 
 export function CartView({ deliveryFee }: { deliveryFee: number }) {
+  const { t, locale, href } = useI18n();
   const hydrated = useCartSync();
   const lines = useCart((s) => s.lines);
   const setQuantity = useCart((s) => s.setQuantity);
@@ -21,7 +23,7 @@ export function CartView({ deliveryFee }: { deliveryFee: number }) {
   if (!hydrated) {
     return (
       <div aria-busy="true" className="mt-10 space-y-4">
-        <span className="sr-only">{ar.cart.loading}</span>
+        <span className="sr-only">{t.cart.loading}</span>
         <div className="h-28 animate-pulse rounded-[var(--radius-lg)] bg-mist" />
         <div className="h-28 animate-pulse rounded-[var(--radius-lg)] bg-mist" />
       </div>
@@ -32,8 +34,8 @@ export function CartView({ deliveryFee }: { deliveryFee: number }) {
     return (
       <div className="mt-10 flex flex-col items-start gap-5 rounded-[var(--radius-lg)] bg-mist p-8 md:p-12">
         <ShoppingBag aria-hidden className="size-10 text-gold-deep" strokeWidth={1.5} />
-        <p className="text-xl">{ar.cart.empty}</p>
-        <ButtonLink href="/shop">{ar.cart.emptyCta}</ButtonLink>
+        <p className="text-xl">{t.cart.empty}</p>
+        <ButtonLink href={href("/shop")}>{t.cart.emptyCta}</ButtonLink>
       </div>
     );
   }
@@ -45,21 +47,21 @@ export function CartView({ deliveryFee }: { deliveryFee: number }) {
       <ul className="divide-y divide-line border-y border-line">
         {lines.map((line) => (
           <li key={line.productId} className="grid grid-cols-[5.5rem_1fr] gap-4 py-6 sm:grid-cols-[7rem_1fr]">
-            <Link href={`/products/${line.slug}`} tabIndex={-1} aria-hidden className="rounded-2xl relative block aspect-[4/5] overflow-hidden bg-mist">
+            <Link href={href(`/products/${line.slug}`)} tabIndex={-1} aria-hidden className="rounded-2xl relative block aspect-[4/5] overflow-hidden bg-mist">
               {line.image ? <Image src={line.image} alt="" fill sizes="112px" className="object-cover" /> : null}
             </Link>
             <div className="flex flex-col gap-3">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <Link href={`/products/${line.slug}`} className="text-xl font-semibold hover:underline">
+                  <Link href={href(`/products/${line.slug}`)} className="text-xl font-semibold hover:underline">
                     {line.name}
                   </Link>
                   <p className="text-sm text-muted tabular">
-                    {ar.cart.unitPrice}: {formatTND(line.unitPrice)}
+                    {t.cart.unitPrice}: {formatTND(line.unitPrice, locale)}
                   </p>
-                  <OfferSaving line={line} />
+                  <OfferSaving line={line} locale={locale} />
                 </div>
-                <LinePrice line={line} className="font-bold" />
+                <LinePrice line={line} className="font-bold" locale={locale} />
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <QuantityStepper
@@ -67,32 +69,32 @@ export function CartView({ deliveryFee }: { deliveryFee: number }) {
                   value={line.quantity}
                   max={line.maxQuantity}
                   onChange={(n) => setQuantity(line.productId, n)}
-                  label={fill("كمية {name}", { name: line.name })}
+                  label={fill(t.cart.quantityOf, { name: line.name })}
                 />
                 <button
                   type="button"
                   onClick={() => remove(line.productId)}
                   className="inline-flex min-h-10 items-center gap-1.5 rounded-md px-2 text-sm font-medium text-danger hover:bg-danger-bg"
-                  aria-label={fill(ar.cart.removeItem, { name: line.name })}
+                  aria-label={fill(t.cart.removeItem, { name: line.name })}
                 >
                   <Trash2 aria-hidden className="size-4" />
-                  {ar.cart.remove}
+                  {t.cart.remove}
                 </button>
               </div>
-              {line.quantity >= line.maxQuantity ? <p className="text-sm text-warning">{ar.cart.maxReached}</p> : null}
+              {line.quantity >= line.maxQuantity ? <p className="text-sm text-warning">{t.cart.maxReached}</p> : null}
             </div>
           </li>
         ))}
       </ul>
 
-      <aside aria-label={ar.checkout.summary} className="rounded-[var(--radius-lg)] bg-mist p-6 lg:sticky lg:top-24">
-        <OrderTotals {...totals} />
-        <p className="mt-4 text-sm text-muted">{ar.checkout.paymentCodBody}</p>
-        <ButtonLink href="/checkout" size="lg" className="mt-6 w-full">
-          {ar.cart.checkout}
+      <aside aria-label={t.checkout.summary} className="rounded-[var(--radius-lg)] bg-mist p-6 lg:sticky lg:top-24">
+        <OrderTotals {...totals} locale={locale} />
+        <p className="mt-4 text-sm text-muted">{t.checkout.paymentCodBody}</p>
+        <ButtonLink href={href("/checkout")} size="lg" className="mt-6 w-full">
+          {t.cart.checkout}
         </ButtonLink>
-        <Link href="/shop" className="mt-3 flex min-h-11 items-center justify-center font-medium text-muted hover:text-paper">
-          {ar.cart.continue}
+        <Link href={href("/shop")} className="mt-3 flex min-h-11 items-center justify-center font-medium text-muted hover:text-paper">
+          {t.cart.continue}
         </Link>
       </aside>
     </div>

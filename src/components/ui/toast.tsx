@@ -3,6 +3,7 @@
 import { CircleAlert, CircleCheck, X } from "lucide-react";
 import Link from "next/link";
 import { create } from "zustand";
+import { useI18n } from "@/i18n/client";
 import { cn } from "@/lib/site";
 
 type Toast = { id: number; kind: "success" | "error"; message: string; action?: { href: string; label: string } };
@@ -25,6 +26,7 @@ export const toast = {
 export function Toaster() {
   const toasts = useToasts((s) => s.toasts);
   const dismiss = useToasts((s) => s.dismiss);
+  const closeLabel = useI18n().t.common.closeToast;
   return (
     <div
       aria-live="polite"
@@ -56,7 +58,7 @@ export function Toaster() {
             type="button"
             onClick={() => dismiss(t.id)}
             className="-me-1 inline-flex size-9 shrink-0 items-center justify-center rounded-full text-muted hover:bg-mist"
-            aria-label="إغلاق التنبيه"
+            aria-label={closeLabel}
           >
             <X aria-hidden className="size-4" />
           </button>

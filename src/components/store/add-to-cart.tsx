@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { create } from "zustand";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
-import { ar, boxesLabel, fill } from "@/i18n/ar";
+import { fill } from "@/i18n/ar";
+import { useI18n } from "@/i18n/client";
 import type { Bundle } from "@/db/schema";
 import { useCart } from "@/lib/cart-store";
 import { formatTND } from "@/lib/money";
@@ -29,6 +30,7 @@ function toLine(p: CartProduct) {
 
 /** Compact button for product cards. */
 export function AddToCartButton({ product, variant = "outline", className }: { product: CartProduct; variant?: "outline" | "primary" | "sabili"; className?: string }) {
+  const { t, href } = useI18n();
   const add = useCart((s) => s.add);
   const disabled = product.stock <= 0;
   return (
@@ -39,11 +41,11 @@ export function AddToCartButton({ product, variant = "outline", className }: { p
       className={className}
       onClick={() => {
         add(toLine(product), 1);
-        toast.success(fill("أُضيفت «{name}» إلى السلة", { name: product.name }), { href: "/cart", label: "عرض السلة" });
+        toast.success(fill(t.shop.added, { name: product.name }), { href: href("/cart"), label: t.shop.viewCart });
       }}
     >
       <ShoppingBag aria-hidden className="size-5" strokeWidth={1.5} />
-      {disabled ? ar.shop.outOfStock : ar.shop.addToCart}
+      {disabled ? t.shop.outOfStock : t.shop.addToCart}
     </Button>
   );
 }
@@ -61,6 +63,7 @@ export function QuantityStepper({
   label: string;
   size?: "sm" | "md";
 }) {
+  const { t } = useI18n();
   const limit = Math.max(1, Math.min(max, MAX_QTY_PER_ITEM));
   const btn = cn(
     "inline-flex items-center justify-center text-paper transition-colors hover:bg-paper/10 disabled:opacity-35 disabled:hover:bg-transparent",
@@ -68,13 +71,13 @@ export function QuantityStepper({
   );
   return (
     <div role="group" aria-label={label} className="inline-flex items-center rounded-[var(--radius-md)] border border-line bg-ink-soft">
-      <button type="button" className={btn} onClick={() => onChange(value + 1)} disabled={value >= limit} aria-label={ar.product.increase}>
+      <button type="button" className={btn} onClick={() => onChange(value + 1)} disabled={value >= limit} aria-label={t.product.increase}>
         <Plus aria-hidden className="size-4" />
       </button>
       <output aria-live="polite" className={cn("min-w-10 text-center font-semibold tabular", size === "sm" ? "text-base" : "text-lg")}>
         {value}
       </output>
-      <button type="button" className={btn} onClick={() => onChange(value - 1)} disabled={value <= 1} aria-label={ar.product.decrease}>
+      <button type="button" className={btn} onClick={() => onChange(value - 1)} disabled={value <= 1} aria-label={t.product.decrease}>
         <Minus aria-hidden className="size-4" />
       </button>
     </div>
@@ -107,10 +110,11 @@ function useQuantity(p: CartProduct): [number, (n: number) => void] {
 }
 
 function OfferPicker({ product, value, onChange }: { product: CartProduct; value: number; onChange: (n: number) => void }) {
+  const { t, locale } = useI18n();
   const choices = offerChoices(product);
   return (
     <fieldset>
-      <legend className="font-medium">{ar.product.offers}</legend>
+      <legend className="font-medium">{t.product.offers}</legend>
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         {choices.map((c) => {
           const saved = c.regular - c.total;
@@ -133,20 +137,20 @@ function OfferPicker({ product, value, onChange }: { product: CartProduct; value
                 onChange={() => onChange(c.quantity)}
                 className="sr-only"
               />
-              <span className="font-semibold">{boxesLabel(c.quantity)}</span>
-              <span className="text-2xl font-bold tabular">{formatTND(c.total)}</span>
+              <span className="font-semibold">{t.boxes(c.quantity)}</span>
+              <span className="whitespace-nowrap text-2xl font-bold tabular">{formatTND(c.total, locale)}</span>
               {saved > 0 ? (
                 <>
                   <span className="text-sm text-muted tabular">
                     <span className="line-through">
-                      <span className="sr-only">بدلًا من </span>
-                      {formatTND(c.regular)}
+                      <span className="sr-only">{t.product.insteadOf}</span>
+                      {formatTND(c.regular, locale)}
                     </span>
                     {" · "}
-                    {fill(ar.product.offerUnit, { price: formatTND(Math.round(c.total / c.quantity)) })}
+                    {fill(t.product.offerUnit, { price: formatTND(Math.round(c.total / c.quantity), locale) })}
                   </span>
                   <span className="mt-1 self-start rounded-full bg-gold px-2.5 py-0.5 text-sm font-semibold text-ink tabular">
-                    {fill(ar.product.offerSave, { amount: formatTND(saved) })}
+                    {fill(t.product.offerSave, { amount: formatTND(saved, locale) })}
                   </span>
                 </>
               ) : null}
@@ -160,10 +164,11 @@ function OfferPicker({ product, value, onChange }: { product: CartProduct; value
 
 /** The same choices, small enough for the phone's sticky order bar. */
 function OfferChips({ product, value, onChange }: { product: CartProduct; value: number; onChange: (n: number) => void }) {
+  const { t, locale } = useI18n();
   const choices = offerChoices(product);
   return (
     <fieldset>
-      <legend className="sr-only">{ar.product.offers}</legend>
+      <legend className="sr-only">{t.product.offers}</legend>
       <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${choices.length}, minmax(0, 1fr))` }}>
         {choices.map((c) => {
           const saved = c.regular - c.total;
@@ -186,10 +191,10 @@ function OfferChips({ product, value, onChange }: { product: CartProduct; value:
                 onChange={() => onChange(c.quantity)}
                 className="sr-only"
               />
-              <span className="text-xs text-paper/80">{boxesLabel(c.quantity)}</span>
-              <span className="font-bold tabular">{formatTND(c.total)}</span>
+              <span className="text-xs text-paper/80">{t.boxes(c.quantity)}</span>
+              <span className="whitespace-nowrap font-bold tabular">{formatTND(c.total, locale)}</span>
               {saved > 0 ? (
-                <span className="text-[0.7rem] font-semibold text-gold tabular">{fill(ar.product.offerSave, { amount: formatTND(saved) })}</span>
+                <span className="text-[0.7rem] font-semibold text-gold tabular">{fill(t.product.offerSave, { amount: formatTND(saved, locale) })}</span>
               ) : null}
             </label>
           );
@@ -201,6 +206,7 @@ function OfferChips({ product, value, onChange }: { product: CartProduct; value:
 
 /** Quantity (or quantity offers) + "add to cart" + "order now" block for the product page. */
 export function ProductPurchase({ product, sticky = false }: { product: CartProduct; sticky?: boolean }) {
+  const { t, locale, href } = useI18n();
   const [qty, setQty] = useQuantity(product);
   const add = useCart((s) => s.add);
   const router = useRouter();
@@ -209,8 +215,8 @@ export function ProductPurchase({ product, sticky = false }: { product: CartProd
 
   const addToCart = (goToCheckout: boolean) => {
     add(toLine(product), qty);
-    if (goToCheckout) router.push("/checkout");
-    else toast.success(fill("أُضيفت «{name}» إلى السلة", { name: product.name }), { href: "/cart", label: "عرض السلة" });
+    if (goToCheckout) router.push(href("/checkout"));
+    else toast.success(fill(t.shop.added, { name: product.name }), { href: href("/cart"), label: t.shop.viewCart });
   };
 
   if (sticky && hasOffers) {
@@ -220,10 +226,10 @@ export function ProductPurchase({ product, sticky = false }: { product: CartProd
         <OfferChips product={product} value={qty} onChange={setQty} />
         <Button type="button" variant="primary" disabled={out} onClick={() => addToCart(true)} className="w-full">
           {out ? (
-            ar.shop.outOfStock
+            t.shop.outOfStock
           ) : (
             <>
-              {ar.product.orderNow} · <span className="tabular">{formatTND(bundleTotal(product.price, qty, product.bundles))}</span>
+              {t.product.orderNow} · <span className="tabular">{formatTND(bundleTotal(product.price, qty, product.bundles), locale)}</span>
             </>
           )}
         </Button>
@@ -236,10 +242,10 @@ export function ProductPurchase({ product, sticky = false }: { product: CartProd
       <div className="flex items-center gap-4">
         <div className="shrink-0">
           <span className="block text-sm text-muted">{product.name}</span>
-          <span className="font-bold tabular">{formatTND(product.price * qty)}</span>
+          <span className="font-bold tabular">{formatTND(product.price * qty, locale)}</span>
         </div>
         <Button type="button" variant="primary" disabled={out} onClick={() => addToCart(true)} className="flex-1">
-          {out ? ar.shop.outOfStock : ar.product.orderNow}
+          {out ? t.shop.outOfStock : t.product.orderNow}
         </Button>
       </div>
     );
@@ -252,18 +258,18 @@ export function ProductPurchase({ product, sticky = false }: { product: CartProd
       ) : (
         <div className="flex items-center gap-4">
           <span id="qty-label" className="font-medium">
-            {ar.product.quantity}
+            {t.product.quantity}
           </span>
-          <QuantityStepper value={qty} max={product.stock} onChange={setQty} label={ar.product.quantity} />
+          <QuantityStepper value={qty} max={product.stock} onChange={setQty} label={t.product.quantity} />
         </div>
       )}
       <div className="grid gap-3 sm:grid-cols-2">
         <Button type="button" variant="primary" size="lg" disabled={out} onClick={() => addToCart(true)}>
-          {out ? ar.shop.outOfStock : ar.product.orderNow}
+          {out ? t.shop.outOfStock : t.product.orderNow}
         </Button>
         <Button type="button" variant="outline" size="lg" disabled={out} onClick={() => addToCart(false)}>
           <ShoppingBag aria-hidden className="size-5" strokeWidth={1.5} />
-          {ar.product.addToCart}
+          {t.product.addToCart}
         </Button>
       </div>
     </div>

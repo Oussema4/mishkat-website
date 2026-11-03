@@ -14,12 +14,16 @@ type Database = LibSQLDatabase<typeof schema>;
 
 export type CreateOrderResult =
   | { ok: true; publicToken: string; reference: string; duplicate: boolean }
-  | { ok: false; code: "unavailable" | "stock" | "limit" | "conflict"; message: string };
+  | { ok: false; code: "unavailable" | "stock" | "limit" | "conflict"; message: string; detail?: StockDetail };
+
+/** Which product ran short and how many are left (for a message in the shopper's language). */
+export type StockDetail = { name: string; left: number };
 
 class OrderError extends Error {
   constructor(
     public code: "unavailable" | "stock" | "limit" | "conflict",
     message: string,
+    public detail?: StockDetail,
   ) {
     super(message);
   }
@@ -133,6 +137,7 @@ export async function createOrder(db: Database, data: CheckoutData, deliveryFee:
             left > 0
               ? `الكمية المتوفرة من «${line.product.name}» هي ${left} فقط. عدّل الكمية ثم أعد المحاولة.`
               : `«${line.product.name}» نفد من المخزون حاليًا.`,
+            { name: line.product.name, left },
           );
         }
       }
@@ -181,7 +186,7 @@ export async function createOrder(db: Database, data: CheckoutData, deliveryFee:
     }, { behavior: "immediate" }));
     return { ok: true, ...result };
   } catch (err) {
-    if (err instanceof OrderError) return { ok: false, code: err.code, message: err.message };
+    if (err instanceof OrderError) return { ok: false, code: err.code, message: err.message, detail: err.detail };
     if (isUniqueViolation(err)) {
       // A concurrent request with the same key won the race.
       const again = await findByIdempotencyKey(db, data.idempotencyKey);

@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       .from(productImages)
       .where(eq(productImages.productId, productId));
     await db.insert(productImages).values({ productId, url: saved.url, alt, sortOrder: Number(max) + 1 });
-    revalidatePath("/", "layout");
+    revalidatePath("/[lang]", "layout");
     return reply(200, { ok: true, message: "تمت إضافة الصورة." });
   }
 
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       alt: "رسالة من أحد عملاء مشكاة",
       sortOrder: Number(max) + 1,
     });
-    revalidatePath("/", "layout");
+    revalidatePath("/[lang]", "layout");
     return reply(200, { ok: true, message: "تمت إضافة الرأي. تأكّد أن الصورة لا تُظهر اسم الشخص أو صورته." });
   }
 

@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import type { Review } from "@/db/schema";
+import { useI18n } from "@/i18n/client";
 
 const HOLD_MS = 4500;
 const SLIDE_MS = 700;
@@ -16,6 +17,7 @@ const SLIDE_MS = 700;
  * still and messages change without travel. Prev/next always work.
  */
 export function ReviewPile({ reviews, labels }: { reviews: Review[]; labels: { prev: string; next: string; pause: string; play: string } }) {
+  const { t, locale } = useI18n();
   const n = reviews.length;
   const [i, setI] = useState(0);
   const [leaving, setLeaving] = useState<number | null>(null);
@@ -79,7 +81,7 @@ export function ReviewPile({ reviews, labels }: { reviews: Review[]; labels: { p
             <figure key={r.id} aria-hidden={cls === "msg-out"} className={`${cls} absolute inset-0 grid place-items-center p-8 sm:p-10`}>
               <Image
                 src={r.imageUrl}
-                alt={r.alt}
+                alt={locale === "ar" ? r.alt : t.home.reviewDialog}
                 width={r.width}
                 height={r.height}
                 sizes="(min-width: 640px) 460px, 80vw"
@@ -92,13 +94,13 @@ export function ReviewPile({ reviews, labels }: { reviews: Review[]; labels: { p
 
       <div className="mt-8 flex items-center justify-center gap-2">
         <button type="button" onClick={() => go(-1)} aria-label={labels.prev} className="inline-flex size-12 items-center justify-center rounded-full bg-paper/10 transition-colors hover:bg-gold hover:text-ink">
-          <ChevronRight aria-hidden className="size-5" />
+          <ChevronRight aria-hidden className="size-5 ltr:rotate-180" />
         </button>
         <span aria-live="polite" className="min-w-16 text-center font-semibold tabular-nums text-paper/85">
           {i + 1} / {n}
         </span>
         <button type="button" onClick={() => go(1)} aria-label={labels.next} className="inline-flex size-12 items-center justify-center rounded-full bg-paper/10 transition-colors hover:bg-gold hover:text-ink">
-          <ChevronLeft aria-hidden className="size-5" />
+          <ChevronLeft aria-hidden className="size-5 ltr:rotate-180" />
         </button>
         <button
           type="button"

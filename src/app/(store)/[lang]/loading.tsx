@@ -1,11 +1,16 @@
+"use client";
+
+import { useI18n } from "@/i18n/client";
+
 /**
  * Shown instantly while a store page is being fetched, so a click never feels frozen.
  * Kept deliberately quiet: a page-shaped placeholder, no spinner.
  */
 export default function StoreLoading() {
+  const { t } = useI18n();
   return (
     <div role="status" aria-live="polite" className="container-page py-10 md:py-16">
-      <span className="sr-only">جارٍ التحميل…</span>
+      <span className="sr-only">{t.common.loading}</span>
       <div aria-hidden className="animate-pulse space-y-6">
         <div className="h-12 w-2/3 max-w-md rounded-[var(--radius-md)] bg-mist" />
         <div className="h-5 w-full max-w-xl rounded-[var(--radius-sm)] bg-mist" />

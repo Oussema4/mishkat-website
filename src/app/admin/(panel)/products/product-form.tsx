@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useActionState, useState } from "react";
 import { AdminField, FormMessage, SubmitButton, adminInput, describe, keepValuesOnSubmit } from "@/components/admin/form-bits";
-import type { Category, Product } from "@/db/schema";
+import type { Category, Product, ProductText } from "@/db/schema";
 import { formatBundles, formatFaq, formatLabelValues, formatSteps, formatTNDInput } from "@/lib/admin-format";
 import { uploadImages } from "@/components/admin/upload-action";
 import { cn } from "@/lib/site";
@@ -188,6 +188,17 @@ export function ProductForm({
         </div>
       </Section>
 
+      <Section title="الترجمة (الفرنسية والإنجليزية)">
+        <p className="-mt-2 mb-4 text-sm leading-6 text-muted">
+          ما يظهر في صفحات /fr و /en. نفس طريقة الكتابة كالحقول العربية أعلاه. أي حقل يُترك فارغًا يظهر بالعربية.
+        </p>
+        <div className="space-y-3">
+          {(["fr", "en"] as const).map((lang) => (
+            <TranslationFields key={lang} lang={lang} value={product?.translations?.[lang]} />
+          ))}
+        </div>
+      </Section>
+
       <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center gap-4 border-t border-line bg-mist/95 px-4 py-3 backdrop-blur md:-mx-8 md:px-8">
         <SubmitButton pending={pending}>{product ? "حفظ التعديلات" : "إضافة المنتج"}</SubmitButton>
         <div className="flex-1">
@@ -200,6 +211,49 @@ export function ProductForm({
         </div>
       </div>
     </form>
+  );
+}
+
+/** The product's texts in one other language; fields are named `fr.name`, `en.faq`, … */
+function TranslationFields({ lang, value }: { lang: "fr" | "en"; value?: Partial<ProductText> }) {
+  const id = (field: string) => `${lang}.${field}`;
+  const v = value ?? {};
+  return (
+    <details className="rounded-[var(--radius-md)] border border-line p-4 open:pb-5" open={lang === "fr"}>
+      <summary className="cursor-pointer font-semibold">{lang === "fr" ? "Français" : "English"}</summary>
+      <div dir="ltr" lang={lang} className="mt-4 grid gap-5 text-start md:grid-cols-2">
+        <AdminField id={id("name")} label="Name">
+          <input {...describe(id("name"), {})} defaultValue={v.name ?? ""} className={adminInput} />
+        </AdminField>
+        <AdminField id={id("tagline")} label="Tagline">
+          <input {...describe(id("tagline"), {})} defaultValue={v.tagline ?? ""} className={adminInput} />
+        </AdminField>
+        <AdminField id={id("shortDescription")} label="Short description" className="md:col-span-2">
+          <textarea {...describe(id("shortDescription"), {})} defaultValue={v.shortDescription ?? ""} rows={2} className={adminInput} />
+        </AdminField>
+        <AdminField id={id("description")} label="Description" className="md:col-span-2">
+          <textarea {...describe(id("description"), {})} defaultValue={v.description ?? ""} rows={6} className={adminInput} />
+        </AdminField>
+        <AdminField id={id("ageRange")} label="Age">
+          <input {...describe(id("ageRange"), {})} defaultValue={v.ageRange ?? ""} className={adminInput} />
+        </AdminField>
+        <AdminField id={id("players")} label="Players">
+          <input {...describe(id("players"), {})} defaultValue={v.players ?? ""} className={adminInput} />
+        </AdminField>
+        <AdminField id={id("contents")} label="What's in the box (Label: value)" className="md:col-span-2">
+          <textarea {...describe(id("contents"), {})} defaultValue={formatLabelValues(v.contents ?? [])} rows={4} className={adminInput} />
+        </AdminField>
+        <AdminField id={id("howToPlay")} label="How to play" className="md:col-span-2">
+          <textarea {...describe(id("howToPlay"), {})} defaultValue={formatSteps(v.howToPlay ?? [])} rows={8} className={adminInput} />
+        </AdminField>
+        <AdminField id={id("benefits")} label="Benefits (one per line)" className="md:col-span-2">
+          <textarea {...describe(id("benefits"), {})} defaultValue={(v.benefits ?? []).join("\n")} rows={4} className={adminInput} />
+        </AdminField>
+        <AdminField id={id("faq")} label="FAQ" className="md:col-span-2">
+          <textarea {...describe(id("faq"), {})} defaultValue={formatFaq(v.faq ?? [])} rows={6} className={adminInput} />
+        </AdminField>
+      </div>
+    </details>
   );
 }
 

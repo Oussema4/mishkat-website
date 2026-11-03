@@ -2,30 +2,30 @@ import type { Metadata } from "next";
 import { Mail, Phone } from "lucide-react";
 import Link from "next/link";
 import { FacebookIcon, InstagramIcon, WhatsAppIcon } from "@/components/brand/social-icons";
-import { ar } from "@/i18n/ar";
+import { pageAlternates, pageLocale, type LangParams } from "@/i18n/server";
 import { instagramHandle, whatsappLink } from "@/lib/tunisia";
 import { getSettings } from "@/server/settings";
 
-export const metadata: Metadata = {
-  title: ar.contact.title,
-  description: "تواصل مع مشكاة عبر واتساب أو الهاتف أو البريد الإلكتروني أو إنستغرام.",
-  alternates: { canonical: "/contact" },
-};
+export async function generateMetadata({ params }: LangParams): Promise<Metadata> {
+  const { locale, t } = await pageLocale(params);
+  return { title: t.contact.title, description: t.meta.contact, alternates: pageAlternates(locale, "/contact") };
+}
 
-export default async function ContactPage() {
+export default async function ContactPage({ params }: LangParams) {
+  const { t, href } = await pageLocale(params);
   const s = await getSettings();
   const channels = [
-    s.phone && { icon: Phone, label: ar.contact.phone, value: s.phone, href: `tel:${s.phone.replace(/\s/g, "")}`, ltr: true },
-    s.email && { icon: Mail, label: ar.contact.email, value: s.email, href: `mailto:${s.email}`, ltr: true },
-    s.instagram && { icon: InstagramIcon, label: ar.contact.instagram, value: instagramHandle(s.instagram), href: s.instagram, ltr: true, external: true },
-    s.facebook && { icon: FacebookIcon, label: ar.contact.facebook, value: "Mishkat", href: s.facebook, ltr: true, external: true },
+    s.phone && { icon: Phone, label: t.contact.phone, value: s.phone, href: `tel:${s.phone.replace(/\s/g, "")}`, ltr: true },
+    s.email && { icon: Mail, label: t.contact.email, value: s.email, href: `mailto:${s.email}`, ltr: true },
+    s.instagram && { icon: InstagramIcon, label: t.contact.instagram, value: instagramHandle(s.instagram), href: s.instagram, ltr: true, external: true },
+    s.facebook && { icon: FacebookIcon, label: t.contact.facebook, value: "Mishkat", href: s.facebook, ltr: true, external: true },
   ].filter(Boolean) as { icon: React.ComponentType<{ className?: string }>; label: string; value: string; href: string; ltr?: boolean; external?: boolean }[];
 
   return (
     <div className="container-page py-10 md:py-16">
       <div className="max-w-2xl">
-        <h1 className="text-4xl md:text-5xl">{ar.contact.title}</h1>
-        <p className="mt-3 text-lg text-paper/80">{ar.contact.lead}</p>
+        <h1 className="text-4xl md:text-5xl">{t.contact.title}</h1>
+        <p className="mt-3 text-lg text-paper/80">{t.contact.lead}</p>
       </div>
 
       <div className="mt-10 grid gap-10 md:grid-cols-[1fr_1.2fr]">
@@ -33,11 +33,11 @@ export default async function ContactPage() {
           <div className="on-dark flex flex-col justify-between gap-8 rounded-3xl border border-paper/10 bg-ink-soft p-8 text-paper">
             <div>
               <WhatsAppIcon className="size-10 text-gold" />
-              <p className="mt-5 font-display text-3xl text-gold">{ar.contact.whatsapp}</p>
-              <p className="mt-2 text-paper/75">نردّ على أسئلتك قبل الطلب وبعده.</p>
+              <p className="mt-5 font-display text-3xl text-gold">{t.contact.whatsapp}</p>
+              <p className="mt-2 text-paper/75">{t.contact.whatsappLead}</p>
             </div>
             <a
-              href={whatsappLink(s.whatsapp, "السلام عليكم، عندي سؤال عن منتجات مشكاة")}
+              href={whatsappLink(s.whatsapp, t.contact.whatsappMessage)}
               target="_blank"
               rel="noopener"
               className="inline-flex min-h-14 items-center justify-center gap-2 rounded-[var(--radius-md)] bg-gold px-6 text-lg font-semibold text-ink hover:bg-gold-light"
@@ -72,13 +72,14 @@ export default async function ContactPage() {
       </div>
 
       <p className="mt-12 text-muted">
-        لديك سؤال عن التوصيل أو الدفع؟ اطّلع على{" "}
-        <Link href="/faq" className="font-semibold text-gold-light underline underline-offset-4">
-          {ar.nav.faq}
+        {t.contact.moreLead}{" "}
+        <Link href={href("/faq")} className="font-semibold text-gold-light underline underline-offset-4">
+          {t.nav.faq}
         </Link>{" "}
-        و
-        <Link href="/policies/delivery" className="font-semibold text-gold-light underline underline-offset-4">
-          {ar.policies.delivery}
+        {t.contact.moreAnd}
+        {t.contact.moreAnd.length > 1 ? " " : ""}
+        <Link href={href("/policies/delivery")} className="font-semibold text-gold-light underline underline-offset-4">
+          {t.policies.delivery}
         </Link>
         .
       </p>
