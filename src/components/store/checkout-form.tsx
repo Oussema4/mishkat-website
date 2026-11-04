@@ -153,6 +153,17 @@ export function CheckoutForm({
     });
   };
 
+  const submitLabel = pending ? (
+    <>
+      <LoaderCircle aria-hidden className="size-5 animate-spin" />
+      {t.checkout.sending}
+    </>
+  ) : (
+    <>
+      {t.checkout.confirm} · <span className="tabular">{formatTND(totals.total, locale)}</span>
+    </>
+  );
+
   const errorList = FIELD_ORDER.filter((f) => errors[f]).map((f) => ({ field: f, message: errors[f]! }));
   if (errors.items) errorList.push({ field: "note", message: errors.items });
 
@@ -333,22 +344,28 @@ export function CheckoutForm({
           <OrderTotals {...totals} locale={locale} />
         </div>
         <p className="mt-4 text-sm text-muted">{fill(t.checkout.deliveryNote, { time: deliveryTime })}</p>
-        <Button type="submit" size="lg" className="mt-6 w-full" disabled={pending} aria-disabled={pending}>
-          {pending ? (
-            <>
-              <LoaderCircle aria-hidden className="size-5 animate-spin" />
-              {t.checkout.sending}
-            </>
-          ) : (
-            <>
-              {t.checkout.confirm} · <span className="tabular">{formatTND(totals.total, locale)}</span>
-            </>
-          )}
-        </Button>
+        {/* On phones the button lives in the bar fixed at the bottom of the screen (below) */}
+        <div className="hidden lg:block">
+          <Button type="submit" size="lg" className="mt-6 w-full" disabled={pending} aria-disabled={pending}>
+            {submitLabel}
+          </Button>
+        </div>
         <p className="sr-only" aria-live="polite">
           {pending ? t.checkout.sending : ""}
         </p>
       </aside>
+
+      {/* Phones: the order button stays on screen while the customer fills the form */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-paper/10 bg-ink/95 px-4 pt-3 backdrop-blur-md lg:hidden"
+        style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+      >
+        <Button type="submit" size="lg" className="w-full" disabled={pending} aria-disabled={pending}>
+          {submitLabel}
+        </Button>
+      </div>
+      {/* Room under the page so the bar never hides the end of it */}
+      <div aria-hidden className="h-20 lg:hidden" />
     </form>
   );
 }
