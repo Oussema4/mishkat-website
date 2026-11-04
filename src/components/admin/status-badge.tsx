@@ -2,18 +2,19 @@ import type { OrderStatus } from "@/db/schema";
 import { ar } from "@/i18n/ar";
 import { cn } from "@/lib/site";
 
-const styles: Record<OrderStatus, string> = {
-  new: "bg-[#fff4dc] text-[#7a4a00] ring-[#f0d9a6]",
-  confirmed: "bg-[#e8efff] text-[#1f3a9e] ring-[#c9d6fb]",
-  preparing: "bg-[#f1ebff] text-[#5a2aa8] ring-[#ddd0fa]",
-  shipped: "bg-[#e6f4f7] text-[#155e6e] ring-[#c3e2ea]",
-  delivered: "bg-success-bg text-success ring-[#c5e5d2]",
-  cancelled: "bg-mist text-muted ring-line line-through decoration-1",
+/** One filled colour per status, readable at a glance (dark text on a light fill, contrast ≥ 4.5). */
+export const STATUS_STYLES: Record<OrderStatus, string> = {
+  new: "bg-[#fdeb9c] text-[#5c4700]",
+  confirmed: "bg-[#c6eda2] text-[#24480c]",
+  preparing: "bg-[#d9c4fb] text-[#3d1385]",
+  shipped: "bg-[#bfd3f5] text-[#173777]",
+  delivered: "bg-[#a8e3c2] text-[#0d4a2c]",
+  cancelled: "bg-[#f7b1b1] text-[#7a1616]",
 };
 
-export function StatusBadge({ status }: { status: OrderStatus }) {
+export function StatusBadge({ status, className }: { status: OrderStatus; className?: string }) {
   return (
-    <span className={cn("inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-sm font-medium ring-1 ring-inset", styles[status])}>
+    <span className={cn("inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-sm font-medium", STATUS_STYLES[status], className)}>
       {ar.status[status]}
     </span>
   );
