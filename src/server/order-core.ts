@@ -46,8 +46,15 @@ function isUniqueViolation(err: unknown) {
   return /UNIQUE constraint failed/i.test(errorText(err));
 }
 
+/**
+ * Worth another try: the database was locked, or the connection to the hosted database (Turso)
+ * dropped or timed out mid-transaction. The transaction rolled back, and createOrder looks the
+ * checkout key up first, so a retry never saves the order twice.
+ */
 function isBusy(err: unknown) {
-  return /SQLITE_BUSY|database is locked|TRANSACTION_ACTIVE/i.test(errorText(err));
+  return /SQLITE_BUSY|database is locked|TRANSACTION_ACTIVE|STREAM_EXPIRED|TRANSACTION_TIMEOUT|fetch failed|ECONNRESET|ETIMEDOUT|socket hang up|other side closed|\b50[234]\b/i.test(
+    errorText(err),
+  );
 }
 
 /** Retries a write transaction a few times when the database is momentarily locked. */

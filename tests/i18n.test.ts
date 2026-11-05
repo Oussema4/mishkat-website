@@ -36,6 +36,9 @@ describe("language paths", () => {
     expect(splitLocale("/fr/products/sabili")).toEqual({ locale: "fr", path: "/products/sabili" });
     expect(splitLocale("/en")).toEqual({ locale: "en", path: "/" });
     expect(splitLocale("/shop")).toEqual({ locale: "ar", path: "/shop" });
+    // The internal address of an Arabic page, as the server renders it.
+    expect(splitLocale("/ar/contact")).toEqual({ locale: "ar", path: "/contact" });
+    expect(splitLocale("/ar")).toEqual({ locale: "ar", path: "/" });
   });
 
   it("lists hreflang alternates", () => {

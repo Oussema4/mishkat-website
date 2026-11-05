@@ -37,7 +37,8 @@ export function localePath(locale: Locale, path: string): string {
 /** Splits a browser path into its language and the path without the prefix. */
 export function splitLocale(pathname: string): { locale: Locale; path: string } {
   const [, first, ...rest] = pathname.split("/");
-  if (isLocale(first) && first !== defaultLocale) return { locale: first, path: `/${rest.join("/")}` };
+  // "/ar/…" too: while rendering an Arabic page the server sees the internal (rewritten) address.
+  if (isLocale(first)) return { locale: first, path: `/${rest.join("/")}` };
   return { locale: defaultLocale, path: pathname || "/" };
 }
 

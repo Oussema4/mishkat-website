@@ -103,7 +103,7 @@ export function CheckoutForm({
     const payload = {
       ...values,
       ...(communeId ? { communeId: Number(communeId) } : {}),
-      company: String(form.get("company") ?? ""),
+      trap: String(form.get("mk_trap") ?? ""),
       items: cart.lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
       idempotencyKey: cart.ensureCheckoutKey(),
     };
@@ -145,8 +145,14 @@ export function CheckoutForm({
         }
         if (result.newKey) useCart.setState({ checkoutKey: null });
         if (result.refreshCart) await resyncCart(locale).catch(() => undefined);
-      } catch {
+      } catch (err) {
         submitting.current = false;
+        // The site was updated while this page was open: its order button points at the old
+        // version. Reload (the cart is kept in the browser) so the next press works.
+        if (/Server Action|UnrecognizedAction|failed-to-find-server-action/i.test(String(err))) {
+          window.location.reload();
+          return;
+        }
         setBanner(t.checkout.networkError);
         requestAnimationFrame(() => bannerRef.current?.focus());
       }
@@ -298,10 +304,23 @@ export function CheckoutForm({
           <Field name="note" error={errors.note} optional>
             <textarea {...field("note")} rows={2} maxLength={500} className={cn(field("note").className, "resize-y")} />
           </Field>
-          {/* Honeypot for bots — hidden from people and assistive tech */}
+          {/*
+            Honeypot for bots, hidden from people and assistive tech. Its name and label must mean
+            nothing to browser autofill: a field called "company" got filled by Chrome/Safari
+            address autofill, and real customers were refused as bots.
+          */}
           <div aria-hidden className="absolute -start-[9999px] h-px w-px overflow-hidden">
-            <label htmlFor="company">Company</label>
-            <input id="company" name="company" type="text" tabIndex={-1} autoComplete="off" />
+            <label htmlFor="mk_trap">Leave this field empty</label>
+            <input
+              id="mk_trap"
+              name="mk_trap"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              data-form-type="other"
+            />
           </div>
         </fieldset>
 

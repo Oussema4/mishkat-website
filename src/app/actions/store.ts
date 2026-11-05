@@ -26,8 +26,11 @@ const orderLimit = (ip: string) => ({ key: `order:ip:${ip}`, max: 8, windowMs: 1
 export async function placeOrder(input: unknown, lang?: unknown): Promise<PlaceOrderResult> {
   const locale: Locale = isLocale(lang) ? lang : "ar";
   const t = getDictionary(locale);
-  // Honeypot: real customers never fill this hidden field.
-  if (typeof input === "object" && input && "company" in input && (input as { company?: string }).company) {
+  // Honeypot: real customers never fill this hidden field (bots fill every field). Logged, so a
+  // refusal shows up in the Vercel logs instead of passing for an unexplained error.
+  const trap = typeof input === "object" && input && "trap" in input ? String((input as { trap?: unknown }).trap ?? "") : "";
+  if (trap) {
+    console.warn("placeOrder refused: honeypot field filled", { length: trap.length });
     return { ok: false, message: t.checkout.serverError };
   }
 
