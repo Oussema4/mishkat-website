@@ -1,6 +1,6 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { after } from "next/server";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
@@ -12,6 +12,7 @@ import { getCartSnapshot } from "@/server/catalog";
 import { createOrder } from "@/server/order-core";
 import { clientIp, hit } from "@/server/rate-limit";
 import { getCommunes } from "@/server/maystro";
+import { sendPurchaseToMeta } from "@/server/meta-capi";
 import { notifyNewOrder } from "@/server/notify";
 import { getSettings } from "@/server/settings";
 
@@ -46,7 +47,9 @@ export async function placeOrder(input: unknown, lang?: unknown): Promise<PlaceO
   }
 
   try {
-    const { allowed } = await hit(db, orderLimit(clientIp(await headers())));
+    const requestHeaders = await headers();
+    const ip = clientIp(requestHeaders);
+    const { allowed } = await hit(db, orderLimit(ip));
     if (!allowed) {
       return { ok: false, message: t.checkout.tooManyOrders };
     }
@@ -70,7 +73,18 @@ export async function placeOrder(input: unknown, lang?: unknown): Promise<PlaceO
     // Store pages are pre-rendered; refresh them so stock levels stay accurate.
     revalidatePath("/[lang]", "layout");
     // Phone alert for the shop, sent after the customer gets their answer (a resubmit is not a new order).
-    if (!result.duplicate) after(() => notifyNewOrder(result.publicToken));
+    if (!result.duplicate) {
+      after(() => notifyNewOrder(result.publicToken));
+      // The sale also goes to Meta from the server (the browser Pixel can be blocked).
+      const cookieStore = await cookies();
+      const browser = {
+        ip: ip === "local" ? null : ip,
+        userAgent: requestHeaders.get("user-agent"),
+        fbp: cookieStore.get("_fbp")?.value ?? null,
+        fbc: cookieStore.get("_fbc")?.value ?? null,
+      };
+      after(() => sendPurchaseToMeta(result.publicToken, locale, browser));
+    }
     return { ok: true, token: result.publicToken };
   } catch (err) {
     console.error("placeOrder failed", err);
