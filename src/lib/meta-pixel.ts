@@ -4,8 +4,11 @@
  */
 export const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID?.trim() || "1430752171643713";
 
-/** Meta Business domain verification code (public, it sits in the page head). Empty until set. */
-export const META_DOMAIN_VERIFICATION = process.env.META_DOMAIN_VERIFICATION?.trim() || "";
+/**
+ * Meta Business domain verification for mishkattn.com (business "mishkat.2025", meta-tag method).
+ * Public by nature: it sits in the page head. META_DOMAIN_VERIFICATION overrides it.
+ */
+export const META_DOMAIN_VERIFICATION = process.env.META_DOMAIN_VERIFICATION?.trim() || "jn8p8civji1oevixgd8oywhk8v2z1p";
 
 type Fbq = (command: "track" | "init", event: string, params?: Record<string, unknown>, options?: { eventID?: string }) => void;
 
