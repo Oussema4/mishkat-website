@@ -6,7 +6,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState, useTransition } from "react";
 import { placeOrder } from "@/app/actions/store";
+import { PixelEvent } from "@/components/store/meta-pixel";
 import { LinePrice, OrderTotals } from "@/components/store/order-summary";
+import { pixelValue } from "@/lib/meta-pixel";
 import { resyncCart, useCartSync } from "@/components/store/use-cart-sync";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { fill, type Dictionary } from "@/i18n/ar";
@@ -87,6 +89,12 @@ export function CheckoutForm({
   }
 
   const totals = computeTotals(lines, deliveryFee);
+  const pixelCheckout = (
+    <PixelEvent
+      event="InitiateCheckout"
+      params={{ content_ids: lines.map((l) => String(l.productId)), content_type: "product", num_items: lines.reduce((n, l) => n + l.quantity, 0), value: pixelValue(totals.total) }}
+    />
+  );
 
   const validateField = (name: FieldName, value: string) => {
     const result = checkoutSchema.shape[name].safeParse(value);
@@ -188,6 +196,7 @@ export function CheckoutForm({
 
   return (
     <form onSubmit={onSubmit} noValidate className="mt-10 grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-start">
+      {pixelCheckout}
       <div className="space-y-10">
         {errorList.length > 0 ? (
           <div

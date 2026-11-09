@@ -3,10 +3,12 @@ import { notFound } from "next/navigation";
 import { CartHydrator } from "@/components/store/cart-hydrator";
 import { Footer } from "@/components/store/footer";
 import { Header } from "@/components/store/header";
+import { MetaPixel } from "@/components/store/meta-pixel";
 import { WhatsAppFloat } from "@/components/store/whatsapp-float";
 import { Toaster } from "@/components/ui/toast";
 import { LocaleProvider } from "@/i18n/client";
 import { getDictionary, isLocale, LOCALE_INFO, LOCALES, type Locale } from "@/i18n/config";
+import { META_DOMAIN_VERIFICATION } from "@/lib/meta-pixel";
 import { siteUrl } from "@/lib/site";
 import { getSettings } from "@/server/settings";
 import { fontClasses } from "../../fonts";
@@ -35,6 +37,8 @@ export async function generateMetadata({ params }: { params: Promise<{ lang: str
     },
     // Google Search Console ownership (HTML tag method): set GOOGLE_SITE_VERIFICATION in Vercel.
     ...(process.env.GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } } : {}),
+    // Meta Business domain verification (meta-tag method): the code from Business Settings → Domains.
+    ...(META_DOMAIN_VERIFICATION ? { other: { "facebook-domain-verification": META_DOMAIN_VERIFICATION } } : {}),
   };
 }
 
@@ -60,6 +64,7 @@ export default async function StoreLayout({ children, params }: { children: Reac
             {settings.whatsapp ? <WhatsAppFloat number={settings.whatsapp} /> : null}
             <Toaster />
             <CartHydrator />
+            <MetaPixel />
           </div>
         </LocaleProvider>
       </body>

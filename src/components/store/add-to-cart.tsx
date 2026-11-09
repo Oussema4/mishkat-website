@@ -10,6 +10,7 @@ import { useI18n } from "@/i18n/client";
 import type { Bundle } from "@/db/schema";
 import { useCart } from "@/lib/cart-store";
 import { formatTND } from "@/lib/money";
+import { pixelValue, trackPixel } from "@/lib/meta-pixel";
 import { bundleTotal } from "@/lib/pricing";
 import { MAX_QTY_PER_ITEM } from "@/lib/validation";
 import { cn } from "@/lib/site";
@@ -41,6 +42,7 @@ export function AddToCartButton({ product, variant = "outline", className }: { p
       className={className}
       onClick={() => {
         add(toLine(product), 1);
+        trackPixel("AddToCart", { content_ids: [String(product.id)], content_type: "product", content_name: product.name, value: pixelValue(product.price) });
         toast.success(fill(t.shop.added, { name: product.name }), { href: href("/cart"), label: t.shop.viewCart });
       }}
     >
@@ -215,6 +217,13 @@ export function ProductPurchase({ product, sticky = false }: { product: CartProd
 
   const addToCart = (goToCheckout: boolean) => {
     add(toLine(product), qty);
+    trackPixel("AddToCart", {
+      content_ids: [String(product.id)],
+      content_type: "product",
+      content_name: product.name,
+      num_items: qty,
+      value: pixelValue(bundleTotal(product.price, qty, product.bundles)),
+    });
     if (goToCheckout) router.push(href("/checkout"));
     else toast.success(fill(t.shop.added, { name: product.name }), { href: href("/cart"), label: t.shop.viewCart });
   };

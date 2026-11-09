@@ -3,6 +3,8 @@ import { Check, Presentation, Truck, Wallet } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductPurchase } from "@/components/store/add-to-cart";
+import { PixelEvent } from "@/components/store/meta-pixel";
+import { pixelValue } from "@/lib/meta-pixel";
 import { FaqList } from "@/components/store/faq-list";
 import { ProductGallery } from "@/components/store/product-gallery";
 import { buttonClass } from "@/components/ui/button";
@@ -98,6 +100,11 @@ export default async function ProductPage({ params }: Props) {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
+
+      <PixelEvent
+        event="ViewContent"
+        params={{ content_ids: [String(product.id)], content_type: "product", content_name: product.name, value: pixelValue(product.price) }}
+      />
 
       <nav aria-label={t.nav.breadcrumb} className="container-page pt-6 text-sm text-muted">
         <ol className="flex flex-wrap items-center gap-2">

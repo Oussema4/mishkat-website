@@ -4,6 +4,8 @@ import { eq, inArray } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { WhatsAppIcon } from "@/components/brand/social-icons";
 import { ClearCart } from "@/components/store/clear-cart";
+import { PixelEvent } from "@/components/store/meta-pixel";
+import { pixelValue } from "@/lib/meta-pixel";
 import { OrderTotals } from "@/components/store/order-summary";
 import { ButtonLink } from "@/components/ui/button";
 import { db } from "@/db";
@@ -50,6 +52,17 @@ export default async function OrderConfirmationPage({ params }: Props) {
   return (
     <div className="container-page max-w-3xl py-12 md:py-20">
       <ClearCart />
+      {/* One Purchase per order: the order reference is the event id, and reopening the page sends nothing */}
+      <PixelEvent
+        event="Purchase"
+        onceKey={`purchase:${order.reference}`}
+        params={{
+          content_ids: items.map((i) => i.productId).filter((id): id is number => id !== null).map(String),
+          content_type: "product",
+          num_items: items.reduce((n, i) => n + i.quantity, 0),
+          value: pixelValue(order.total),
+        }}
+      />
       <CircleCheck aria-hidden className="size-14 text-success" strokeWidth={1.5} />
       <h1 className="mt-5 text-4xl md:text-5xl">{t.confirmation.title}</h1>
       <p className="mt-4 text-lg text-muted">{fill(t.confirmation.lead, { name: order.firstName })}</p>

@@ -17,18 +17,18 @@ const DEV = process.env.NODE_ENV !== "production";
 
 /**
  * Content-Security-Policy: only this site's own scripts, styles, fonts and images, plus Google Fonts
- * (used by the rules deck) and our Blob store. Next.js inlines its bootstrap scripts, hence
+ * (used by the rules deck), our Blob store and the Meta Pixel (connect.facebook.net, facebook.com/tr). Next.js inlines its bootstrap scripts, hence
  * 'unsafe-inline' for scripts; the dev server also needs eval and a websocket for hot reload.
  * frame-ancestors differs by route: nothing may frame the store, the rules deck only by our pages.
  */
 function csp(frameAncestors: string) {
   return [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline'${DEV ? " 'unsafe-eval'" : ""}`,
+    `script-src 'self' 'unsafe-inline' https://connect.facebook.net${DEV ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
-    `img-src 'self' data: blob:${BLOB_HOST ? ` https://${BLOB_HOST}` : ""}`,
-    `connect-src 'self'${DEV ? " ws: wss:" : ""}`,
+    `img-src 'self' data: blob: https://www.facebook.com${BLOB_HOST ? ` https://${BLOB_HOST}` : ""}`,
+    `connect-src 'self' https://www.facebook.com https://connect.facebook.net${DEV ? " ws: wss:" : ""}`,
     "frame-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
