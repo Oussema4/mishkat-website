@@ -8,7 +8,7 @@ import { WhatsAppFloat } from "@/components/store/whatsapp-float";
 import { Toaster } from "@/components/ui/toast";
 import { LocaleProvider } from "@/i18n/client";
 import { getDictionary, isLocale, LOCALE_INFO, LOCALES, type Locale } from "@/i18n/config";
-import { META_DOMAIN_VERIFICATION } from "@/lib/meta-pixel";
+import { META_DOMAIN_VERIFICATION, META_PIXEL_SNIPPET } from "@/lib/meta-pixel";
 import { siteUrl } from "@/lib/site";
 import { getSettings } from "@/server/settings";
 import { fontClasses } from "../../fonts";
@@ -52,6 +52,10 @@ export default async function StoreLayout({ children, params }: { children: Reac
   const info = LOCALE_INFO[locale];
   return (
     <html lang={info.htmlLang} dir={info.dir} className={fontClasses}>
+      <head>
+        {/* Meta Pixel first thing, so a visitor from an ad counts even if they leave before the page is interactive. */}
+        <script id="meta-pixel" dangerouslySetInnerHTML={{ __html: META_PIXEL_SNIPPET }} />
+      </head>
       <body className="min-h-dvh">
         <LocaleProvider locale={locale}>
           {/* .night: the store's black-and-gold theme (globals.css); .on-dark: gold focus rings */}

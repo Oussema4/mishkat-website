@@ -1,13 +1,12 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import Script from "next/script";
 import { useEffect, useRef } from "react";
 import { META_PIXEL_ID, trackPixel } from "@/lib/meta-pixel";
 
 /**
- * Loads the Meta Pixel on store pages (never the dashboard) once the page is interactive, and
- * counts a PageView on every navigation, including the client-side ones.
+ * Counts a PageView on every client-side navigation of the store (never the dashboard). The
+ * Pixel itself and the first PageView come from META_PIXEL_SNIPPET in the store layout's head.
  */
 export function MetaPixel() {
   const pathname = usePathname();
@@ -24,9 +23,6 @@ export function MetaPixel() {
 
   return (
     <>
-      <Script id="meta-pixel" strategy="afterInteractive">
-        {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${META_PIXEL_ID}');fbq('track','PageView');`}
-      </Script>
       <noscript>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img height="1" width="1" style={{ display: "none" }} alt="" src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`} />
