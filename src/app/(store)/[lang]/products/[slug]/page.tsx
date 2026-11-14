@@ -7,6 +7,7 @@ import { PixelEvent } from "@/components/store/meta-pixel";
 import { pixelValue } from "@/lib/meta-pixel";
 import { FaqList } from "@/components/store/faq-list";
 import { ProductGallery } from "@/components/store/product-gallery";
+import { ReviewWall } from "@/components/store/review-wall";
 import { buttonClass } from "@/components/ui/button";
 import { FrameWhenVisible } from "@/components/ui/in-view";
 import { Price } from "@/components/ui/price";
@@ -16,8 +17,15 @@ import { pageAlternates, pageLocale } from "@/i18n/server";
 import { formatTND, fromMillimes } from "@/lib/money";
 import { PRODUCT_CUTOUTS } from "@/lib/product-cutouts";
 import { siteUrl } from "@/lib/site";
-import { getActiveProducts, getProductBySlug } from "@/server/catalog";
+import { getActiveProducts, getProductBySlug, getVisibleReviews } from "@/server/catalog";
 import { getSettings } from "@/server/settings";
+
+/**
+ * Sabili's page opens its customer messages with the three that answer a buyer's doubts best:
+ * a family playing until midnight, three hours without phones, and the quality on arrival.
+ * The other visible messages follow behind "read all"; a message hidden in the dashboard stays hidden.
+ */
+const FEATURED_REVIEWS = ["/images/reviews/review-02-msg.webp", "/images/reviews/review-01-msg.webp", "/images/reviews/review-06.webp"];
 
 /**
  * Product pages are pre-built at deploy time and served instantly. New products are built
@@ -50,8 +58,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
   const { locale, t, href } = await pageLocale(params);
-  const [product, settings] = await Promise.all([getProductBySlug(slug, locale), getSettings(locale)]);
+  const [product, settings, allReviews] = await Promise.all([getProductBySlug(slug, locale), getSettings(locale), getVisibleReviews()]);
   if (!product) notFound();
+  // The customer messages are about Sabili; featured ones first, in the order above.
+  const rank = (url: string) => (FEATURED_REVIEWS.includes(url) ? FEATURED_REVIEWS.indexOf(url) : FEATURED_REVIEWS.length);
+  const reviews = product.slug === "sabili" ? [...allReviews].sort((a, b) => rank(a.imageUrl) - rank(b.imageUrl)) : [];
+  const featuredCount = reviews.filter((r) => FEATURED_REVIEWS.includes(r.imageUrl)).length || 3;
 
   const cartProduct = {
     id: product.id,
@@ -167,6 +179,22 @@ export default async function ProductPage({ params }: Props) {
           </ul>
         </div>
       </section>
+
+      {/* ───── Real customer messages, right after the order block ───── */}
+      {reviews.length > 0 ? (
+        <section aria-labelledby="product-reviews-title" className="container-page py-10 md:py-14">
+          <h2 id="product-reviews-title" className="text-3xl md:text-4xl">
+            {t.home.reviewsTitle}
+          </h2>
+          <p className="mt-3 max-w-prose text-paper/70">{t.home.reviewsNote}</p>
+          <ReviewWall
+            reviews={reviews}
+            initial={featuredCount}
+            labels={{ zoom: t.home.reviewZoom, dialog: t.home.reviewDialog, close: t.common.close }}
+            showAllLabel={fill(t.home.reviewsAll, { count: String(reviews.length) })}
+          />
+        </section>
+      ) : null}
 
       {/* ───── Description + contents ───── */}
       <section>
