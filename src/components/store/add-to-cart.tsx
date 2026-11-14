@@ -93,12 +93,6 @@ function offerChoices(p: CartProduct) {
   return quantities.map((quantity) => ({ quantity, total: bundleTotal(p.price, quantity, p.bundles), regular: p.price * quantity }));
 }
 
-/** Pre-selected quantity: the first offer (2 boxes for Sabili) when there is enough stock. */
-function defaultQuantity(p: CartProduct) {
-  const first = Math.min(...p.bundles.map((b) => b.quantity));
-  return Number.isFinite(first) && first <= p.stock ? first : 1;
-}
-
 /** The chosen quantity is shared by the purchase block and the phone's sticky order bar. */
 const useChosen = create<{ qty: Record<number, number>; choose: (id: number, n: number) => void }>((set) => ({
   qty: {},
@@ -106,7 +100,8 @@ const useChosen = create<{ qty: Record<number, number>; choose: (id: number, n: 
 }));
 
 function useQuantity(p: CartProduct): [number, (n: number) => void] {
-  const qty = useChosen((s) => s.qty[p.id]) ?? defaultQuantity(p);
+  // One box is pre-selected; the offers stay one tap away.
+  const qty = useChosen((s) => s.qty[p.id]) ?? 1;
   const choose = useChosen((s) => s.choose);
   return [qty, (n) => choose(p.id, n)];
 }
