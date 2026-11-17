@@ -11,7 +11,8 @@ export const MAX_ITEMS_PER_ORDER = 20;
 export function checkoutSchemaFor(m: Dictionary["validation"]) {
   return z.object({
     firstName: trimmed(2, 60, m.firstName, m.tooLong),
-    lastName: trimmed(2, 60, m.lastName, m.tooLong),
+    // The form asks for the name in one field (see splitFullName); a one-word name is accepted.
+    lastName: z.string().trim().max(60, m.tooLong).optional().default(""),
     phone: z
       .string()
       .trim()
@@ -49,6 +50,12 @@ export function checkoutSchemaFor(m: Dictionary["validation"]) {
 }
 
 export const checkoutSchema = checkoutSchemaFor(ar.validation);
+
+/** "Name and surname" typed in one field → first word, then the rest (the courier gets both). */
+export function splitFullName(fullName: string) {
+  const [firstName = "", ...rest] = fullName.trim().split(/\s+/);
+  return { firstName, lastName: rest.join(" ") };
+}
 
 export type CheckoutInput = z.input<typeof checkoutSchema>;
 export type CheckoutData = z.output<typeof checkoutSchema>;

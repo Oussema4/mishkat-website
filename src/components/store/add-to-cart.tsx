@@ -2,7 +2,9 @@
 
 import { Minus, Plus, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { create } from "zustand";
+import { CheckoutForm, type DeliveryInfo } from "@/components/store/checkout-form";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { fill } from "@/i18n/ar";
@@ -201,8 +203,62 @@ function OfferChips({ product, value, onChange }: { product: CartProduct; value:
   );
 }
 
-/** Quantity (or quantity offers) + "add to cart" + "order now" block for the product page. */
-export function ProductPurchase({ product, sticky = false }: { product: CartProduct; sticky?: boolean }) {
+/** Scrolls to the product page's order form and puts the cursor in its first field. */
+function goToOrderForm() {
+  const form = document.getElementById("order-form");
+  if (!form) return false;
+  // The form's block (its heading included) comes into view, then the cursor goes to the name:
+  // focusing during the smooth scroll would make the browser jump to the field instead.
+  const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  (form.parentElement ?? form).scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+  window.setTimeout(() => form.querySelector<HTMLInputElement>("#fullName")?.focus({ preventScroll: true }), smooth ? 600 : 0);
+  return true;
+}
+
+/**
+ * Phones: the offers and an order button stay at the bottom of the screen. The button takes the
+ * customer to the order form on the page; the bar steps aside while that form is on screen.
+ */
+export function StickyOrderBar({ product, deliveryFee }: { product: CartProduct; deliveryFee: number }) {
+  const [formOnScreen, setFormOnScreen] = useState(false);
+  useEffect(() => {
+    const form = document.getElementById("order-form");
+    if (!form) return;
+    const observer = new IntersectionObserver(([entry]) => setFormOnScreen(entry.isIntersecting), { threshold: 0.15 });
+    observer.observe(form);
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <div
+      className={cn(
+        "sticky bottom-0 z-30 bg-mist px-4 py-3 transition-[translate,opacity] duration-200 md:hidden",
+        formOnScreen && "pointer-events-none translate-y-full opacity-0",
+      )}
+      style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+      aria-hidden={formOnScreen || undefined}
+      inert={formOnScreen || undefined}
+    >
+      <ProductPurchase product={product} sticky deliveryFee={deliveryFee} />
+    </div>
+  );
+}
+
+/**
+ * Product page purchase block: the quantity offers, then (with `order`) the order form itself,
+ * so the customer orders without leaving the page. Without `order`: "order now" + "add to cart".
+ */
+export function ProductPurchase({
+  product,
+  sticky = false,
+  order,
+  deliveryFee,
+}: {
+  product: CartProduct;
+  sticky?: boolean;
+  order?: DeliveryInfo;
+  /** Sticky bar: the delivery fee, shown under the offers. */
+  deliveryFee?: number;
+}) {
   const { t, locale, href } = useI18n();
   const [qty, setQty] = useQuantity(product);
   const add = useCart((s) => s.add);
@@ -223,12 +279,20 @@ export function ProductPurchase({ product, sticky = false }: { product: CartProd
     else toast.success(fill(t.shop.added, { name: product.name }), { href: href("/cart"), label: t.shop.viewCart });
   };
 
+  // The sticky bar's button: to the form on this page when there is one, else to checkout.
+  const orderNow = () => {
+    if (!goToOrderForm()) addToCart(true);
+  };
+
   if (sticky && hasOffers) {
     // On phones the offers stay in view from the first screen: one box is as visible as the packs.
     return (
       <div className="space-y-2">
         <OfferChips product={product} value={qty} onChange={setQty} />
-        <Button type="button" variant="primary" disabled={out} onClick={() => addToCart(true)} className="w-full">
+        {deliveryFee !== undefined ? (
+          <p className="text-center text-xs text-muted tabular">{fill(t.product.deliveryExtra, { fee: formatTND(deliveryFee, locale) })}</p>
+        ) : null}
+        <Button type="button" variant="primary" disabled={out} onClick={orderNow} className="w-full">
           {out ? (
             t.shop.outOfStock
           ) : (
@@ -248,8 +312,35 @@ export function ProductPurchase({ product, sticky = false }: { product: CartProd
           <span className="block text-sm text-muted">{product.name}</span>
           <span className="font-bold tabular">{formatTND(product.price * qty, locale)}</span>
         </div>
-        <Button type="button" variant="primary" disabled={out} onClick={() => addToCart(true)} className="flex-1">
+        <Button type="button" variant="primary" disabled={out} onClick={orderNow} className="flex-1">
           {out ? t.shop.outOfStock : t.product.orderNow}
+        </Button>
+      </div>
+    );
+  }
+
+  const quantityChoice = hasOffers ? (
+    <OfferPicker product={product} value={qty} onChange={setQty} />
+  ) : (
+    <div className="flex items-center gap-4">
+      <span id="qty-label" className="font-medium">
+        {t.product.quantity}
+      </span>
+      <QuantityStepper value={qty} max={product.stock} onChange={setQty} label={t.product.quantity} />
+    </div>
+  );
+
+  if (order && !out) {
+    return (
+      <div className="space-y-6">
+        {quantityChoice}
+        <div className="scroll-mt-20">
+          <h2 className="mb-4 font-sans text-lg font-bold">{t.product.orderForm}</h2>
+          <CheckoutForm {...order} inline={{ lines: [{ ...toLine(product), quantity: qty }] }} />
+        </div>
+        <Button type="button" variant="outline" disabled={out} onClick={() => addToCart(false)} className="w-full">
+          <ShoppingBag aria-hidden className="size-5" strokeWidth={1.5} />
+          {t.product.addToCart}
         </Button>
       </div>
     );
@@ -257,16 +348,7 @@ export function ProductPurchase({ product, sticky = false }: { product: CartProd
 
   return (
     <div className="space-y-4">
-      {hasOffers ? (
-        <OfferPicker product={product} value={qty} onChange={setQty} />
-      ) : (
-        <div className="flex items-center gap-4">
-          <span id="qty-label" className="font-medium">
-            {t.product.quantity}
-          </span>
-          <QuantityStepper value={qty} max={product.stock} onChange={setQty} label={t.product.quantity} />
-        </div>
-      )}
+      {quantityChoice}
       <div className="grid gap-3 sm:grid-cols-2">
         <Button type="button" variant="primary" size="lg" disabled={out} onClick={() => addToCart(true)}>
           {out ? t.shop.outOfStock : t.product.orderNow}

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Check, Presentation, Truck, Wallet } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ProductPurchase } from "@/components/store/add-to-cart";
+import { ProductPurchase, StickyOrderBar } from "@/components/store/add-to-cart";
 import { PixelEvent } from "@/components/store/meta-pixel";
 import { pixelValue } from "@/lib/meta-pixel";
 import { FaqList } from "@/components/store/faq-list";
@@ -18,6 +18,7 @@ import { formatTND, fromMillimes } from "@/lib/money";
 import { PRODUCT_CUTOUTS } from "@/lib/product-cutouts";
 import { siteUrl } from "@/lib/site";
 import { getActiveProducts, getProductBySlug, getVisibleReviews } from "@/server/catalog";
+import { getCommunes } from "@/server/maystro";
 import { getSettings } from "@/server/settings";
 
 /**
@@ -58,7 +59,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
   const { locale, t, href } = await pageLocale(params);
-  const [product, settings, allReviews] = await Promise.all([getProductBySlug(slug, locale), getSettings(locale), getVisibleReviews()]);
+  // Maystro's delegations feed the order form on the page (refreshed daily; null → free-text city).
+  const [product, settings, allReviews, communes] = await Promise.all([
+    getProductBySlug(slug, locale),
+    getSettings(locale),
+    getVisibleReviews(),
+    getCommunes(),
+  ]);
   if (!product) notFound();
   // The customer messages are about Sabili; featured ones first, in the order above.
   const rank = (url: string) => (FEATURED_REVIEWS.includes(url) ? FEATURED_REVIEWS.indexOf(url) : FEATURED_REVIEWS.length);
@@ -149,6 +156,7 @@ export default async function ProductPage({ params }: Props) {
 
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
             <Price price={product.price} compareAt={product.compareAtPrice} size="lg" showSave locale={locale} />
+            <span className="text-muted tabular">{fill(t.product.deliveryExtra, { fee: formatTND(settings.deliveryFee, locale) })}</span>
             <StockBadge stock={product.stock} locale={locale} />
           </div>
 
@@ -164,7 +172,10 @@ export default async function ProductPage({ params }: Props) {
           ) : null}
 
           <div className="mt-8">
-            <ProductPurchase product={cartProduct} />
+            <ProductPurchase
+              product={cartProduct}
+              order={{ deliveryFee: settings.deliveryFee, deliveryTime: settings.deliveryTime, communes }}
+            />
           </div>
 
           <ul className="mt-8 space-y-3 rounded-[var(--radius-md)] bg-mist p-5 text-[0.95rem]">
@@ -297,10 +308,8 @@ export default async function ProductPage({ params }: Props) {
         ) : null}
       </section>
 
-      {/* Mobile sticky order bar */}
-      <div className="sticky bottom-0 z-30 bg-mist px-4 py-3 md:hidden">
-        <ProductPurchase product={cartProduct} sticky />
-      </div>
+      {/* Mobile sticky order bar (leads to the order form above) */}
+      <StickyOrderBar product={cartProduct} deliveryFee={settings.deliveryFee} />
     </>
   );
 }

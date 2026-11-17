@@ -103,6 +103,8 @@ export const ar = {
     increase: "زيادة الكمية",
     decrease: "إنقاص الكمية",
     orderNow: "اطلب الآن",
+    orderForm: "للطلب، اكتب معلوماتك والدفع عند الاستلام",
+    deliveryExtra: "+ {fee} توصيل لكل الولايات",
     addToCart: "أضف إلى السلة",
     description: "عن اللعبة",
     contents: "محتويات العلبة",
@@ -147,6 +149,7 @@ export const ar = {
     addressSection: "عنوان التوصيل",
     firstName: "الاسم",
     lastName: "اللقب",
+    fullName: "الاسم واللقب",
     phone: "رقم الهاتف",
     phoneHint: "8 أرقام. نستعمله فقط للتواصل معك بخصوص طلبك.",
     governorate: "الولاية",
@@ -174,7 +177,7 @@ export const ar = {
   /** Form checks, shown under each field. */
   validation: {
     tooLong: "النص طويل جدًا",
-    firstName: "اكتب اسمك (حرفان على الأقل)",
+    firstName: "اكتب اسمك ولقبك",
     lastName: "اكتب لقبك (حرفان على الأقل)",
     phone: "اكتب رقم هاتف تونسي من 8 أرقام، مثل 92 123 456",
     governorate: "اختر ولايتك من القائمة",
