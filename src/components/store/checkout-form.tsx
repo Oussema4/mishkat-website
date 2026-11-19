@@ -4,8 +4,8 @@ import { CircleAlert, LoaderCircle, Wallet } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState, useTransition } from "react";
-import { placeOrder } from "@/app/actions/store";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { placeOrder, saveCheckoutLead } from "@/app/actions/store";
 import { PixelEvent } from "@/components/store/meta-pixel";
 import { LinePrice, OrderTotals } from "@/components/store/order-summary";
 import { pixelValue, trackPixel } from "@/lib/meta-pixel";
@@ -18,7 +18,7 @@ import { formatTND } from "@/lib/money";
 import { computeTotals } from "@/lib/pricing";
 import { cn } from "@/lib/site";
 import { MAYSTRO_WILAYAS, type Commune } from "@/lib/maystro";
-import { GOVERNORATES, type Governorate } from "@/lib/tunisia";
+import { GOVERNORATES, normalizeTunisianPhone, type Governorate } from "@/lib/tunisia";
 import { checkoutSchemaFor, splitFullName } from "@/lib/validation";
 
 type FieldName = "fullName" | "phone" | "governorate" | "city" | "note";
@@ -41,6 +41,9 @@ function toFormErrors(errors: Record<string, string>) {
   }
   return out;
 }
+
+const randomKey = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
 
 const inputClass =
   "block w-full min-h-12 rounded-[var(--radius-md)] border bg-ink-soft px-3.5 py-2.5 text-base text-paper outline-none placeholder:text-paper/45 transition-colors " +
@@ -73,6 +76,45 @@ export function CheckoutForm({ deliveryFee, deliveryTime, communes, inline }: De
   // Inline orders keep their own double-submit key, renewed whenever the chosen items change.
   const inlineKey = useRef<{ items: string; key: string } | null>(null);
   const startedCheckout = useRef(false);
+
+  // Started checkout: once the phone number is valid, what the customer has typed is saved (a
+  // second after they stop typing), so the shop can call back if no order follows.
+  const formRef = useRef<HTMLFormElement>(null);
+  const leadKey = useRef<string | null>(null);
+  const leadSent = useRef("");
+  const leadTimer = useRef<number | undefined>(undefined);
+  const captureLead = () => {
+    const form = formRef.current;
+    if (!form || submitting.current) return;
+    const data = new FormData(form);
+    const phone = String(data.get("phone") ?? "");
+    if (!normalizeTunisianPhone(phone)) return;
+    leadKey.current ??= randomKey();
+    const communeName = communes?.find((c) => String(c.id) === String(data.get("communeId") ?? ""))?.name;
+    const payload = {
+      key: leadKey.current,
+      fullName: String(data.get("fullName") ?? ""),
+      phone,
+      governorate: String(data.get("governorate") ?? ""),
+      city: communeName ?? String(data.get("city") ?? ""),
+      items: lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
+      locale,
+    };
+    const signature = JSON.stringify(payload);
+    if (signature === leadSent.current) return;
+    window.clearTimeout(leadTimer.current);
+    leadTimer.current = window.setTimeout(() => {
+      leadSent.current = signature;
+      saveCheckoutLead(payload).catch(() => undefined);
+    }, 1000);
+  };
+  // A different offer picked after the number was typed: keep the saved checkout up to date.
+  const linesSignature = lines.map((l) => `${l.productId}:${l.quantity}`).join(",");
+  useEffect(() => {
+    if (leadKey.current) captureLead();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linesSignature]);
+  useEffect(() => () => window.clearTimeout(leadTimer.current), []);
 
   if (placedToken) {
     return (
@@ -131,6 +173,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime, communes, inline }: De
   const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (submitting.current) return; // guards against a double click before React re-renders
+    window.clearTimeout(leadTimer.current);
     const form = new FormData(e.currentTarget);
     const items = lines.map((l) => ({ productId: l.productId, quantity: l.quantity }));
 
@@ -144,6 +187,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime, communes, inline }: De
       trap: String(form.get("mk_trap") ?? ""),
       items,
       idempotencyKey: idempotencyKey(items),
+      ...(leadKey.current ? { leadKey: leadKey.current } : {}),
     };
 
     // Client-side check first for instant feedback; the server validates again.
@@ -341,7 +385,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime, communes, inline }: De
   if (inline) {
     // Product page: the form follows the offer the customer picked, totals (with delivery) before the button.
     return (
-      <form id="order-form" onSubmit={onSubmit} onFocus={onFormFocus} noValidate className="relative scroll-mt-24 space-y-5">
+      <form id="order-form" ref={formRef} onSubmit={onSubmit} onFocus={onFormFocus} onChange={captureLead} noValidate className="relative scroll-mt-24 space-y-5">
         {alerts}
         <div className="grid gap-5 sm:grid-cols-2">
           {nameField}
@@ -367,7 +411,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime, communes, inline }: De
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="mt-10 grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-start">
+    <form ref={formRef} onSubmit={onSubmit} onChange={captureLead} noValidate className="mt-10 grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-start">
       <PixelEvent event="InitiateCheckout" params={checkoutParams} />
       <div className="space-y-10">
         {alerts}

@@ -236,6 +236,7 @@ export const en: Dictionary = {
   },
   status: {
     new: "New order",
+    postponed: "Postponed",
     confirmed: "Order confirmed",
     preparing: "Being prepared",
     shipped: "Shipped",

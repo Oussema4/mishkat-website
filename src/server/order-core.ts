@@ -30,7 +30,7 @@ class OrderError extends Error {
 }
 
 /** Orders not yet shipped, delivered or cancelled. One phone number can hold only a few at once. */
-export const OPEN_STATUSES = ["new", "confirmed", "preparing"] as const;
+export const OPEN_STATUSES = ["new", "postponed", "confirmed", "preparing"] as const;
 export const MAX_OPEN_ORDERS_PER_PHONE = 3;
 
 export function formatReference(id: number) {

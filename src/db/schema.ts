@@ -80,7 +80,8 @@ export const productImages = sqliteTable("product_images", {
 export const ADMIN_ROLES = ["owner", "admin"] as const;
 export type AdminRole = (typeof ADMIN_ROLES)[number];
 
-export const ORDER_STATUSES = ["new", "confirmed", "preparing", "shipped", "delivered", "cancelled"] as const;
+/** "postponed": the customer asked to be called or delivered later (not confirmed yet). */
+export const ORDER_STATUSES = ["new", "postponed", "confirmed", "preparing", "shipped", "delivered", "cancelled"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 /**
@@ -136,6 +137,34 @@ export const orders = sqliteTable(
     ...timestamps,
   },
   (t) => [index("orders_status_idx").on(t.status), index("orders_created_idx").on(t.createdAt), index("orders_phone_idx").on(t.phone)],
+);
+
+/**
+ * A checkout started but maybe not finished: saved as soon as the customer has typed a valid phone
+ * number in the order form, then updated as they fill it in. `orderId` is set when the same
+ * checkout (or the same phone soon after) becomes an order; otherwise it shows as abandoned.
+ */
+export type LeadItem = { productId: number; name: string; quantity: number; lineTotal: number };
+export const checkoutLeads = sqliteTable(
+  "checkout_leads",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    /** One per order form on the customer's screen (random, from the browser). */
+    key: text("key").notNull().unique(),
+    firstName: text("first_name").notNull().default(""),
+    lastName: text("last_name").notNull().default(""),
+    phone: text("phone").notNull(),
+    governorate: text("governorate").notNull().default(""),
+    city: text("city").notNull().default(""),
+    items: text("items", { mode: "json" }).$type<LeadItem[]>().notNull().default(sql`'[]'`),
+    subtotal: integer("subtotal").notNull().default(0),
+    locale: text("locale").notNull().default("ar"),
+    orderId: integer("order_id").references(() => orders.id, { onDelete: "set null" }),
+    /** The shop dealt with it (called back, not interested…): hidden from the list. */
+    dismissed: integer("dismissed", { mode: "boolean" }).notNull().default(false),
+    ...timestamps,
+  },
+  (t) => [index("checkout_leads_phone_idx").on(t.phone), index("checkout_leads_created_idx").on(t.createdAt)],
 );
 
 export const orderItems = sqliteTable("order_items", {
@@ -215,3 +244,4 @@ export type OrderItem = typeof orderItems.$inferSelect;
 export type Admin = typeof admins.$inferSelect;
 export type Review = typeof reviews.$inferSelect;
 export type Driver = typeof drivers.$inferSelect;
+export type CheckoutLead = typeof checkoutLeads.$inferSelect;

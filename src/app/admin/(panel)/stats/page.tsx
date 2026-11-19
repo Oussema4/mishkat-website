@@ -1,11 +1,11 @@
-import { and, asc, eq, gte, ne, sql, type SQL } from "drizzle-orm";
+import { and, asc, eq, gte, lt, ne, sql, type SQL } from "drizzle-orm";
 import Link from "next/link";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { db } from "@/db";
 import { drivers, orderItems, orders, products } from "@/db/schema";
 import { formatTND } from "@/lib/money";
 import { cn } from "@/lib/site";
-import { computeStats, daysOfStock, deliveryBreakdown, PERIODS, periodStart, tunisDay, type Period, type StatOrder } from "@/lib/stats";
+import { computeStats, customRange, daysOfStock, deliveryBreakdown, PERIODS, periodRange, tunisDay, tunisHour, type Period, type StatOrder } from "@/lib/stats";
 import { requireAdmin } from "@/server/auth";
 
 export const metadata = { title: "الإحصائيات" };
@@ -37,10 +37,19 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
   // Every admin page re-checks the session against the database (the layout does not re-run).
   await requireAdmin();
   const params = await searchParams;
-  const period: Period = typeof params.p === "string" && params.p in PERIODS ? (params.p as Period) : "30";
   const now = new Date();
-  const since = periodStart(period, now);
-  const inPeriod: SQL | undefined = since ? gte(orders.createdAt, since) : undefined;
+  // A range picked with the dates (from … to, or one day), else one of the preset periods.
+  const custom = customRange(params.from, params.to);
+  const period: Period | null = custom ? null : typeof params.p === "string" && params.p in PERIODS ? (params.p as Period) : "30";
+  const { start: since, end: until } = custom ?? periodRange(period ?? "30", now);
+  const inPeriod: SQL | undefined = and(since ? gte(orders.createdAt, since) : undefined, until ? lt(orders.createdAt, until) : undefined);
+  const today = tunisDay(now);
+  const singleDay = period === "today" || period === "yesterday" || (custom !== null && custom.from === custom.to);
+  const rangeLabel = custom
+    ? custom.from === custom.to
+      ? `نهار ${custom.from.split("-").reverse().join("/")}`
+      : `من ${custom.from.split("-").reverse().join("/")} حتى ${custom.to.split("-").reverse().join("/")}`
+    : PERIODS[period ?? "30"];
 
   const [rows, productList, soldRows, driverList] = await Promise.all([
     db
@@ -72,15 +81,22 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
   const s = computeStats(list);
   const delivery = deliveryBreakdown(list, driverList);
   const first = list.reduce<Date | null>((d, o) => (!d || o.createdAt < d ? o.createdAt : d), null);
-  const periodDays = Math.max(1, Math.ceil((now.getTime() - (since ?? first ?? now).getTime()) / 86_400_000));
+  const rangeEnd = until && until < now ? until : now;
+  const periodDays = Math.max(1, Math.ceil((rangeEnd.getTime() - (since ?? first ?? now).getTime()) / 86_400_000));
 
-  // Daily bars for short periods, monthly ones beyond five weeks.
-  const monthly = s.days.length > 35;
-  const series = monthly
-    ? [...s.days.reduce((m, d) => m.set(d.day.slice(0, 7), (m.get(d.day.slice(0, 7)) ?? 0) + d.orders), new Map<string, number>())].map(([day, n]) => ({ day, orders: n }))
-    : s.days.map((d) => ({ day: d.day, orders: d.orders }));
+  // One day: bars per hour. Up to five weeks: per day. Beyond: per month.
+  const monthly = !singleDay && s.days.length > 35;
+  const hourly = singleDay
+    ? Array.from({ length: 24 }, (_, h) => ({ day: `${String(h).padStart(2, "0")}:00`, orders: list.filter((o) => o.status !== "cancelled" && tunisHour(o.createdAt) === h).length })).filter(
+        (d, h, all) => d.orders > 0 || (h >= 8 && h <= 23 && all.some((x) => x.orders > 0)),
+      )
+    : null;
+  const series =
+    hourly ??
+    (monthly
+      ? [...s.days.reduce((m, d) => m.set(d.day.slice(0, 7), (m.get(d.day.slice(0, 7)) ?? 0) + d.orders), new Map<string, number>())].map(([day, n]) => ({ day, orders: n }))
+      : s.days.map((d) => ({ day: d.day, orders: d.orders })));
   const maxSeries = Math.max(0, ...series.map((d) => d.orders));
-  const today = tunisDay(now);
 
   return (
     <div className="space-y-6">
@@ -91,23 +107,46 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
             الأرقام من الطلبات اللي جات للسيت. المبالغ هي سوم العلب برك، من غير التوصيل، والطلبات الملغاة ما تتحسبش في الفلوس.
           </p>
         </div>
-        <nav aria-label="الفترة" className="flex flex-wrap gap-1 rounded-[var(--radius-md)] bg-paper p-1 shadow-[var(--shadow-soft)]">
-          {(Object.keys(PERIODS) as Period[]).map((p) => (
-            <Link
-              key={p}
-              href={`/admin/stats?p=${p}`}
-              aria-current={p === period ? "page" : undefined}
-              className={cn("inline-flex min-h-10 items-center rounded-[var(--radius-sm)] px-3 text-sm font-medium", p === period ? "bg-ink text-paper" : "hover:bg-mist")}
-            >
-              {PERIODS[p]}
-            </Link>
-          ))}
-        </nav>
+        <div className="space-y-2">
+          <nav aria-label="الفترة" className="flex flex-wrap gap-1 rounded-[var(--radius-md)] bg-paper p-1 shadow-[var(--shadow-soft)]">
+            {(Object.keys(PERIODS) as Period[]).map((p) => (
+              <Link
+                key={p}
+                href={`/admin/stats?p=${p}`}
+                aria-current={p === period ? "page" : undefined}
+                className={cn("inline-flex min-h-10 items-center rounded-[var(--radius-sm)] px-3 text-sm font-medium", p === period ? "bg-ink text-paper" : "hover:bg-mist")}
+              >
+                {PERIODS[p]}
+              </Link>
+            ))}
+          </nav>
+          {/* Pick the dates yourself: from … to, or the same date twice for one day. */}
+          <form
+            action="/admin/stats"
+            className={cn("flex flex-wrap items-end gap-2 rounded-[var(--radius-md)] bg-paper p-2 shadow-[var(--shadow-soft)]", custom && "ring-2 ring-ink")}
+          >
+            <label className="block text-sm">
+              <span className="mb-1 block text-muted">من نهار</span>
+              <input type="date" name="from" required max={today} defaultValue={custom?.from ?? ""} className="min-h-10 rounded-[var(--radius-sm)] border border-line bg-paper px-2" />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block text-muted">حتى نهار (اختياري)</span>
+              <input type="date" name="to" max={today} defaultValue={custom && custom.to !== custom.from ? custom.to : ""} className="min-h-10 rounded-[var(--radius-sm)] border border-line bg-paper px-2" />
+            </label>
+            <button type="submit" className="inline-flex min-h-10 items-center rounded-[var(--radius-sm)] bg-ink px-4 text-sm font-medium text-paper">
+              عرض
+            </button>
+          </form>
+        </div>
       </header>
+
+      <p className="text-lg font-semibold">
+        الفترة: <span className="text-gold-deep">{rangeLabel}</span>
+      </p>
 
       {/* ───── Headline numbers ───── */}
       <section aria-label="أهم الأرقام" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Kpi label="الطلبات" value={String(s.orders)} note={`${s.liveOrders} شغّالة · ${s.cancelledOrders} ملغاة · ${s.waiting} تستنّى التأكيد`} />
+        <Kpi label="الطلبات" value={String(s.orders)} note={`${s.liveOrders} شغّالة · ${s.cancelledOrders} ملغاة · ${s.waiting} تستنّى التأكيد · ${s.postponed} مؤجّلة`} />
         <Kpi label="العلب المطلوبة" value={String(s.boxes)} note={`المعدّل ${String(s.averageBoxes).replace(".", ",")} علبة في الطلب`} />
         <Kpi label="قيمة الطلبات" value={formatTND(s.value)} note={`من غير التوصيل · معدّل الطلب ${formatTND(s.averageOrder)}`} />
         <Kpi label="فلوس الطلبات المسلّمة" value={formatTND(s.deliveredValue)} note={`${s.deliveredOrders} طلب تسلّم · ${formatTND(s.inProgressValue)} في الطريق`} strong />
@@ -123,7 +162,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
         {/* ───── Orders over time ───── */}
         <section aria-labelledby="days-title" className={card}>
           <h2 id="days-title" className="font-sans text-lg font-bold">
-            الطلبات {monthly ? "في كل شهر" : "في كل نهار"}
+            الطلبات {hourly ? "في كل ساعة" : monthly ? "في كل شهر" : "في كل نهار"}
           </h2>
           {series.length === 0 ? (
             <p className="mt-3 text-muted">ما فماش طلبات في الفترة هاذي.</p>
@@ -132,7 +171,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
               {series.map((d) => (
                 <li key={d.day} className="grid grid-cols-[5.5rem_1fr_2.5rem] items-center gap-3 text-sm">
                   <span dir="ltr" className={cn("text-end tabular text-muted", d.day === today && "font-bold text-ink")}>
-                    {monthly ? d.day : d.day.slice(5).split("-").reverse().join("/")}
+                    {hourly || monthly ? d.day : d.day.slice(5).split("-").reverse().join("/")}
                   </span>
                   <Bar value={d.orders} max={maxSeries} className={d.day === today ? "bg-gold-deep" : undefined} />
                   <span className="font-semibold tabular">{d.orders}</span>

@@ -1,5 +1,5 @@
-import { and, count, desc, eq, like, or, sql, type SQL } from "drizzle-orm";
-import { ChevronLeft, ChevronRight, Motorbike, Search } from "lucide-react";
+import { and, count, desc, eq, inArray, like, or, sql, type SQL } from "drizzle-orm";
+import { ChevronLeft, ChevronRight, Motorbike, Repeat2, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { BULK_FORM, BulkOrdersBar } from "@/components/admin/bulk-orders";
@@ -63,6 +63,13 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
     db.select({ id: drivers.id, name: drivers.name }).from(drivers),
   ]);
   const driverName = (id: number | null) => driverList.find((d) => d.id === id)?.name ?? null;
+
+  // Same phone on several orders (a customer who ordered twice by mistake, or a returning one).
+  const phones = [...new Set(rows.map((o) => o.phone))];
+  const phoneCounts = phones.length
+    ? await db.select({ phone: orders.phone, n: count() }).from(orders).where(inArray(orders.phone, phones)).groupBy(orders.phone)
+    : [];
+  const ordersOf = (phone: string) => phoneCounts.find((p) => p.phone === phone)?.n ?? 1;
 
   const countOf = (s: OrderStatus) => counts.find((c) => c.status === s)?.n ?? 0;
   const allCount = counts.reduce((n, c) => n + c.n, 0);
@@ -170,8 +177,13 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
                     <div className="text-sm text-muted">{formatDateTime(o.createdAt)}</div>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="font-medium">
+                    <div className="flex flex-wrap items-center gap-2 font-medium">
                       {o.firstName} {o.lastName}
+                      {ordersOf(o.phone) > 1 ? (
+                        <Link href={href({ q: o.phone, status: null })} className="relative z-10 hover:opacity-80">
+                          <RepeatBadge n={ordersOf(o.phone)} />
+                        </Link>
+                      ) : null}
                     </div>
                     <div className="flex items-center gap-0.5">
                       <span dir="ltr" className="whitespace-nowrap text-sm text-muted tabular">
@@ -214,8 +226,9 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
                     <StatusBadge status={o.status} />
                   </div>
                   <div className="flex items-center justify-between gap-3">
-                    <span>
+                    <span className="flex flex-wrap items-center gap-2">
                       {o.firstName} {o.lastName} · {o.governorate}
+                      {ordersOf(o.phone) > 1 ? <RepeatBadge n={ordersOf(o.phone)} /> : null}
                     </span>
                     <span className="font-semibold tabular">{formatTND(o.total)}</span>
                   </div>
@@ -241,6 +254,16 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
         </nav>
       ) : null}
     </div>
+  );
+}
+
+/** The same phone number is on `n` orders. */
+function RepeatBadge({ n }: { n: number }) {
+  return (
+    <span title={`نفس الرقم في ${n} طلبات`} className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-[#f7b1b1] px-2 py-0.5 text-xs font-semibold text-[#7a1616]">
+      <Repeat2 aria-hidden className="size-3.5" />
+      مكرّر ×{n}
+    </span>
   );
 }
 

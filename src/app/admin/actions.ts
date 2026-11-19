@@ -10,7 +10,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { ADMIN_ROLES, admins, categories, drivers, ORDER_STATUSES, orders, productImages, products, reviews, type ProductText } from "@/db/schema";
+import { ADMIN_ROLES, admins, categories, checkoutLeads, drivers, ORDER_STATUSES, orders, productImages, products, reviews, type ProductText } from "@/db/schema";
 import { parseBundles, parseFaq, parseLabelValues, parseLines, parseSteps, parseTND, slugify } from "@/lib/admin-format";
 import { MAX_QTY_PER_ITEM } from "@/lib/validation";
 import { findCommune } from "@/lib/maystro";
@@ -198,7 +198,9 @@ export async function updateOrderCustomer(_prev: FormState, form: FormData): Pro
   if (!Number.isInteger(orderId)) return { error: "بيانات غير صالحة." };
   const [order] = await db.select({ status: orders.status, maystroState: orders.maystroState }).from(orders).where(eq(orders.id, orderId)).limit(1);
   if (!order) return { error: "الطلب غير موجود." };
-  if (order.status !== "new" || order.maystroState === "sent") return { error: "التعديل ممكن برك كي تكون الحالة «طلب جديد»." };
+  if ((order.status !== "new" && order.status !== "postponed") || order.maystroState === "sent") {
+    return { error: "التعديل ممكن برك كي تكون الحالة «طلب جديد» ولا «مؤجّل»." };
+  }
 
   const text = (name: string) => String(form.get(name) ?? "");
   const parsed = customerSchema.safeParse({
@@ -232,6 +234,17 @@ export async function updateOrderCustomer(_prev: FormState, form: FormData): Pro
     .where(eq(orders.id, orderId));
   revalidatePath("/admin", "layout");
   return { ok: true, message: "تم حفظ معطيات الحريف." };
+}
+
+// ───────────── Unfinished checkouts ─────────────
+
+/** "Handled" on an unfinished checkout (called back, not interested…): it leaves the list. */
+export async function dismissLead(form: FormData) {
+  await requireAdmin();
+  const id = Number(form.get("id"));
+  if (!Number.isInteger(id) || id <= 0) return;
+  await db.update(checkoutLeads).set({ dismissed: form.get("undo") !== "1", updatedAt: new Date() }).where(eq(checkoutLeads.id, id));
+  revalidatePath("/admin/abandoned");
 }
 
 // ───────────── Delivery people ─────────────

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeStats, daysOfStock, deliveryBreakdown, periodStart, type StatOrder } from "@/lib/stats";
+import { computeStats, customRange, daysOfStock, deliveryBreakdown, periodRange, periodStart, tunisHour, type StatOrder } from "@/lib/stats";
 
 const order = (over: Partial<StatOrder>): StatOrder => ({
   status: "new",
@@ -59,6 +59,14 @@ describe("dashboard statistics", () => {
     expect(periodStart("7", now)?.toISOString()).toBe("2026-11-12T23:00:00.000Z");
     expect(periodStart("month", now)?.toISOString()).toBe("2026-10-31T23:00:00.000Z");
     expect(periodStart("all", now)).toBeNull();
+    expect(periodRange("today", now)).toEqual({ start: new Date("2026-11-18T23:00:00.000Z"), end: null });
+    expect(periodRange("yesterday", now)).toEqual({ start: new Date("2026-11-17T23:00:00.000Z"), end: new Date("2026-11-18T23:00:00.000Z") });
+    // A picked range includes both days; one day = the same date twice; backwards dates are swapped.
+    expect(customRange("2026-11-01", "2026-11-03")).toMatchObject({ start: new Date("2026-10-31T23:00:00.000Z"), end: new Date("2026-11-03T23:00:00.000Z") });
+    expect(customRange("2026-11-05", "2026-11-05")?.end).toEqual(new Date("2026-11-05T23:00:00.000Z"));
+    expect(customRange("2026-11-09", "2026-11-02")).toMatchObject({ from: "2026-11-02", to: "2026-11-09" });
+    expect(customRange("nope", undefined)).toBeNull();
+    expect(tunisHour(new Date("2026-11-18T22:30:00Z"))).toBe(23);
     expect(daysOfStock(100, 30, 30)).toBe(100);
     expect(daysOfStock(100, 0, 30)).toBeNull();
   });

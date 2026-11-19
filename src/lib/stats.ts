@@ -6,7 +6,15 @@ import type { OrderStatus } from "@/db/schema";
  * money: the courier keeps the delivery). "Live" orders are every order except cancelled ones.
  */
 
-export const PERIODS = { "7": "7 أيام", "30": "30 يوم", "90": "3 شهر", month: "الشهر هذا", all: "من البداية" } as const;
+export const PERIODS = {
+  today: "اليوم",
+  yesterday: "البارح",
+  "7": "7 أيام",
+  "30": "30 يوم",
+  "90": "3 شهر",
+  month: "الشهر هذا",
+  all: "من البداية",
+} as const;
 export type Period = keyof typeof PERIODS;
 
 export type StatOrder = {
@@ -26,12 +34,40 @@ const TUNIS_DAY = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Tunis", y
 /** Calendar day in Tunisia, "YYYY-MM-DD". */
 export const tunisDay = (d: Date) => TUNIS_DAY.format(d);
 
-/** Start of the period (Tunisia is UTC+1 all year), or null for "from the start". */
+const TUNIS_HOUR = new Intl.DateTimeFormat("en-GB", { timeZone: "Africa/Tunis", hour: "2-digit", hourCycle: "h23" });
+/** Hour of the day in Tunisia, 0–23. */
+export const tunisHour = (d: Date) => Number(TUNIS_HOUR.format(d));
+
+/** Midnight in Tunisia (UTC+1 all year) at the start of a "YYYY-MM-DD" day. */
+const dayStart = (day: string) => new Date(`${day}T00:00:00+01:00`);
+const addDays = (day: string, n: number) => tunisDay(new Date(dayStart(day).getTime() + n * 86_400_000 + 3_600_000));
+
+/** Start of the period, or null for "from the start". */
 export function periodStart(period: Period, now = new Date()): Date | null {
-  if (period === "all") return null;
-  if (period === "month") return new Date(`${tunisDay(now).slice(0, 7)}-01T00:00:00+01:00`);
-  const days = Number(period);
-  return new Date(`${tunisDay(new Date(now.getTime() - (days - 1) * 86_400_000))}T00:00:00+01:00`);
+  return periodRange(period, now).start;
+}
+
+/** [start, end) of a preset period in Tunisian days; null = unbounded on that side. */
+export function periodRange(period: Period, now = new Date()): { start: Date | null; end: Date | null } {
+  const today = tunisDay(now);
+  if (period === "all") return { start: null, end: null };
+  if (period === "today") return { start: dayStart(today), end: null };
+  if (period === "yesterday") return { start: dayStart(addDays(today, -1)), end: dayStart(today) };
+  if (period === "month") return { start: dayStart(`${today.slice(0, 7)}-01`), end: null };
+  return { start: dayStart(addDays(today, -(Number(period) - 1))), end: null };
+}
+
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+/**
+ * A range the shop picked itself: from one day to another, both included (the same day twice for
+ * one day). Null when the dates are missing or invalid; swapped when given backwards.
+ */
+export function customRange(from: unknown, to: unknown): { start: Date; end: Date; from: string; to: string } | null {
+  const a = typeof from === "string" && DAY.test(from) ? from : null;
+  const b = typeof to === "string" && DAY.test(to) ? to : a;
+  if (!a || !b || Number.isNaN(dayStart(a).getTime()) || Number.isNaN(dayStart(b).getTime())) return null;
+  const [first, last] = a <= b ? [a, b] : [b, a];
+  return { start: dayStart(first), end: dayStart(addDays(last, 1)), from: first, to: last };
 }
 
 const IN_PROGRESS: OrderStatus[] = ["confirmed", "preparing", "shipped"];
@@ -44,7 +80,8 @@ export function computeStats(list: StatOrder[]) {
   const delivered = byStatus("delivered");
   const cancelled = byStatus("cancelled");
   const inProgress = list.filter((o) => IN_PROGRESS.includes(o.status));
-  const handled = list.filter((o) => o.status !== "new");
+  // Handled = no longer waiting for the first call; postponed orders are still waiting.
+  const handled = list.filter((o) => o.status !== "new" && o.status !== "postponed");
 
   // Offer mix: how many boxes each live order took (1, 2, 3, 4 or more).
   const mix = [1, 2, 3, 4].map((boxes) => {
@@ -85,13 +122,14 @@ export function computeStats(list: StatOrder[]) {
     inProgressValue: sum(inProgress, (o) => o.subtotal),
     inProgressOrders: inProgress.length,
     waiting: byStatus("new").length,
+    postponed: byStatus("postponed").length,
     cancelledOrders: cancelled.length,
     /** Of the orders already handled (no longer "new"), how many were confirmed or went further. */
     confirmRate: pct(handled.length - cancelled.length, handled.length),
     /** Of the orders that are finished (delivered or cancelled), how many were delivered. */
     deliverRate: pct(delivered.length, delivered.length + cancelled.length),
     cancelRate: pct(cancelled.length, list.length),
-    statuses: (["new", "confirmed", "preparing", "shipped", "delivered", "cancelled"] as OrderStatus[]).map((s) => ({
+    statuses: (["new", "postponed", "confirmed", "preparing", "shipped", "delivered", "cancelled"] as OrderStatus[]).map((s) => ({
       status: s,
       orders: byStatus(s).length,
       value: sum(byStatus(s), (o) => o.subtotal),

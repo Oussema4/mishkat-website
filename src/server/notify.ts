@@ -1,7 +1,7 @@
 import "server-only";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { orderItems, orders } from "@/db/schema";
+import { checkoutLeads, orderItems, orders } from "@/db/schema";
 import { formatTND } from "@/lib/money";
 import { siteUrl } from "@/lib/site";
 
@@ -17,13 +17,50 @@ function esc(text: string) {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-export async function notifyNewOrder(publicToken: string) {
+function slackWebhook() {
   const webhook = process.env.SLACK_WEBHOOK_URL?.trim();
-  if (!webhook) return;
+  if (!webhook) return null;
   if (!webhook.startsWith(SLACK_HOST)) {
     console.error("SLACK_WEBHOOK_URL must start with https://hooks.slack.com/");
-    return;
+    return null;
   }
+  return webhook;
+}
+
+/**
+ * A customer has typed their phone number in the order form (they may still finish the order).
+ * If no order follows, the checkout shows under «ما كمّلوش» in the dashboard.
+ */
+export async function notifyNewLead(leadId: number) {
+  const webhook = slackWebhook();
+  if (!webhook) return;
+  try {
+    const [lead] = await db.select().from(checkoutLeads).where(eq(checkoutLeads.id, leadId)).limit(1);
+    if (!lead || lead.orderId) return;
+    const name = `${lead.firstName} ${lead.lastName}`.trim() || "بلا اسم";
+    const headline = `حريف بدا يعمّر الطلب · ${lead.phone}`;
+    const lines = [
+      `*${headline}*`,
+      `*الحريف:* ${esc(name)} · ${lead.phone}${lead.governorate ? ` · ${esc(lead.governorate)}` : ""}`,
+      lead.items.length ? `*يحب:* ${lead.items.map((i) => `${esc(i.name)} × ${i.quantity} (${formatTND(i.lineTotal)})`).join("، ")}` : null,
+      "كان ما كمّلش الطلب، يبان في «ما كمّلوش» بعد 15 دقيقة.",
+      `<${siteUrl()}/admin/abandoned|فتح «ما كمّلوش» في لوحة التحكم>`,
+    ].filter(Boolean);
+    const res = await fetch(webhook, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: headline, blocks: [{ type: "section", text: { type: "mrkdwn", text: lines.join("\n") } }] }),
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!res.ok) console.error("Slack lead notification failed", res.status);
+  } catch (err) {
+    console.error("Slack lead notification failed", err);
+  }
+}
+
+export async function notifyNewOrder(publicToken: string) {
+  const webhook = slackWebhook();
+  if (!webhook) return;
 
   try {
     const [order] = await db.select().from(orders).where(eq(orders.publicToken, publicToken)).limit(1);

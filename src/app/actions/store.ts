@@ -13,7 +13,10 @@ import { createOrder } from "@/server/order-core";
 import { clientIp, hit } from "@/server/rate-limit";
 import { getCommunes } from "@/server/maystro";
 import { sendPurchaseToMeta } from "@/server/meta-capi";
-import { notifyNewOrder } from "@/server/notify";
+import { markLeadConverted, parseLeadInput, saveLead } from "@/server/leads";
+import { notifyNewLead, notifyNewOrder } from "@/server/notify";
+import { eq } from "drizzle-orm";
+import { orders } from "@/db/schema";
 import { getSettings } from "@/server/settings";
 
 export type PlaceOrderResult =
@@ -75,6 +78,12 @@ export async function placeOrder(input: unknown, lang?: unknown): Promise<PlaceO
     // Phone alert for the shop, sent after the customer gets their answer (a resubmit is not a new order).
     if (!result.duplicate) {
       after(() => notifyNewOrder(result.publicToken));
+      // The checkout this order came from is no longer "abandoned".
+      const leadKey = typeof input === "object" && input && "leadKey" in input ? String((input as { leadKey?: unknown }).leadKey ?? "").slice(0, 64) : "";
+      after(async () => {
+        const [placed] = await db.select({ id: orders.id }).from(orders).where(eq(orders.publicToken, result.publicToken)).limit(1);
+        if (placed) await markLeadConverted(placed.id, parsed.data.phone, leadKey || null);
+      });
       // The sale also goes to Meta from the server (the browser Pixel can be blocked).
       const cookieStore = await cookies();
       const browser = {
@@ -89,6 +98,27 @@ export async function placeOrder(input: unknown, lang?: unknown): Promise<PlaceO
   } catch (err) {
     console.error("placeOrder failed", err);
     return { ok: false, message: t.checkout.serverError };
+  }
+}
+
+// Started checkouts: at most 40 saves per IP per 10 minutes (the form saves as the customer types).
+const leadLimit = (ip: string) => ({ key: `lead:ip:${ip}`, max: 40, windowMs: 10 * 60 * 1000 });
+
+/**
+ * Called by the order form once the customer has typed a valid phone number (then as they fill
+ * in the rest), so the shop can call back someone who stopped before "confirm order".
+ * Answers nothing useful to the browser on purpose; failures are only logged.
+ */
+export async function saveCheckoutLead(input: unknown): Promise<void> {
+  const lead = parseLeadInput(input);
+  if (!lead) return;
+  try {
+    const { allowed } = await hit(db, leadLimit(clientIp(await headers())));
+    if (!allowed) return;
+    const { created } = await saveLead(lead);
+    if (created) after(() => notifyNewLead(created));
+  } catch (err) {
+    console.error("saveCheckoutLead failed", err);
   }
 }
 

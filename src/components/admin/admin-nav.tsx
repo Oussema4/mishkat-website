@@ -1,12 +1,13 @@
 "use client";
 
-import { ChartColumn, ExternalLink, Package, Settings, ShoppingCart, Truck, Users } from "lucide-react";
+import { ChartColumn, ExternalLink, Package, PhoneMissed, Settings, ShoppingCart, Truck, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/site";
 
 const items = [
   { href: "/admin", label: "الطلبات", icon: ShoppingCart, match: (p: string) => p === "/admin" || p.startsWith("/admin/orders") },
+  { href: "/admin/abandoned", label: "ما كمّلوش", icon: PhoneMissed, match: (p: string) => p.startsWith("/admin/abandoned") },
   { href: "/admin/stats", label: "الإحصائيات", icon: ChartColumn, match: (p: string) => p.startsWith("/admin/stats") },
   { href: "/admin/products", label: "المنتجات", icon: Package, match: (p: string) => p.startsWith("/admin/products") },
   { href: "/admin/maystro", label: "التوصيل", icon: Truck, match: (p: string) => p.startsWith("/admin/maystro") },

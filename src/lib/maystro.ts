@@ -91,7 +91,7 @@ export function maystroStatusLabel(code: number | null | undefined): string {
   return MAYSTRO_STATUSES[code]?.label ?? `حالة ${code}`;
 }
 
-const SHOP_STEP: Record<Exclude<OrderStatus, "cancelled">, number> = { new: 0, confirmed: 1, preparing: 2, shipped: 3, delivered: 4 };
+const SHOP_STEP: Record<Exclude<OrderStatus, "cancelled">, number> = { new: 0, postponed: 0, confirmed: 1, preparing: 2, shipped: 3, delivered: 4 };
 
 /**
  * The shop status an order moves to when Maystro reports `code`, or null to leave it as it is.

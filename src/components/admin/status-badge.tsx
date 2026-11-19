@@ -5,6 +5,7 @@ import { cn } from "@/lib/site";
 /** One filled colour per status, readable at a glance (dark text on a light fill, contrast ≥ 4.5). */
 export const STATUS_STYLES: Record<OrderStatus, string> = {
   new: "bg-[#fdeb9c] text-[#5c4700]",
+  postponed: "bg-[#fdd0a8] text-[#6b3000]",
   confirmed: "bg-[#c6eda2] text-[#24480c]",
   preparing: "bg-[#d9c4fb] text-[#3d1385]",
   shipped: "bg-[#bfd3f5] text-[#173777]",

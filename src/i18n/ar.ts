@@ -243,6 +243,7 @@ export const ar = {
   },
   status: {
     new: "طلب جديد",
+    postponed: "مؤجّل",
     confirmed: "تم تأكيد الطلب",
     preparing: "قيد التجهيز",
     shipped: "تم الشحن",

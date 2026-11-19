@@ -1,5 +1,5 @@
-import { asc, eq } from "drizzle-orm";
-import { ArrowRight, Phone } from "lucide-react";
+import { and, asc, desc, eq, ne } from "drizzle-orm";
+import { ArrowRight, Phone, Repeat2 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { WhatsAppIcon } from "@/components/brand/social-icons";
@@ -35,14 +35,21 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
     await Promise.race([syncOrderFromMaystro(order.id), new Promise((resolve) => setTimeout(resolve, 4000))]);
     order = (await load()) ?? order;
   }
-  const [items, history, allDrivers] = await Promise.all([
+  const [items, history, allDrivers, samePhone] = await Promise.all([
     db.select().from(orderItems).where(eq(orderItems.orderId, orderId)),
     db.select().from(orderStatusHistory).where(eq(orderStatusHistory.orderId, orderId)).orderBy(asc(orderStatusHistory.createdAt), asc(orderStatusHistory.id)),
     db.select({ id: drivers.id, name: drivers.name, active: drivers.active }).from(drivers).orderBy(asc(drivers.id)),
+    // The customer's other orders (same phone): ordered twice by mistake, or a returning customer.
+    db
+      .select({ id: orders.id, reference: orders.reference, status: orders.status, total: orders.total, createdAt: orders.createdAt })
+      .from(orders)
+      .where(and(eq(orders.phone, order.phone), ne(orders.id, order.id)))
+      .orderBy(desc(orders.createdAt))
+      .limit(10),
   ]);
 
   // The customer's details can be corrected until the order is confirmed (and never once at Maystro).
-  const editable = order.status === "new" && order.maystroState !== "sent";
+  const editable = (order.status === "new" || order.status === "postponed") && order.maystroState !== "sent";
   const communes = editable ? await getCommunes() : null;
 
   const waText = `السلام عليكم ${order.firstName}، معك مشكاة بخصوص طلبك رقم ${order.reference} (${formatTND(order.total)}).`;
@@ -70,6 +77,26 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
             <h2 id="customer-title" className="font-sans text-lg font-bold">
               الزبون والتوصيل
             </h2>
+            {samePhone.length > 0 ? (
+              <div role="note" className="mt-4 rounded-[var(--radius-md)] border border-[#f7b1b1] bg-[#fdeaea] p-4">
+                <p className="flex items-center gap-2 font-semibold text-[#7a1616]">
+                  <Repeat2 aria-hidden className="size-5" />
+                  حريف مكرّر: نفس الرقم في {samePhone.length === 1 ? "طلب آخر" : `${samePhone.length} طلبات أخرى`}
+                </p>
+                <ul className="mt-2 space-y-1.5 text-sm">
+                  {samePhone.map((o) => (
+                    <li key={o.id} className="flex flex-wrap items-center gap-2">
+                      <Link href={`/admin/orders/${o.id}`} dir="ltr" className="font-semibold tabular underline underline-offset-4">
+                        {o.reference}
+                      </Link>
+                      <span className="text-muted">{formatDateTime(o.createdAt)}</span>
+                      <span className="tabular">{formatTND(o.total)}</span>
+                      <StatusBadge status={o.status} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
             <CustomerDetails
               orderId={order.id}
               customer={{
