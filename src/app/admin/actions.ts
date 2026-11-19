@@ -14,7 +14,7 @@ import { ADMIN_ROLES, admins, categories, checkoutLeads, drivers, ORDER_STATUSES
 import { parseBundles, parseFaq, parseLabelValues, parseLines, parseSteps, parseTND, slugify } from "@/lib/admin-format";
 import { MAX_QTY_PER_ITEM } from "@/lib/validation";
 import { findCommune } from "@/lib/maystro";
-import { GOVERNORATES, normalizeTunisianPhone } from "@/lib/tunisia";
+import { GOVERNORATES, normalizeTunisianPhone, type Governorate } from "@/lib/tunisia";
 import { endSession, getCurrentAdmin, getCurrentOwner, hashPassword, requireAdmin, startSession, verifyPassword } from "@/server/auth";
 import { changeOrderStatus, deleteOrders } from "@/server/order-core";
 import { carrierById } from "@/lib/carriers";
@@ -111,7 +111,7 @@ export async function chooseDelivery(_prev: FormState, form: FormData): Promise<
   const carrier = carrierById(String(form.get("carrier")));
   if (!Number.isInteger(orderId) || !carrier) return { error: "اختر طريقة التوصيل." };
   const [order] = await db
-    .select({ status: orders.status, maystroState: orders.maystroState, driverId: orders.driverId })
+    .select({ status: orders.status, maystroState: orders.maystroState, driverId: orders.driverId, governorate: orders.governorate, communeId: orders.communeId })
     .from(orders)
     .where(eq(orders.id, orderId))
     .limit(1);
@@ -135,6 +135,15 @@ export async function chooseDelivery(_prev: FormState, form: FormData): Promise<
     if (!maystroEnabled()) return { error: "Maystro غير مربوط (ينقص MAYSTRO_TOKEN)." };
     // A parcel is only created for an order the shop has confirmed with the customer.
     if (order.status !== "confirmed") return { error: "اجعل حالة الطلب «تم تأكيد الطلب» أولًا، ثم أرسله إلى Maystro." };
+    // The delegation picked in the panel (customers only give the governorate and an address).
+    const picked = Number(form.get("communeId"));
+    if (picked) {
+      const commune = findCommune((await getCommunes()) ?? [], picked, order.governorate as Governorate);
+      if (!commune) return { error: "اختر المعتمدية من القائمة." };
+      await db.update(orders).set({ communeId: commune.id, city: commune.name, updatedAt: new Date() }).where(eq(orders.id, orderId));
+    } else if (!order.communeId) {
+      return { error: "اختر المعتمدية قبل الإرسال إلى Maystro." };
+    }
     const sent = await sendOrderToMaystro(orderId);
     if (!sent.ok) {
       revalidatePath("/admin", "layout");
@@ -184,7 +193,7 @@ const customerSchema = z.object({
   lastName: z.string().trim().max(60, "اللقب طويل برشا."),
   governorate: z.enum(GOVERNORATES, { error: "اختر الولاية." }),
   city: z.string().trim().max(80, "المعتمدية طويلة برشا."),
-  address: z.string().trim().max(300, "العنوان طويل برشا."),
+  address: z.string().trim().min(5, "اكتب العنوان.").max(300, "العنوان طويل برشا."),
   note: z.string().trim().max(500, "الملاحظة طويلة برشا."),
 });
 
@@ -215,17 +224,17 @@ export async function updateOrderCustomer(_prev: FormState, form: FormData): Pro
   const phone = normalizeTunisianPhone(text("phone"));
   if (!phone) return { error: "رقم الهاتف غير صحيح (8 أرقام)." };
 
-  // With Maystro's list loaded, the delegation must be one of the governorate's (its name is the city).
+  // The delegation is optional; when given with Maystro's list loaded, it must be one of the
+  // governorate's (its name is the city).
   let { city } = parsed.data;
   let communeId: number | null = null;
   const communes = await getCommunes();
+  const picked = Number(form.get("communeId"));
   if (communes) {
-    const commune = findCommune(communes, Number(form.get("communeId")), parsed.data.governorate);
-    if (!commune) return { error: "اختر المعتمدية من القائمة." };
-    city = commune.name;
-    communeId = commune.id;
-  } else if (city.length < 2) {
-    return { error: "اكتب المعتمدية." };
+    const commune = picked ? findCommune(communes, picked, parsed.data.governorate) : null;
+    if (picked && !commune) return { error: "اختر المعتمدية من القائمة." };
+    city = commune?.name ?? "";
+    communeId = commune?.id ?? null;
   }
 
   await db

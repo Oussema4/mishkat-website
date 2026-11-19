@@ -17,18 +17,18 @@ import { useCart, type CartLine } from "@/lib/cart-store";
 import { formatTND } from "@/lib/money";
 import { computeTotals } from "@/lib/pricing";
 import { cn } from "@/lib/site";
-import { MAYSTRO_WILAYAS, type Commune } from "@/lib/maystro";
-import { GOVERNORATES, normalizeTunisianPhone, type Governorate } from "@/lib/tunisia";
+import { MAYSTRO_WILAYAS } from "@/lib/maystro";
+import { GOVERNORATES, normalizeTunisianPhone } from "@/lib/tunisia";
 import { checkoutSchemaFor, splitFullName } from "@/lib/validation";
 
-type FieldName = "fullName" | "phone" | "governorate" | "city" | "note";
+type FieldName = "fullName" | "phone" | "governorate" | "address" | "note";
 
-const FIELD_ORDER: FieldName[] = ["fullName", "phone", "governorate", "city", "note"];
+const FIELD_ORDER: FieldName[] = ["fullName", "phone", "governorate", "address", "note"];
 const labels = (t: Dictionary): Record<FieldName, string> => ({
   fullName: t.checkout.fullName,
   phone: t.checkout.phone,
   governorate: t.checkout.governorate,
-  city: t.checkout.city,
+  address: t.checkout.address,
   note: t.checkout.note,
 });
 
@@ -49,19 +49,16 @@ const inputClass =
   "block w-full min-h-12 rounded-[var(--radius-md)] border bg-ink-soft px-3.5 py-2.5 text-base text-paper outline-none placeholder:text-paper/45 transition-colors " +
   "focus:border-gold focus:ring-2 focus:ring-gold/40 aria-[invalid=true]:border-danger";
 
-export type DeliveryInfo = { deliveryFee: number; deliveryTime: string; communes: Commune[] | null };
+export type DeliveryInfo = { deliveryFee: number; deliveryTime: string };
 
 /**
  * The order form. On /checkout it orders the cart; with `inline` it orders the lines given (the
  * product page's chosen offer) right where the customer is, without the cart or a second page.
  */
-export function CheckoutForm({ deliveryFee, deliveryTime, communes, inline }: DeliveryInfo & { inline?: { lines: CartLine[] } }) {
+export function CheckoutForm({ deliveryFee, deliveryTime, inline }: DeliveryInfo & { inline?: { lines: CartLine[] } }) {
   const { t, locale, href } = useI18n();
   const checkoutSchema = useMemo(() => checkoutSchemaFor(t.validation), [t]);
   const [governorate, setGovernorate] = useState("");
-  const [communeId, setCommuneId] = useState("");
-  const wilaya = MAYSTRO_WILAYAS[governorate as Governorate]?.code;
-  const cityOptions = communes && wilaya ? communes.filter((c) => c.wilaya === wilaya) : [];
   const hydrated = useCartSync();
   const cartLines = useCart((s) => s.lines);
   const lines = inline ? inline.lines : cartLines;
@@ -90,13 +87,12 @@ export function CheckoutForm({ deliveryFee, deliveryTime, communes, inline }: De
     const phone = String(data.get("phone") ?? "");
     if (!normalizeTunisianPhone(phone)) return;
     leadKey.current ??= randomKey();
-    const communeName = communes?.find((c) => String(c.id) === String(data.get("communeId") ?? ""))?.name;
     const payload = {
       key: leadKey.current,
       fullName: String(data.get("fullName") ?? ""),
       phone,
       governorate: String(data.get("governorate") ?? ""),
-      city: communeName ?? String(data.get("city") ?? ""),
+      address: String(data.get("address") ?? ""),
       items: lines.map((l) => ({ productId: l.productId, quantity: l.quantity })),
       locale,
     };
@@ -181,9 +177,8 @@ export function CheckoutForm({ deliveryFee, deliveryTime, communes, inline }: De
       ...splitFullName(String(form.get("fullName") ?? "")),
       phone: String(form.get("phone") ?? ""),
       governorate: String(form.get("governorate") ?? ""),
-      city: String(form.get("city") ?? ""),
+      address: String(form.get("address") ?? ""),
       note: String(form.get("note") ?? ""),
-      ...(communeId ? { communeId: Number(communeId) } : {}),
       trap: String(form.get("mk_trap") ?? ""),
       items,
       idempotencyKey: idempotencyKey(items),
@@ -325,18 +320,9 @@ export function CheckoutForm({ deliveryFee, deliveryTime, communes, inline }: De
   );
 
   const placeFields = (
-    <div className="grid gap-5 sm:grid-cols-2">
+    <>
       <Field name="governorate" error={errors.governorate}>
-        <select
-          {...field("governorate")}
-          autoComplete="address-level1"
-          required
-          value={governorate}
-          onChange={(e) => {
-            setGovernorate(e.target.value);
-            setCommuneId("");
-          }}
-        >
+        <select {...field("governorate")} autoComplete="address-level1" required value={governorate} onChange={(e) => setGovernorate(e.target.value)}>
           <option value="" disabled>
             {t.checkout.chooseGovernorate}
           </option>
@@ -347,27 +333,11 @@ export function CheckoutForm({ deliveryFee, deliveryTime, communes, inline }: De
           ))}
         </select>
       </Field>
-      <Field name="city" error={errors.city}>
-        {communes ? (
-          // Maystro's delegations for the chosen governorate; the id goes to the server, the name is the city.
-          <>
-            <select {...field("city")} name="communeId" required value={communeId} disabled={!governorate} onChange={(e) => setCommuneId(e.target.value)}>
-              <option value="" disabled>
-                {governorate ? t.checkout.chooseCity : t.checkout.chooseGovernorateFirst}
-              </option>
-              {cityOptions.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            <input type="hidden" name="city" value={cityOptions.find((c) => String(c.id) === communeId)?.name ?? ""} />
-          </>
-        ) : (
-          <input {...field("city")} type="text" autoComplete="address-level2" required maxLength={80} />
-        )}
+      {/* One line the phone's autofill can fill with the customer's saved address. */}
+      <Field name="address" error={errors.address}>
+        <input {...field("address")} type="text" autoComplete="street-address" placeholder={t.checkout.addressPlaceholder} required minLength={5} maxLength={300} />
       </Field>
-    </div>
+    </>
   );
 
   /*

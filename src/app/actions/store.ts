@@ -41,12 +41,12 @@ export async function placeOrder(input: unknown, lang?: unknown): Promise<PlaceO
   const parsed = checkoutSchemaFor(t.validation).safeParse(input);
   if (!parsed.success) return { ok: false, errors: fieldErrors(parsed.error) };
 
-  // The delegation must be one of Maystro's for the chosen governorate; its name becomes the city.
-  const communes = await getCommunes();
-  if (communes) {
-    const commune = parsed.data.communeId ? findCommune(communes, parsed.data.communeId, parsed.data.governorate) : null;
-    if (!commune) return { ok: false, errors: { city: t.validation.cityList } };
-    parsed.data.city = commune.name;
+  // A delegation sent by a page opened before the form changed is kept only if it is Maystro's
+  // for that governorate; otherwise the shop picks it when sending the parcel.
+  if (parsed.data.communeId) {
+    const commune = findCommune((await getCommunes()) ?? [], parsed.data.communeId, parsed.data.governorate);
+    parsed.data.communeId = commune?.id;
+    parsed.data.city = commune?.name ?? parsed.data.city;
   }
 
   try {

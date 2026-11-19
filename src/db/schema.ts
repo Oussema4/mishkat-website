@@ -156,6 +156,7 @@ export const checkoutLeads = sqliteTable(
     phone: text("phone").notNull(),
     governorate: text("governorate").notNull().default(""),
     city: text("city").notNull().default(""),
+    address: text("address").notNull().default(""),
     items: text("items", { mode: "json" }).$type<LeadItem[]>().notNull().default(sql`'[]'`),
     subtotal: integer("subtotal").notNull().default(0),
     locale: text("locale").notNull().default("ar"),

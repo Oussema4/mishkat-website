@@ -40,6 +40,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
         like(orders.reference, `%${q.toUpperCase()}%`),
         like(sql`${orders.firstName} || ' ' || ${orders.lastName}`, term),
         like(orders.city, term),
+        like(orders.address, term),
         digits.length >= 3 ? like(orders.phone, `%${digits.slice(-8)}%`) : undefined,
       )!,
     );
@@ -195,7 +196,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
                   </td>
                   <td className="px-4 py-3">
                     {o.governorate}
-                    <div className="text-sm text-muted">{o.city}</div>
+                    <div className="max-w-56 truncate text-sm text-muted" title={o.address || o.city}>{o.address || o.city}</div>
                   </td>
                   <td className="px-4 py-3 font-semibold tabular">{formatTND(o.total)}</td>
                   <td className="px-4 py-3">

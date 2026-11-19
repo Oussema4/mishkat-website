@@ -25,12 +25,11 @@ export function checkoutSchemaFor(m: Dictionary["validation"]) {
         return n;
       }),
     governorate: z.enum(GOVERNORATES, { error: m.governorate }),
-    city: trimmed(2, 80, m.city, m.tooLong),
-    /** Maystro delegation id from the checkout list (absent when the list couldn't be loaded). */
+    // The customer gives the governorate and a written address; the delegation (Maystro needs it)
+    // is picked by the shop when sending the parcel. Still accepted from pages opened before.
+    city: z.string().trim().max(80, m.tooLong).optional().default(""),
     communeId: z.number().int().positive().optional(),
-    // No street address at checkout (governorate + city are enough; the courier calls before delivery).
-    // Still accepted from older pages, and the dashboard shows it when present.
-    address: z.string().trim().max(300, m.tooLong).optional().default(""),
+    address: trimmed(5, 300, m.address, m.tooLong),
     note: z.string().trim().max(500, m.noteTooLong).optional().default(""),
     items: z
       .array(

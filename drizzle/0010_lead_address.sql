@@ -1,0 +1,1 @@
+ALTER TABLE `checkout_leads` ADD `address` text DEFAULT '' NOT NULL;

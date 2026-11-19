@@ -18,7 +18,6 @@ import { formatTND, fromMillimes } from "@/lib/money";
 import { PRODUCT_CUTOUTS } from "@/lib/product-cutouts";
 import { siteUrl } from "@/lib/site";
 import { getActiveProducts, getProductBySlug, getVisibleReviews } from "@/server/catalog";
-import { getCommunes } from "@/server/maystro";
 import { getSettings } from "@/server/settings";
 
 /**
@@ -59,12 +58,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
   const { locale, t, href } = await pageLocale(params);
-  // Maystro's delegations feed the order form on the page (refreshed daily; null → free-text city).
-  const [product, settings, allReviews, communes] = await Promise.all([
+  const [product, settings, allReviews] = await Promise.all([
     getProductBySlug(slug, locale),
     getSettings(locale),
     getVisibleReviews(),
-    getCommunes(),
   ]);
   if (!product) notFound();
   // The customer messages are about Sabili; featured ones first, in the order above.
@@ -174,7 +171,7 @@ export default async function ProductPage({ params }: Props) {
           <div className="mt-8">
             <ProductPurchase
               product={cartProduct}
-              order={{ deliveryFee: settings.deliveryFee, deliveryTime: settings.deliveryTime, communes }}
+              order={{ deliveryFee: settings.deliveryFee, deliveryTime: settings.deliveryTime }}
             />
           </div>
 

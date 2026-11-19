@@ -10,8 +10,8 @@ import { drivers, orderItems, orders, orderStatusHistory } from "@/db/schema";
 import { ar } from "@/i18n/ar";
 import { formatDateTime } from "@/lib/dates";
 import { formatTND } from "@/lib/money";
-import { whatsappLink } from "@/lib/tunisia";
-import { maystroStatusLabel } from "@/lib/maystro";
+import { whatsappLink, type Governorate } from "@/lib/tunisia";
+import { maystroStatusLabel, MAYSTRO_WILAYAS } from "@/lib/maystro";
 import { getCommunes, maystroEnabled, syncOrderFromMaystro } from "@/server/maystro";
 import { CustomerDetails } from "./customer-form";
 import { DeliveryPanel } from "./delivery-panel";
@@ -50,7 +50,9 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
 
   // The customer's details can be corrected until the order is confirmed (and never once at Maystro).
   const editable = (order.status === "new" || order.status === "postponed") && order.maystroState !== "sent";
-  const communes = editable ? await getCommunes() : null;
+  // Maystro's delegations: for the customer form, and to pick one when sending the parcel.
+  const communes = editable || (order.maystroState !== "sent" && order.status !== "cancelled") ? await getCommunes() : null;
+  const wilaya = MAYSTRO_WILAYAS[order.governorate as Governorate]?.code;
 
   const waText = `السلام عليكم ${order.firstName}، معك مشكاة بخصوص طلبك رقم ${order.reference} (${formatTND(order.total)}).`;
 
@@ -185,6 +187,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
               cancelled={order.status === "cancelled"}
               drivers={allDrivers.filter((d) => d.active).map(({ id, name }) => ({ id, name }))}
               driver={allDrivers.find((d) => d.id === order.driverId) ?? null}
+              commune={{ id: order.communeId, options: communes && wilaya ? communes.filter((c) => c.wilaya === wilaya).map(({ id, name }) => ({ id, name })) : null }}
               maystro={{
                 enabled: maystroEnabled(),
                 state: order.maystroState,

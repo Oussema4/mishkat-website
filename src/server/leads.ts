@@ -20,6 +20,7 @@ export type LeadInput = {
   phone: string;
   governorate: string;
   city: string;
+  address: string;
   items: { productId: number; quantity: number }[];
   locale: string;
 };
@@ -45,6 +46,7 @@ export function parseLeadInput(raw: unknown): LeadInput | null {
     phone,
     governorate: (GOVERNORATES as readonly string[]).includes(governorate) ? governorate : "",
     city: text(r.city, 80),
+    address: text(r.address, 300),
     items,
     locale: text(r.locale, 5) || "ar",
   };
@@ -66,6 +68,7 @@ export async function saveLead(input: LeadInput): Promise<{ created: number | nu
     phone: input.phone,
     governorate: input.governorate,
     city: input.city,
+    address: input.address,
     items,
     subtotal: items.reduce((n, i) => n + i.lineTotal, 0),
     locale: input.locale,

@@ -81,7 +81,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
         </li>
         <li className="flex gap-3">
           <Truck aria-hidden className="mt-1 size-6 shrink-0 text-gold-deep" strokeWidth={1.5} />
-          <span>{fill(t.confirmation.delivery, { time: settings.deliveryTime, place: [order.city, governorate].join(t.common.listSeparator) })}</span>
+          <span>{fill(t.confirmation.delivery, { time: settings.deliveryTime, place: [order.city, governorate].filter(Boolean).join(t.common.listSeparator) })}</span>
         </li>
       </ul>
 

@@ -22,7 +22,8 @@ type Customer = {
 
 /**
  * The customer block of an order. While the order is "new" (not confirmed yet) the details can
- * be corrected here: a wrong number, a missing surname, the delegation the customer meant…
+ * be corrected here: a wrong number, a missing surname, the address… The delegation is optional
+ * here (Maystro needs it: it can also be picked when sending the parcel).
  */
 export function CustomerDetails({ orderId, customer, editable, communes }: { orderId: number; customer: Customer; editable: boolean; communes: Commune[] | null }) {
   const [editing, setEditing] = useState(false);
@@ -125,12 +126,10 @@ export function CustomerDetails({ orderId, customer, editable, communes }: { ord
           </select>
         </label>
         <label className="block">
-          <span className={label}>المعتمدية</span>
+          <span className={label}>المعتمدية (لـ Maystro، اختياري)</span>
           {communes ? (
-            <select name="communeId" value={communeId} onChange={(e) => setCommuneId(e.target.value)} required className={adminInput}>
-              <option value="" disabled>
-                اختر المعتمدية
-              </option>
+            <select name="communeId" value={communeId} onChange={(e) => setCommuneId(e.target.value)} className={adminInput}>
+              <option value="">— ما تختارتش —</option>
               {cityOptions.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
@@ -138,12 +137,12 @@ export function CustomerDetails({ orderId, customer, editable, communes }: { ord
               ))}
             </select>
           ) : (
-            <input name="city" defaultValue={customer.city} required maxLength={80} className={adminInput} />
+            <input name="city" defaultValue={customer.city} maxLength={80} className={adminInput} />
           )}
         </label>
         <label className="block">
-          <span className={label}>العنوان (اختياري)</span>
-          <input name="address" defaultValue={customer.address} maxLength={300} className={adminInput} />
+          <span className={label}>العنوان</span>
+          <input name="address" defaultValue={customer.address} required minLength={5} maxLength={300} className={adminInput} />
         </label>
         <label className="block sm:col-span-2">
           <span className={label}>ملاحظة (اختياري)</span>

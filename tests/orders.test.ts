@@ -23,7 +23,7 @@ function input(overrides: Partial<CheckoutData> = {}): CheckoutData {
     lastName: "التونسي",
     phone: "+216 92 123 456",
     governorate: "سوسة",
-    city: "حمام سوسة",
+    address: "حمام سوسة، نهج الياسمين",
     items: [{ productId, quantity: 2 }],
     idempotencyKey: `key-${Math.random().toString(36).slice(2)}-${Date.now()}`,
     ...overrides,

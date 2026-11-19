@@ -64,15 +64,18 @@ describe("checkout validation", () => {
     lastName: "بن علي",
     phone: "55 123 456",
     governorate: "صفاقس",
-    city: "ساقية الزيت",
+    address: "ساقية الزيت، طريق تونس كلم 5",
     items: [{ productId: 1, quantity: 1 }],
     idempotencyKey: "0123456789abcdef0123",
   };
   it("accepts a valid order", () => expect(checkoutSchema.safeParse(valid).success).toBe(true));
   it("rejects unknown governorates", () => expect(checkoutSchema.safeParse({ ...valid, governorate: "باريس" }).success).toBe(false));
   it("rejects empty carts", () => expect(checkoutSchema.safeParse({ ...valid, items: [] }).success).toBe(false));
-  it("needs no street address", () => expect(checkoutSchema.parse(valid).address).toBe(""));
-  it("rejects a missing city", () => expect(checkoutSchema.safeParse({ ...valid, city: " " }).success).toBe(false));
+  it("needs no delegation", () => expect(checkoutSchema.parse(valid).city).toBe(""));
+  it("requires an address", () => {
+    expect(checkoutSchema.safeParse({ ...valid, address: " " }).success).toBe(false);
+    expect(checkoutSchema.safeParse({ ...valid, address: undefined }).success).toBe(false);
+  });
 });
 
 describe("admin text formats", () => {

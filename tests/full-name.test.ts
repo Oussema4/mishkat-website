@@ -10,7 +10,7 @@ describe("one name field at checkout", () => {
   it("accepts a one-word name and refuses an empty one", () => {
     expect(splitFullName("أحمد")).toEqual({ firstName: "أحمد", lastName: "" });
     expect(splitFullName("   ")).toEqual({ firstName: "", lastName: "" });
-    const base = { phone: "92359349", governorate: "تونس", city: "La Marsa", items: [{ productId: 1, quantity: 1 }], idempotencyKey: "k".repeat(20) };
+    const base = { phone: "92359349", governorate: "تونس", address: "La Marsa, rue 5", items: [{ productId: 1, quantity: 1 }], idempotencyKey: "k".repeat(20) };
     expect(checkoutSchema.safeParse({ ...base, ...splitFullName("أحمد") }).success).toBe(true);
     expect(checkoutSchema.safeParse({ ...base, ...splitFullName(" ") }).success).toBe(false);
   });

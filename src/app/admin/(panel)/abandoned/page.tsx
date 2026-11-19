@@ -117,7 +117,7 @@ export default async function AbandonedPage({ searchParams }: PageProps<"/admin/
                       </span>
                       <CopyButton value={l.phone} label="انسخ رقم الهاتف" />
                     </p>
-                    <p className="text-sm text-muted">{[l.city, l.governorate].filter(Boolean).join("، ") || "الولاية ما تكتبتش"}</p>
+                    <p className="text-sm text-muted">{[l.address, l.city, l.governorate].filter(Boolean).join("، ") || "الولاية ما تكتبتش"}</p>
                   </div>
                   <div className="text-end">
                     <span
