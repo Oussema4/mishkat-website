@@ -1,9 +1,8 @@
 import { asc, eq } from "drizzle-orm";
-import { ArrowRight, MapPin, Phone } from "lucide-react";
+import { ArrowRight, Phone } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { WhatsAppIcon } from "@/components/brand/social-icons";
-import { CopyButton } from "@/components/admin/copy-button";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { OrderTotals } from "@/components/store/order-summary";
 import { db } from "@/db";
@@ -11,9 +10,10 @@ import { drivers, orderItems, orders, orderStatusHistory } from "@/db/schema";
 import { ar } from "@/i18n/ar";
 import { formatDateTime } from "@/lib/dates";
 import { formatTND } from "@/lib/money";
-import { formatTunisianPhone, whatsappLink } from "@/lib/tunisia";
+import { whatsappLink } from "@/lib/tunisia";
 import { maystroStatusLabel } from "@/lib/maystro";
-import { maystroEnabled, syncOrderFromMaystro } from "@/server/maystro";
+import { getCommunes, maystroEnabled, syncOrderFromMaystro } from "@/server/maystro";
+import { CustomerDetails } from "./customer-form";
 import { DeliveryPanel } from "./delivery-panel";
 import { StatusForm } from "./status-form";
 import { requireAdmin } from "@/server/auth";
@@ -41,6 +41,10 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
     db.select({ id: drivers.id, name: drivers.name, active: drivers.active }).from(drivers).orderBy(asc(drivers.id)),
   ]);
 
+  // The customer's details can be corrected until the order is confirmed (and never once at Maystro).
+  const editable = order.status === "new" && order.maystroState !== "sent";
+  const communes = editable ? await getCommunes() : null;
+
   const waText = `السلام عليكم ${order.firstName}، معك مشكاة بخصوص طلبك رقم ${order.reference} (${formatTND(order.total)}).`;
 
   return (
@@ -66,38 +70,21 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
             <h2 id="customer-title" className="font-sans text-lg font-bold">
               الزبون والتوصيل
             </h2>
-            <dl className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div>
-                <dt className="text-sm text-muted">الاسم واللقب</dt>
-                <dd className="text-lg font-semibold">
-                  {order.firstName} {order.lastName}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm text-muted">الهاتف</dt>
-                <dd className="flex items-center gap-1">
-                  <span dir="ltr" className="text-lg font-semibold tabular">
-                    {formatTunisianPhone(order.phone)}
-                  </span>
-                  <CopyButton value={order.phone} label="انسخ رقم الهاتف" />
-                </dd>
-              </div>
-              <div className="sm:col-span-2">
-                <dt className="text-sm text-muted">العنوان</dt>
-                <dd className="flex gap-2 leading-7">
-                  <MapPin aria-hidden className="mt-1 size-4 shrink-0 text-gold-deep" />
-                  <span>
-                    {[order.address, order.city, order.governorate].filter(Boolean).join("، ")}
-                  </span>
-                </dd>
-              </div>
-              {order.note ? (
-                <div className="sm:col-span-2">
-                  <dt className="text-sm text-muted">ملاحظة الزبون</dt>
-                  <dd className="rounded-[var(--radius-md)] bg-mist p-3 leading-7">{order.note}</dd>
-                </div>
-              ) : null}
-            </dl>
+            <CustomerDetails
+              orderId={order.id}
+              customer={{
+                firstName: order.firstName,
+                lastName: order.lastName,
+                phone: order.phone,
+                governorate: order.governorate,
+                city: order.city,
+                communeId: order.communeId,
+                address: order.address,
+                note: order.note,
+              }}
+              editable={editable}
+              communes={communes}
+            />
             <div className="mt-5 flex flex-wrap gap-2">
               <a
                 href={`tel:+216${order.phone}`}

@@ -13,11 +13,12 @@ import { db } from "@/db";
 import { ADMIN_ROLES, admins, categories, drivers, ORDER_STATUSES, orders, productImages, products, reviews, type ProductText } from "@/db/schema";
 import { parseBundles, parseFaq, parseLabelValues, parseLines, parseSteps, parseTND, slugify } from "@/lib/admin-format";
 import { MAX_QTY_PER_ITEM } from "@/lib/validation";
-import { normalizeTunisianPhone } from "@/lib/tunisia";
+import { findCommune } from "@/lib/maystro";
+import { GOVERNORATES, normalizeTunisianPhone } from "@/lib/tunisia";
 import { endSession, getCurrentAdmin, getCurrentOwner, hashPassword, requireAdmin, startSession, verifyPassword } from "@/server/auth";
 import { changeOrderStatus, deleteOrders } from "@/server/order-core";
 import { carrierById } from "@/lib/carriers";
-import { maystroEnabled, maystroWebhookUrl, registerWebhook, sendOrderToMaystro, syncOrderFromMaystro } from "@/server/maystro";
+import { getCommunes, maystroEnabled, maystroWebhookUrl, registerWebhook, sendOrderToMaystro, syncOrderFromMaystro } from "@/server/maystro";
 import { saveSettings } from "@/server/settings";
 import { clientIp, hit, isBlocked, reset } from "@/server/rate-limit";
 import { deleteImage } from "@/server/uploads";
@@ -174,6 +175,63 @@ export async function connectMaystroWebhook(_prev: FormState): Promise<FormState
   if (!(await getCurrentOwner())) return { error: "ربط Maystro للمالك فقط." };
   const result = await registerWebhook(maystroWebhookUrl());
   return result.ok ? { ok: true, message: result.message } : { error: result.message };
+}
+
+// ───────────── Customer details ─────────────
+
+const customerSchema = z.object({
+  firstName: z.string().trim().min(2, "اكتب الاسم (حرفان على الأقل).").max(60, "الاسم طويل برشا."),
+  lastName: z.string().trim().max(60, "اللقب طويل برشا."),
+  governorate: z.enum(GOVERNORATES, { error: "اختر الولاية." }),
+  city: z.string().trim().max(80, "المعتمدية طويلة برشا."),
+  address: z.string().trim().max(300, "العنوان طويل برشا."),
+  note: z.string().trim().max(500, "الملاحظة طويلة برشا."),
+});
+
+/**
+ * Corrects the customer's details (name, phone, place, note) on an order that is still "new",
+ * i.e. before it is confirmed and handed to a courier.
+ */
+export async function updateOrderCustomer(_prev: FormState, form: FormData): Promise<FormState> {
+  await requireAdmin();
+  const orderId = Number(form.get("orderId"));
+  if (!Number.isInteger(orderId)) return { error: "بيانات غير صالحة." };
+  const [order] = await db.select({ status: orders.status, maystroState: orders.maystroState }).from(orders).where(eq(orders.id, orderId)).limit(1);
+  if (!order) return { error: "الطلب غير موجود." };
+  if (order.status !== "new" || order.maystroState === "sent") return { error: "التعديل ممكن برك كي تكون الحالة «طلب جديد»." };
+
+  const text = (name: string) => String(form.get(name) ?? "");
+  const parsed = customerSchema.safeParse({
+    firstName: text("firstName"),
+    lastName: text("lastName"),
+    governorate: text("governorate"),
+    city: text("city"),
+    address: text("address"),
+    note: text("note"),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة." };
+  const phone = normalizeTunisianPhone(text("phone"));
+  if (!phone) return { error: "رقم الهاتف غير صحيح (8 أرقام)." };
+
+  // With Maystro's list loaded, the delegation must be one of the governorate's (its name is the city).
+  let { city } = parsed.data;
+  let communeId: number | null = null;
+  const communes = await getCommunes();
+  if (communes) {
+    const commune = findCommune(communes, Number(form.get("communeId")), parsed.data.governorate);
+    if (!commune) return { error: "اختر المعتمدية من القائمة." };
+    city = commune.name;
+    communeId = commune.id;
+  } else if (city.length < 2) {
+    return { error: "اكتب المعتمدية." };
+  }
+
+  await db
+    .update(orders)
+    .set({ ...parsed.data, city, communeId, phone, updatedAt: new Date() })
+    .where(eq(orders.id, orderId));
+  revalidatePath("/admin", "layout");
+  return { ok: true, message: "تم حفظ معطيات الحريف." };
 }
 
 // ───────────── Delivery people ─────────────
