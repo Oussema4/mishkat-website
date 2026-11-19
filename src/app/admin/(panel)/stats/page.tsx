@@ -51,7 +51,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
       : `من ${custom.from.split("-").reverse().join("/")} حتى ${custom.to.split("-").reverse().join("/")}`
     : PERIODS[period ?? "30"];
 
-  const [rows, productList, soldRows, driverList] = await Promise.all([
+  const [rows, productList, soldRows, driverList, outRows] = await Promise.all([
     db
       .select({
         status: orders.status,
@@ -75,6 +75,13 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
       .where(and(ne(orders.status, "cancelled"), inPeriod))
       .groupBy(orderItems.productId),
     db.select({ id: drivers.id, name: drivers.name }).from(drivers),
+    // Every box out of stock since the start: in orders that did not give their boxes back (not cancelled).
+    db
+      .select({ productId: orderItems.productId, units: sql<number>`sum(${orderItems.quantity})` })
+      .from(orderItems)
+      .innerJoin(orders, eq(orderItems.orderId, orders.id))
+      .where(eq(orders.stockRestored, false))
+      .groupBy(orderItems.productId),
   ]);
 
   const list: StatOrder[] = rows.map((r) => ({ ...r, boxes: Number(r.boxes) }));
@@ -296,14 +303,16 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
         <h2 id="stock-title" className="font-sans text-lg font-bold">
           الستوك والأسوام
         </h2>
-        <p className="mt-1 text-sm text-muted">الستوك ينقص وقت الطلب ويرجع وقت الإلغاء. «يكفي» محسوب على ريتم البيع في الفترة المختارة.</p>
+        <p className="mt-1 text-sm text-muted">الستوك ينقص وقت الطلب ويرجع وقت الإلغاء. «دخل للستوك» = اللي باقي + اللي خرج من الأوّل. «يكفي» محسوب على ريتم البيع في الفترة المختارة.</p>
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[40rem] text-sm">
+          <table className="w-full min-w-[52rem] text-sm">
             <thead className="text-muted">
               <tr>
                 <th scope="col" className="py-2 text-start font-medium">المنتج</th>
                 <th scope="col" className="py-2 text-start font-medium">السوم والعروض</th>
-                <th scope="col" className="py-2 text-end font-medium">في الستوك</th>
+                <th scope="col" className="py-2 text-end font-medium">دخل للستوك</th>
+                <th scope="col" className="py-2 text-end font-medium">خرج من الأوّل</th>
+                <th scope="col" className="py-2 text-end font-medium">باقي في الستوك</th>
                 <th scope="col" className="py-2 text-end font-medium">تباع في الفترة</th>
                 <th scope="col" className="py-2 text-end font-medium">يكفي</th>
                 <th scope="col" className="py-2 text-end font-medium">قيمة الستوك</th>
@@ -314,6 +323,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
                 const sold = soldRows.find((r) => r.productId === p.id);
                 const units = Number(sold?.units ?? 0);
                 const left = daysOfStock(p.stock, units, periodDays);
+                const out = Number(outRows.find((r) => r.productId === p.id)?.units ?? 0);
                 return (
                   <tr key={p.id} className="border-t border-line align-top">
                     <td className="py-3">
@@ -330,6 +340,8 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
                         </span>
                       ))}
                     </td>
+                    <td className="py-3 text-end tabular">{p.stock + out}</td>
+                    <td className="py-3 text-end tabular">{out}</td>
                     <td className={cn("py-3 text-end text-lg font-bold tabular", p.stock <= 5 && "text-danger")}>{p.stock}</td>
                     <td className="py-3 text-end tabular">
                       {units}
