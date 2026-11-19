@@ -21,7 +21,9 @@ export function formatTND(millimes: number, locale: Locale = "ar"): string {
   const abs = Math.abs(Math.round(millimes));
   const whole = Math.floor(abs / MILLIMES)
     .toString()
-    .replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    // Narrow no-break space: unlike a plain space it keeps "1 439" one number in Arabic (right-to-left)
+    // text, instead of the two parts showing up reversed as "439 1".
+    .replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F");
   const frac = abs % MILLIMES;
   const text = frac ? `${whole},${String(frac).padStart(3, "0")}` : whole;
   return `${sign}${text} ${CURRENCY[locale]}`;

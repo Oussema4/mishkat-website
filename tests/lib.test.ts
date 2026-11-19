@@ -10,7 +10,7 @@ describe("money", () => {
   it("formats TND from millimes", () => {
     expect(formatTND(48000)).toBe("48 د.ت");
     expect(formatTND(7500)).toBe("7,500 د.ت");
-    expect(formatTND(1250000)).toBe("1 250 د.ت");
+    expect(formatTND(1250000)).toBe("1\u202F250 د.ت");
   });
   it("parses admin amounts", () => {
     expect(parseTND("48")).toBe(48000);
