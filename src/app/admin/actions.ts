@@ -10,7 +10,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { ADMIN_ROLES, admins, categories, ORDER_STATUSES, orders, productImages, products, reviews, type ProductText } from "@/db/schema";
+import { ADMIN_ROLES, admins, categories, drivers, ORDER_STATUSES, orders, productImages, products, reviews, type ProductText } from "@/db/schema";
 import { parseBundles, parseFaq, parseLabelValues, parseLines, parseSteps, parseTND, slugify } from "@/lib/admin-format";
 import { MAX_QTY_PER_ITEM } from "@/lib/validation";
 import { normalizeTunisianPhone } from "@/lib/tunisia";
@@ -109,10 +109,25 @@ export async function chooseDelivery(_prev: FormState, form: FormData): Promise<
   const orderId = Number(form.get("orderId"));
   const carrier = carrierById(String(form.get("carrier")));
   if (!Number.isInteger(orderId) || !carrier) return { error: "اختر طريقة التوصيل." };
-  const [order] = await db.select({ status: orders.status, maystroState: orders.maystroState }).from(orders).where(eq(orders.id, orderId)).limit(1);
+  const [order] = await db
+    .select({ status: orders.status, maystroState: orders.maystroState, driverId: orders.driverId })
+    .from(orders)
+    .where(eq(orders.id, orderId))
+    .limit(1);
   if (!order) return { error: "الطلب غير موجود." };
   if (order.maystroState === "sent") return { error: "هذا الطلب أُرسل إلى Maystro من قبل." };
   if (order.status === "cancelled") return { error: "الطلب ملغى." };
+
+  // "Another way": optionally one of the shop's own delivery people (0 / empty = someone else).
+  let driver: { id: number; name: string } | null = null;
+  if (carrier.id === "manual") {
+    const driverId = Number(form.get("driverId"));
+    if (Number.isInteger(driverId) && driverId > 0) {
+      const [found] = await db.select({ id: drivers.id, name: drivers.name, active: drivers.active }).from(drivers).where(eq(drivers.id, driverId)).limit(1);
+      if (!found || !found.active) return { error: "اختر موزّعًا من القائمة." };
+      driver = found;
+    }
+  }
 
   let message: string;
   if (carrier.id === "maystro") {
@@ -126,9 +141,19 @@ export async function chooseDelivery(_prev: FormState, form: FormData): Promise<
     }
     message = `تم إرسال الطلب إلى Maystro${sent.tracking ? ` (رقم التتبّع ${sent.tracking})` : ""}.`;
   } else {
-    message = `تم حفظ طريقة التوصيل: ${carrier.name}.`;
+    message = driver ? `تم الحفظ: التوصيل مع ${driver.name}.` : `تم حفظ طريقة التوصيل: ${carrier.name}.`;
   }
-  await db.update(orders).set({ carrier: carrier.id, updatedAt: new Date() }).where(eq(orders.id, orderId));
+  const driverId = driver?.id ?? null;
+  await db
+    .update(orders)
+    .set({
+      carrier: carrier.id,
+      driverId,
+      // When the delivery person was set (kept if the same one is saved again).
+      ...(driverId !== order.driverId ? { driverAssignedAt: driverId ? new Date() : null } : {}),
+      updatedAt: new Date(),
+    })
+    .where(eq(orders.id, orderId));
   revalidatePath("/admin", "layout");
   refreshStore();
   return { ok: true, message };
@@ -149,6 +174,35 @@ export async function connectMaystroWebhook(_prev: FormState): Promise<FormState
   if (!(await getCurrentOwner())) return { error: "ربط Maystro للمالك فقط." };
   const result = await registerWebhook(maystroWebhookUrl());
   return result.ok ? { ok: true, message: result.message } : { error: result.message };
+}
+
+// ───────────── Delivery people ─────────────
+
+/** Adds a delivery person, or renames / re-numbers one (`id`). */
+export async function saveDriver(_prev: FormState, form: FormData): Promise<FormState> {
+  await requireAdmin();
+  const id = Number(form.get("id"));
+  const name = String(form.get("name") ?? "").trim().replace(/\s+/g, " ");
+  const rawPhone = String(form.get("phone") ?? "").trim();
+  if (name.length < 2 || name.length > 40) return { error: "اكتب اسم الموزّع (من 2 إلى 40 حرفًا)." };
+  const phone = rawPhone ? normalizeTunisianPhone(rawPhone) : "";
+  if (phone === null) return { error: "رقم الهاتف غير صحيح (8 أرقام)." };
+  if (Number.isInteger(id) && id > 0) {
+    await db.update(drivers).set({ name, phone }).where(eq(drivers.id, id));
+  } else {
+    await db.insert(drivers).values({ name, phone });
+  }
+  revalidatePath("/admin", "layout");
+  return { ok: true, message: `تم حفظ ${name}.` };
+}
+
+/** Stops or resumes offering a delivery person on orders (past orders keep the name). */
+export async function setDriverActive(form: FormData) {
+  await requireAdmin();
+  const id = Number(form.get("id"));
+  if (!Number.isInteger(id) || id <= 0) return;
+  await db.update(drivers).set({ active: form.get("active") === "1" }).where(eq(drivers.id, id));
+  revalidatePath("/admin", "layout");
 }
 
 /** Deletes the orders ticked in the list. Owner only: this can't be undone. */

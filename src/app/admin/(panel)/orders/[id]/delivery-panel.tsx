@@ -3,7 +3,7 @@
 import { Check, Truck } from "lucide-react";
 import Image from "next/image";
 import { useActionState, useState } from "react";
-import { FormMessage, SubmitButton } from "@/components/admin/form-bits";
+import { FormMessage, keepValuesOnSubmit, SubmitButton } from "@/components/admin/form-bits";
 import { Button } from "@/components/ui/button";
 import { CARRIERS, carrierById, type Carrier, type CarrierId } from "@/lib/carriers";
 import { cn } from "@/lib/site";
@@ -15,6 +15,10 @@ type Props = {
   /** Status is "confirmed": the only time a parcel may be sent to a carrier's system. */
   confirmed: boolean;
   cancelled: boolean;
+  /** The shop's active delivery people, offered with "another way". */
+  drivers: { id: number; name: string }[];
+  /** The one saved on the order (may be inactive now). */
+  driver: { id: number; name: string } | null;
   maystro: {
     enabled: boolean;
     state: "none" | "sent" | "failed";
@@ -44,9 +48,15 @@ function CarrierMark({ carrier, size = "md" }: { carrier: Carrier; size?: "sm" |
 }
 
 /** Delivery for this order: pick a carrier from the list, then send (Maystro) or record it (other). */
-export function DeliveryPanel({ orderId, carrier, confirmed, cancelled, maystro }: Props) {
+export function DeliveryPanel({ orderId, carrier, confirmed, cancelled, drivers, driver, maystro }: Props) {
   const [choice, setChoice] = useState<CarrierId | null>(carrier);
-  const [state, action] = useActionState<FormState, FormData>(chooseDelivery, {});
+  // 0 = someone else (another company, a friend…): recorded as "another way" with no name.
+  const [driverChoice, setDriverChoice] = useState<number>(driver?.id ?? 0);
+  // A saved driver who has since been deactivated still shows on this order.
+  const driverOptions = driver && !drivers.some((d) => d.id === driver.id) ? [...drivers, driver] : drivers;
+  const [state, action, saving] = useActionState<FormState, FormData>(chooseDelivery, {});
+  // Submitted without React's automatic form reset, so the picks stay on screen after saving.
+  const submit = keepValuesOnSubmit(action);
   const [syncState, sync] = useActionState<FormState, FormData>(refreshFromMaystro, {});
 
   // Handed to Maystro: tracking and status only (the parcel exists, the choice can't change here).
@@ -85,10 +95,13 @@ export function DeliveryPanel({ orderId, carrier, confirmed, cancelled, maystro 
   const selected = carrierById(choice);
   return (
     <form
-      action={action}
       className="mt-4 space-y-3"
       onSubmit={(e) => {
-        if (selected?.api && !confirm(`سيُنشأ طرد حقيقي عند ${selected.name} لهذا الطلب. متابعة؟`)) e.preventDefault();
+        if (selected?.api && !confirm(`سيُنشأ طرد حقيقي عند ${selected.name} لهذا الطلب. متابعة؟`)) {
+          e.preventDefault();
+          return;
+        }
+        submit(e);
       }}
     >
       <input type="hidden" name="orderId" value={orderId} />
@@ -135,10 +148,31 @@ export function DeliveryPanel({ orderId, carrier, confirmed, cancelled, maystro 
         </div>
       </fieldset>
 
-      {carrier === "manual" && choice === "manual" ? (
-        <p className="text-sm text-muted">محفوظ: توصيل آخر.</p>
+      {choice === "manual" && driverOptions.length > 0 ? (
+        <fieldset>
+          <legend className="mb-2 text-sm font-medium text-muted">شكون يوصّلها؟</legend>
+          <div role="radiogroup" className="grid gap-2 sm:grid-cols-2">
+            {[...driverOptions, { id: 0, name: "شخص آخر / شركة أخرى" }].map((d) => (
+              <label
+                key={d.id}
+                className={cn(
+                  "flex min-h-11 cursor-pointer items-center gap-2 rounded-[var(--radius-md)] border border-line px-3 py-2 transition-colors",
+                  "hover:border-ink/40 has-[:checked]:border-ink has-[:checked]:bg-mist has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-gold-deep",
+                )}
+              >
+                <input type="radio" name="driverId" value={d.id} checked={driverChoice === d.id} onChange={() => setDriverChoice(d.id)} className="sr-only" />
+                <span className="flex-1 font-semibold">{d.name}</span>
+                {driverChoice === d.id ? <Check aria-hidden className="size-4 shrink-0" /> : null}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
+
+      {carrier === "manual" && choice === "manual" && driverChoice === (driver?.id ?? 0) ? (
+        <p className="text-sm text-muted">محفوظ: {driver ? `التوصيل مع ${driver.name}` : "توصيل آخر"}.</p>
       ) : selected && !(selected.api && !confirmed) ? (
-        <SubmitButton className="w-full">{selected.api ? `إرسال إلى ${selected.name}` : "حفظ طريقة التوصيل"}</SubmitButton>
+        <SubmitButton className="w-full" pending={saving}>{selected.api ? `إرسال إلى ${selected.name}` : "حفظ طريقة التوصيل"}</SubmitButton>
       ) : (
         <Button type="button" disabled className="w-full">
           اختر طريقة التوصيل

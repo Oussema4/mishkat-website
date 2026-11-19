@@ -1,12 +1,13 @@
 import { CircleCheck, CircleX } from "lucide-react";
-import { count, eq } from "drizzle-orm";
+import { and, asc, count, eq, inArray, isNotNull } from "drizzle-orm";
 import { db } from "@/db";
-import { orders, products } from "@/db/schema";
+import { drivers, orders, products } from "@/db/schema";
 import { getCurrentOwner, requireAdmin } from "@/server/auth";
 import { checkConnection, maystroEnabled, maystroWebhookUrl } from "@/server/maystro";
+import { DriversManager } from "./drivers-form";
 import { WebhookForm } from "./webhook-form";
 
-export const metadata = { title: "Maystro" };
+export const metadata = { title: "التوصيل" };
 
 export default async function MaystroPage() {
   // Every admin page re-checks the session against the database: the layout does not re-run on
@@ -14,19 +15,44 @@ export default async function MaystroPage() {
   await requireAdmin();
   const owner = await getCurrentOwner();
   const enabled = maystroEnabled();
-  const [checks, [{ failed }], active] = await Promise.all([
+  const [checks, [{ failed }], active, driverList, driverCounts] = await Promise.all([
     enabled ? checkConnection() : Promise.resolve([]),
     db.select({ failed: count() }).from(orders).where(eq(orders.maystroState, "failed")),
     db.select({ name: products.name, maystroProductId: products.maystroProductId }).from(products).where(eq(products.status, "active")),
+    db.select().from(drivers).orderBy(asc(drivers.id)),
+    db
+      .select({ driverId: orders.driverId, status: orders.status, n: count() })
+      .from(orders)
+      .where(and(isNotNull(orders.driverId), inArray(orders.status, ["confirmed", "preparing", "shipped", "delivered"])))
+      .groupBy(orders.driverId, orders.status),
   ]);
+  const driverRows = driverList.map((d) => {
+    const mine = driverCounts.filter((c) => c.driverId === d.id);
+    return {
+      id: d.id,
+      name: d.name,
+      phone: d.phone,
+      active: d.active,
+      delivered: mine.filter((c) => c.status === "delivered").reduce((n, c) => n + c.n, 0),
+      open: mine.filter((c) => c.status !== "delivered").reduce((n, c) => n + c.n, 0),
+    };
+  });
   const missing = active.filter((p) => !p.maystroProductId).map((p) => p.name);
 
   return (
     <div className="max-w-3xl space-y-6">
       <header>
-        <h1 className="text-3xl">التوصيل عبر Maystro</h1>
-        <p className="mt-1 text-muted">في صفحة كل طلب تختار طريقة التوصيل. إذا اخترت Maystro يُرسل الطرد إليهم، وحالته تتحدّث وحدها.</p>
+        <h1 className="text-3xl">التوصيل</h1>
+        <p className="mt-1 text-muted">
+          في صفحة كل طلب تختار طريقة التوصيل: Maystro (يُرسل الطرد إليهم وحالته تتحدّث وحدها)، ولا «توصيل آخر» مع واحد من الموزّعين متاعك.
+        </p>
       </header>
+
+      <section className="rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">
+        <h2 className="font-sans text-lg font-bold">الموزّعين متاعك</h2>
+        <p className="mt-1 text-sm text-muted">يظهرو في الطلب كي تختار «توصيل آخر». الموزّع الموقوف يبقى اسمو في الطلبات القديمة.</p>
+        <DriversManager drivers={driverRows} />
+      </section>
 
       <section className="rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">
         <h2 className="font-sans text-lg font-bold">الاتصال</h2>

@@ -6,7 +6,7 @@ import { WhatsAppIcon } from "@/components/brand/social-icons";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { OrderTotals } from "@/components/store/order-summary";
 import { db } from "@/db";
-import { orderItems, orders, orderStatusHistory } from "@/db/schema";
+import { drivers, orderItems, orders, orderStatusHistory } from "@/db/schema";
 import { ar } from "@/i18n/ar";
 import { formatDateTime } from "@/lib/dates";
 import { formatTND } from "@/lib/money";
@@ -26,9 +26,10 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
   if (!Number.isInteger(orderId)) notFound();
   const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
   if (!order) notFound();
-  const [items, history] = await Promise.all([
+  const [items, history, allDrivers] = await Promise.all([
     db.select().from(orderItems).where(eq(orderItems.orderId, orderId)),
     db.select().from(orderStatusHistory).where(eq(orderStatusHistory.orderId, orderId)).orderBy(asc(orderStatusHistory.createdAt), asc(orderStatusHistory.id)),
+    db.select({ id: drivers.id, name: drivers.name, active: drivers.active }).from(drivers).orderBy(asc(drivers.id)),
   ]);
 
   const waText = `السلام عليكم ${order.firstName}، معك مشكاة بخصوص طلبك رقم ${order.reference} (${formatTND(order.total)}).`;
@@ -156,6 +157,8 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
               carrier={order.carrier}
               confirmed={order.status === "confirmed"}
               cancelled={order.status === "cancelled"}
+              drivers={allDrivers.filter((d) => d.active).map(({ id, name }) => ({ id, name }))}
+              driver={allDrivers.find((d) => d.id === order.driverId) ?? null}
               maystro={{
                 enabled: maystroEnabled(),
                 state: order.maystroState,

@@ -83,6 +83,19 @@ export type AdminRole = (typeof ADMIN_ROLES)[number];
 export const ORDER_STATUSES = ["new", "confirmed", "preparing", "shipped", "delivered", "cancelled"] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
+/**
+ * The shop's own delivery people (freelance couriers), chosen on an order delivered "another way"
+ * (carrier "manual"). A driver who stops working with the shop is deactivated, never deleted, so
+ * past orders keep their name.
+ */
+export const drivers = sqliteTable("drivers", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  phone: text("phone").notNull().default(""),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  createdAt: timestamps.createdAt,
+});
+
 /** none: not sent · sent: parcel created at Maystro · failed: refused or unreachable (see maystroError). */
 export const MAYSTRO_STATES = ["none", "sent", "failed"] as const;
 
@@ -110,6 +123,9 @@ export const orders = sqliteTable(
     communeId: integer("commune_id"),
     /** How the order is delivered, chosen in the dashboard (src/lib/carriers.ts); null = not chosen yet. */
     carrier: text("carrier", { enum: CARRIER_IDS }),
+    /** With carrier "manual": the shop's delivery person who takes it, and when that was set. */
+    driverId: integer("driver_id").references(() => drivers.id, { onDelete: "set null" }),
+    driverAssignedAt: integer("driver_assigned_at", { mode: "timestamp" }),
     // Delivery through Maystro: the parcel created there, its tracking number and last known status.
     maystroState: text("maystro_state", { enum: MAYSTRO_STATES }).notNull().default("none"),
     maystroOrderId: text("maystro_order_id"),
@@ -198,3 +214,4 @@ export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type Admin = typeof admins.$inferSelect;
 export type Review = typeof reviews.$inferSelect;
+export type Driver = typeof drivers.$inferSelect;
