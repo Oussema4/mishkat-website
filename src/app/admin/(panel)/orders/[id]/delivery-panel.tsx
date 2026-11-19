@@ -3,7 +3,7 @@
 import { Check, Truck } from "lucide-react";
 import Image from "next/image";
 import { useActionState, useState } from "react";
-import { adminInput, FormMessage, keepValuesOnSubmit, SubmitButton } from "@/components/admin/form-bits";
+import { FormMessage, keepValuesOnSubmit, SubmitButton } from "@/components/admin/form-bits";
 import { Button } from "@/components/ui/button";
 import { CARRIERS, carrierById, type Carrier, type CarrierId } from "@/lib/carriers";
 import { cn } from "@/lib/site";
@@ -19,8 +19,6 @@ type Props = {
   drivers: { id: number; name: string }[];
   /** The one saved on the order (may be inactive now). */
   driver: { id: number; name: string } | null;
-  /** The order's delegation (Maystro needs one) and the governorate's list (null: not loaded). */
-  commune: { id: number | null; options: { id: number; name: string }[] | null };
   maystro: {
     enabled: boolean;
     state: "none" | "sent" | "failed";
@@ -50,7 +48,7 @@ function CarrierMark({ carrier, size = "md" }: { carrier: Carrier; size?: "sm" |
 }
 
 /** Delivery for this order: pick a carrier from the list, then send (Maystro) or record it (other). */
-export function DeliveryPanel({ orderId, carrier, confirmed, cancelled, drivers, driver, commune, maystro }: Props) {
+export function DeliveryPanel({ orderId, carrier, confirmed, cancelled, drivers, driver, maystro }: Props) {
   const [choice, setChoice] = useState<CarrierId | null>(carrier);
   // 0 = someone else (another company, a friend…): recorded as "another way" with no name.
   const [driverChoice, setDriverChoice] = useState<number>(driver?.id ?? 0);
@@ -169,23 +167,6 @@ export function DeliveryPanel({ orderId, carrier, confirmed, cancelled, drivers,
             ))}
           </div>
         </fieldset>
-      ) : null}
-
-      {choice === "maystro" && confirmed && commune.options ? (
-        // The customer only gives the governorate and an address: the delegation is picked here.
-        <label className="block">
-          <span className="mb-2 block text-sm font-medium text-muted">المعتمدية (Maystro يستحقها)</span>
-          <select name="communeId" required defaultValue={commune.id ? String(commune.id) : ""} className={adminInput}>
-            <option value="" disabled>
-              اختر المعتمدية
-            </option>
-            {commune.options.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
       ) : null}
 
       {carrier === "manual" && choice === "manual" && driverChoice === (driver?.id ?? 0) ? (

@@ -3,7 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { and, asc, eq, inArray, isNull, lt, notInArray, or } from "drizzle-orm";
 import { db } from "@/db";
 import { orderItems, orders, products } from "@/db/schema";
-import { buildParcel, cleanCommunes, shopStatusFor, type Commune } from "@/lib/maystro";
+import { buildParcel, cleanCommunes, shopStatusFor, type Commune, guessCommune } from "@/lib/maystro";
 import { siteUrl } from "@/lib/site";
 import type { Governorate } from "@/lib/tunisia";
 import { changeOrderStatus } from "@/server/order-core";
@@ -143,6 +143,15 @@ export async function sendOrderToMaystro(orderId: number): Promise<SendResult> {
   const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
   if (!order) return { ok: false, message: "الطلب غير موجود." };
   if (order.maystroState === "sent") return { ok: true, tracking: order.maystroTracking };
+
+  // No delegation on the order (customers don't give one): chosen from the address, saved on the order.
+  if (!order.communeId) {
+    const commune = guessCommune((await getCommunes()) ?? [], order.governorate as Governorate, order.address);
+    if (commune) {
+      await db.update(orders).set({ communeId: commune.id, city: commune.name, updatedAt: new Date() }).where(eq(orders.id, orderId));
+      Object.assign(order, { communeId: commune.id, city: commune.name });
+    }
+  }
 
   const items = await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
   const ids = items.map((i) => i.productId).filter((n): n is number => n !== null);

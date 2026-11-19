@@ -14,7 +14,7 @@ import { ADMIN_ROLES, admins, categories, checkoutLeads, drivers, ORDER_STATUSES
 import { parseBundles, parseFaq, parseLabelValues, parseLines, parseSteps, parseTND, slugify } from "@/lib/admin-format";
 import { MAX_QTY_PER_ITEM } from "@/lib/validation";
 import { findCommune } from "@/lib/maystro";
-import { GOVERNORATES, normalizeTunisianPhone, type Governorate } from "@/lib/tunisia";
+import { GOVERNORATES, normalizeTunisianPhone } from "@/lib/tunisia";
 import { endSession, getCurrentAdmin, getCurrentOwner, hashPassword, requireAdmin, startSession, verifyPassword } from "@/server/auth";
 import { changeOrderStatus, deleteOrders } from "@/server/order-core";
 import { carrierById } from "@/lib/carriers";
@@ -111,7 +111,7 @@ export async function chooseDelivery(_prev: FormState, form: FormData): Promise<
   const carrier = carrierById(String(form.get("carrier")));
   if (!Number.isInteger(orderId) || !carrier) return { error: "اختر طريقة التوصيل." };
   const [order] = await db
-    .select({ status: orders.status, maystroState: orders.maystroState, driverId: orders.driverId, governorate: orders.governorate, communeId: orders.communeId })
+    .select({ status: orders.status, maystroState: orders.maystroState, driverId: orders.driverId })
     .from(orders)
     .where(eq(orders.id, orderId))
     .limit(1);
@@ -135,15 +135,6 @@ export async function chooseDelivery(_prev: FormState, form: FormData): Promise<
     if (!maystroEnabled()) return { error: "Maystro غير مربوط (ينقص MAYSTRO_TOKEN)." };
     // A parcel is only created for an order the shop has confirmed with the customer.
     if (order.status !== "confirmed") return { error: "اجعل حالة الطلب «تم تأكيد الطلب» أولًا، ثم أرسله إلى Maystro." };
-    // The delegation picked in the panel (customers only give the governorate and an address).
-    const picked = Number(form.get("communeId"));
-    if (picked) {
-      const commune = findCommune((await getCommunes()) ?? [], picked, order.governorate as Governorate);
-      if (!commune) return { error: "اختر المعتمدية من القائمة." };
-      await db.update(orders).set({ communeId: commune.id, city: commune.name, updatedAt: new Date() }).where(eq(orders.id, orderId));
-    } else if (!order.communeId) {
-      return { error: "اختر المعتمدية قبل الإرسال إلى Maystro." };
-    }
     const sent = await sendOrderToMaystro(orderId);
     if (!sent.ok) {
       revalidatePath("/admin", "layout");

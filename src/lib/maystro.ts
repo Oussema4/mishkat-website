@@ -62,6 +62,29 @@ export function findCommune(communes: Commune[], id: number, governorate: Govern
   return c && c.wilaya === MAYSTRO_WILAYAS[governorate].code ? c : null;
 }
 
+/** The main delegation of each governorate (its centre), by Maystro's governorate code. */
+const CENTRE: Record<number, string> = {
+  80: "Bab Bhar", 59: "Ariana Ville", 61: "Ben Arous", 71: "Mannouba", 74: "Nabeul", 82: "Zaghouan",
+  62: "Bizerte Nord", 60: "Beja Nord", 65: "Jendouba", 69: "Le Kef Est", 77: "Siliana Nord", 78: "Sousse Ville",
+  73: "Monastir", 70: "Mahdia", 75: "Sfax Ville", 66: "Kairouan Nord", 67: "Kasserine Nord", 76: "Sidi Bouzid Ouest",
+  63: "Gabes Medina", 72: "Medenine Nord", 81: "Tataouine Nord", 64: "Gafsa Nord", 79: "Tozeur", 68: "Kebili Nord",
+};
+const plain = (s: string) => ` ${s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim()} `;
+
+/**
+ * Customers give no delegation, and Maystro needs one: the delegation named in the address when
+ * there is one (longest name wins: "Hammam Sousse" before "Sousse"), else the governorate's centre.
+ * The full address still goes to Maystro as the destination text.
+ */
+export function guessCommune(communes: Commune[], governorate: Governorate, address: string): Commune | null {
+  const code = MAYSTRO_WILAYAS[governorate]?.code;
+  const list = communes.filter((c) => c.wilaya === code);
+  if (list.length === 0) return null;
+  const text = plain(address);
+  const named = list.filter((c) => text.includes(plain(c.name))).sort((a, b) => b.name.length - a.name.length)[0];
+  return named ?? list.find((c) => plain(c.name) === plain(CENTRE[code] ?? "")) ?? list[0];
+}
+
 // ───────────── Delivery statuses ─────────────
 
 /** Maystro delivery status → Arabic label for the dashboard, and whether it is final. */
@@ -138,7 +161,7 @@ const dinars = (millimes: number) => (millimes / 1000).toFixed(2);
  * `external_id` is the shop reference, so a retry can find a parcel already created.
  */
 export function buildParcel(order: ParcelOrder, lines: ParcelLine[]): { ok: true; body: Record<string, unknown> } | { ok: false; error: string } {
-  if (!order.communeId) return { ok: false, error: "المعتمدية غير محدّدة في هذا الطلب. عدّلها في Maystro أو أرسل الطلب يدويًا." };
+  if (!order.communeId) return { ok: false, error: "ما نجمتش نجيب قائمة المعتمديات من Maystro. عاود جرّب بعد شويّة." };
   const unmapped = lines.filter((l) => !l.maystroProductId).map((l) => l.productName);
   if (unmapped.length > 0) return { ok: false, error: `منتج غير مربوط بـ Maystro: ${unmapped.join("، ")}. اربطه من صفحة المنتج.` };
   if (lines.length > MAX_PARCEL_LINES) return { ok: false, error: `الطلب فيه أكثر من ${MAX_PARCEL_LINES} منتجات مختلفة، وهذا أقصى ما يقبله Maystro.` };

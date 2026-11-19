@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildParcel, cleanCommunes, findCommune, MAYSTRO_WILAYAS, parseWebhook, shopStatusFor, type ParcelOrder } from "@/lib/maystro";
+import { buildParcel, cleanCommunes, findCommune, MAYSTRO_WILAYAS, parseWebhook, shopStatusFor, type ParcelOrder, guessCommune } from "@/lib/maystro";
 import { GOVERNORATES } from "@/lib/tunisia";
 
 describe("Maystro reference data", () => {
@@ -96,5 +96,24 @@ describe("Maystro statuses and webhooks", () => {
     expect(parseWebhook({ message: { data } })).toEqual({ orderId: "uuid-1", externalId: "MSK-000012", event: "OrderCreated" });
     expect(parseWebhook({ message: { data: "not base64 json" } })).toBeNull();
     expect(parseWebhook({})).toBeNull();
+  });
+});
+
+describe("delegation chosen for Maystro when the customer gives none", () => {
+  const communes = [
+    { id: 1, name: "Sousse Ville", wilaya: 78 },
+    { id: 2, name: "Hammam Sousse", wilaya: 78 },
+    { id: 3, name: "Akouda", wilaya: 78 },
+    { id: 4, name: "Gabes Medina", wilaya: 63 },
+    { id: 5, name: "El Hamma", wilaya: 63 },
+  ];
+  it("uses the delegation written in the address, longest name first", () => {
+    expect(guessCommune(communes, "سوسة", "Hammam Sousse, rue 5")?.id).toBe(2);
+    expect(guessCommune(communes, "قابس", "cité El-Hamma")?.id).toBe(5);
+  });
+  it("falls back to the governorate's centre", () => {
+    expect(guessCommune(communes, "سوسة", "حمام سوسة، نهج الياسمين")?.id).toBe(1);
+    expect(guessCommune(communes, "قابس", "")?.id).toBe(4);
+    expect(guessCommune(communes, "تونس", "La Marsa")).toBeNull();
   });
 });
