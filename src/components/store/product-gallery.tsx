@@ -15,8 +15,9 @@ export function ProductGallery({ images, name, slug }: { images: ProductImage[];
   // the page's largest element, and a fade from transparent delays it for Google's LCP).
   const [switched, setSwitched] = useState(false);
   const current = images[index];
-  // The first picture is the studio shot on white: on the black store it shows as its cutout.
-  const cutout = index === 0 ? PRODUCT_CUTOUTS[slug] : undefined;
+  // The studio shot on white shows as its cutout on the black store (wherever it is in the gallery).
+  const cutoutFor = (url?: string) => (url && PRODUCT_CUTOUTS[slug]?.replaces === url ? PRODUCT_CUTOUTS[slug] : undefined);
+  const cutout = cutoutFor(current?.url);
   if (!current) return <div className="rounded-2xl aspect-[4/5] bg-mist" />;
 
   return (
@@ -65,8 +66,8 @@ export function ProductGallery({ images, name, slug }: { images: ProductImage[];
                   i === index ? "border-gold" : "border-transparent hover:border-line",
                 )}
               >
-                {i === 0 && PRODUCT_CUTOUTS[slug] ? (
-                  <Image src={PRODUCT_CUTOUTS[slug].src} alt="" fill sizes="96px" className="object-contain p-1.5" />
+                {cutoutFor(img.url) ? (
+                  <Image src={cutoutFor(img.url)!.src} alt="" fill sizes="96px" className="object-contain p-1.5" />
                 ) : (
                   <Image src={img.url} alt="" fill sizes="96px" className="object-cover" />
                 )}
