@@ -2,7 +2,8 @@ import type { OrderStatus } from "@/db/schema";
 
 /**
  * Shop statistics for the dashboard, computed from plain order rows so the numbers can be tested.
- * Money is in millimes. "Live" orders are every order except cancelled ones.
+ * Money is in millimes and counts the boxes only, without the delivery fee (the shop's own
+ * money: the courier keeps the delivery). "Live" orders are every order except cancelled ones.
  */
 
 export const PERIODS = { "7": "7 أيام", "30": "30 يوم", "90": "3 شهر", month: "الشهر هذا", all: "من البداية" } as const;
@@ -56,7 +57,7 @@ export function computeStats(list: StatOrder[]) {
   for (const o of live) {
     const g = govMap.get(o.governorate) ?? { orders: 0, value: 0 };
     g.orders += 1;
-    g.value += o.total;
+    g.value += o.subtotal;
     govMap.set(o.governorate, g);
   }
   const governorates = [...govMap.entries()].map(([name, v]) => ({ name, ...v })).sort((a, b) => b.orders - a.orders);
@@ -67,7 +68,7 @@ export function computeStats(list: StatOrder[]) {
     const key = tunisDay(o.createdAt);
     const d = dayMap.get(key) ?? { orders: 0, value: 0, boxes: 0 };
     d.orders += 1;
-    d.value += o.total;
+    d.value += o.subtotal;
     d.boxes += o.boxes;
     dayMap.set(key, d);
   }
@@ -76,14 +77,12 @@ export function computeStats(list: StatOrder[]) {
     orders: list.length,
     liveOrders: live.length,
     boxes: sum(live, (o) => o.boxes),
-    value: sum(live, (o) => o.total),
-    productsValue: sum(live, (o) => o.subtotal),
-    deliveryFees: sum(live, (o) => o.deliveryFee),
-    averageOrder: live.length ? Math.round(sum(live, (o) => o.total) / live.length) : 0,
+    value: sum(live, (o) => o.subtotal),
+    averageOrder: live.length ? Math.round(sum(live, (o) => o.subtotal) / live.length) : 0,
     averageBoxes: live.length ? Math.round((sum(live, (o) => o.boxes) / live.length) * 100) / 100 : 0,
-    deliveredValue: sum(delivered, (o) => o.total),
+    deliveredValue: sum(delivered, (o) => o.subtotal),
     deliveredOrders: delivered.length,
-    inProgressValue: sum(inProgress, (o) => o.total),
+    inProgressValue: sum(inProgress, (o) => o.subtotal),
     inProgressOrders: inProgress.length,
     waiting: byStatus("new").length,
     cancelledOrders: cancelled.length,
@@ -95,7 +94,7 @@ export function computeStats(list: StatOrder[]) {
     statuses: (["new", "confirmed", "preparing", "shipped", "delivered", "cancelled"] as OrderStatus[]).map((s) => ({
       status: s,
       orders: byStatus(s).length,
-      value: sum(byStatus(s), (o) => o.total),
+      value: sum(byStatus(s), (o) => o.subtotal),
     })),
     mix,
     governorates,
@@ -110,10 +109,10 @@ export function deliveryBreakdown(list: StatOrder[], drivers: { id: number; name
     const g = groups.get(key) ?? { label, delivered: 0, deliveredValue: 0, open: 0, openValue: 0 };
     if (o.status === "delivered") {
       g.delivered += 1;
-      g.deliveredValue += o.total;
+      g.deliveredValue += o.subtotal;
     } else {
       g.open += 1;
-      g.openValue += o.total;
+      g.openValue += o.subtotal;
     }
     groups.set(key, g);
   };

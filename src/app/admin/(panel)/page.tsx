@@ -1,5 +1,6 @@
 import { and, count, desc, eq, like, or, sql, type SQL } from "drizzle-orm";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Motorbike, Search } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { BULK_FORM, BulkOrdersBar } from "@/components/admin/bulk-orders";
 import { CopyButton } from "@/components/admin/copy-button";
@@ -9,6 +10,7 @@ import { drivers, ORDER_STATUSES, orders, products, type Order, type OrderStatus
 import { ar } from "@/i18n/ar";
 import { formatDateTime } from "@/lib/dates";
 import { formatTND } from "@/lib/money";
+import { carrierById } from "@/lib/carriers";
 import { cn } from "@/lib/site";
 import { formatTunisianPhone } from "@/lib/tunisia";
 import { deleteSelectedOrders } from "@/app/admin/actions";
@@ -245,8 +247,29 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
 /** Who delivers the order: Maystro, one of the shop's delivery people, someone else, or not chosen yet. */
 function DeliveryTag({ order, driver }: { order: Pick<Order, "carrier" | "maystroState">; driver: string | null }) {
   const pill = "inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-sm font-medium";
-  if (order.carrier === "maystro" || order.maystroState === "sent") return <span className={cn(pill, "bg-[#273142] text-paper")}>Maystro</span>;
-  if (order.carrier === "manual") return <span className={cn(pill, "bg-mist text-ink ring-1 ring-line")}>{driver ?? "توصيل آخر"}</span>;
+  if (order.carrier === "maystro" || order.maystroState === "sent") {
+    const logo = carrierById("maystro")!.logo!;
+    return (
+      <Image
+        src={logo.src}
+        alt="Maystro"
+        width={logo.width}
+        height={logo.height}
+        style={{ backgroundColor: logo.background }}
+        className="h-9 w-auto rounded-md px-1"
+      />
+    );
+  }
+  // The shop's own delivery people: yellow, with a motorbike.
+  if (order.carrier === "manual" && driver) {
+    return (
+      <span className={cn(pill, "gap-1.5 bg-[#ffc042] text-ink")}>
+        <Motorbike aria-hidden className="size-4" strokeWidth={1.75} />
+        {driver}
+      </span>
+    );
+  }
+  if (order.carrier === "manual") return <span className={cn(pill, "bg-mist text-ink ring-1 ring-line")}>توصيل آخر</span>;
   return <span className="text-sm text-muted">—</span>;
 }
 

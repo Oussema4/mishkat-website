@@ -28,8 +28,9 @@ describe("dashboard statistics", () => {
     expect(s.orders).toBe(5);
     expect(s.liveOrders).toBe(4);
     expect(s.boxes).toBe(5);
-    expect(s.value).toBe(67_000 * 3 + 108_000);
-    expect(s.deliveredValue).toBe(67_000 + 108_000);
+    // Box prices only, without the 8 DT delivery.
+    expect(s.value).toBe(59_000 * 3 + 100_000);
+    expect(s.deliveredValue).toBe(59_000 + 100_000);
     expect(s.inProgressOrders).toBe(1);
     expect(s.waiting).toBe(1);
   });
@@ -48,7 +49,7 @@ describe("dashboard statistics", () => {
       { id: 1, name: "عزيز" },
       { id: 2, name: "حمزة" },
     ]);
-    expect(groups.find((g) => g.key === "driver:1")).toMatchObject({ label: "عزيز", delivered: 1, deliveredValue: 67_000 });
+    expect(groups.find((g) => g.key === "driver:1")).toMatchObject({ label: "عزيز", delivered: 1, deliveredValue: 59_000 });
     expect(groups.find((g) => g.key === "driver:2")).toMatchObject({ label: "حمزة", open: 1 });
     expect(groups.find((g) => g.key === "maystro")?.delivered).toBe(1);
   });

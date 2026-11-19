@@ -88,7 +88,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
         <div>
           <h1 className="text-3xl">الإحصائيات</h1>
           <p className="mt-1 text-muted">
-            الأرقام من الطلبات اللي جات للسيت. المبالغ بالتوصيل، والطلبات الملغاة ما تتحسبش في الفلوس.
+            الأرقام من الطلبات اللي جات للسيت. المبالغ هي سوم العلب برك، من غير التوصيل، والطلبات الملغاة ما تتحسبش في الفلوس.
           </p>
         </div>
         <nav aria-label="الفترة" className="flex flex-wrap gap-1 rounded-[var(--radius-md)] bg-paper p-1 shadow-[var(--shadow-soft)]">
@@ -109,7 +109,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
       <section aria-label="أهم الأرقام" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi label="الطلبات" value={String(s.orders)} note={`${s.liveOrders} شغّالة · ${s.cancelledOrders} ملغاة · ${s.waiting} تستنّى التأكيد`} />
         <Kpi label="العلب المطلوبة" value={String(s.boxes)} note={`المعدّل ${String(s.averageBoxes).replace(".", ",")} علبة في الطلب`} />
-        <Kpi label="قيمة الطلبات" value={formatTND(s.value)} note={`منها ${formatTND(s.deliveryFees)} توصيل · معدّل الطلب ${formatTND(s.averageOrder)}`} />
+        <Kpi label="قيمة الطلبات" value={formatTND(s.value)} note={`من غير التوصيل · معدّل الطلب ${formatTND(s.averageOrder)}`} />
         <Kpi label="فلوس الطلبات المسلّمة" value={formatTND(s.deliveredValue)} note={`${s.deliveredOrders} طلب تسلّم · ${formatTND(s.inProgressValue)} في الطريق`} strong />
       </section>
 
@@ -198,7 +198,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
           <h2 id="delivery-title" className="font-sans text-lg font-bold">
             التوصيل: شكون وصّل وقدّاش
           </h2>
-          <p className="mt-1 text-sm text-muted">الطلبات المؤكّدة واللي في الطريق والمسلّمة. «فلوس المسلّمة» هي اللي لازم توصلك من عند الموزّع.</p>
+          <p className="mt-1 text-sm text-muted">الطلبات المؤكّدة واللي في الطريق والمسلّمة. «فلوس المسلّمة» هي سوم العلب اللي لازم توصلك من عند الموزّع، من غير التوصيل.</p>
           {delivery.length === 0 ? (
             <p className="mt-3 text-muted">ما فماش طلبات مؤكّدة في الفترة هاذي.</p>
           ) : (
