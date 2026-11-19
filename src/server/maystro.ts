@@ -1,6 +1,6 @@
 import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, lt, notInArray, or } from "drizzle-orm";
 import { db } from "@/db";
 import { orderItems, orders, products } from "@/db/schema";
 import { buildParcel, cleanCommunes, shopStatusFor, type Commune } from "@/lib/maystro";
@@ -185,16 +185,40 @@ export async function syncOrderFromMaystro(orderId: number): Promise<SendResult>
     const parcel = await call<MaystroOrder>(`/api/orders/${encodeURIComponent(order.maystroOrderId)}/`);
     await saveParcel(orderId, parcel);
     const code = statusCode(parcel.status);
-    const next = code === null ? null : shopStatusFor(code);
-    if (next && next !== order.status && !(next === "shipped" && order.status === "delivered")) {
-      await changeOrderStatus(db, orderId, next, { id: null, name: "Maystro" });
-    }
+    const next = code === null ? null : shopStatusFor(code, order.status);
+    if (next) await changeOrderStatus(db, orderId, next, { id: null, name: "Maystro" });
     return { ok: true, tracking: order.maystroTracking };
   } catch (err) {
     const message = err instanceof MaystroError ? err.message : "خطأ غير متوقّع مع Maystro.";
     if (!(err instanceof MaystroError)) console.error("Maystro sync failed", err);
     return { ok: false, message };
   }
+}
+
+/**
+ * Re-reads from Maystro the parcels still on their way whose status is older than `maxAgeMs`, so
+ * the dashboard is up to date even when a webhook was missed. Bounded: at most `limit` parcels,
+ * and the caller waits at most `timeoutMs` (the rest finishes in the background).
+ */
+export async function syncStaleMaystroOrders({ maxAgeMs = 5 * 60_000, limit = 15, timeoutMs = 4000 } = {}) {
+  if (!maystroEnabled()) return 0;
+  const cutoff = new Date(Date.now() - maxAgeMs);
+  const stale = await db
+    .select({ id: orders.id })
+    .from(orders)
+    .where(
+      and(
+        eq(orders.maystroState, "sent"),
+        notInArray(orders.status, ["delivered", "cancelled"]),
+        or(isNull(orders.maystroSyncedAt), lt(orders.maystroSyncedAt, cutoff)),
+      ),
+    )
+    .orderBy(asc(orders.maystroSyncedAt))
+    .limit(limit);
+  if (stale.length === 0) return 0;
+  const work = Promise.allSettled(stale.map((o) => syncOrderFromMaystro(o.id)));
+  await Promise.race([work, new Promise((resolve) => setTimeout(resolve, timeoutMs))]);
+  return stale.length;
 }
 
 /** The shop order a webhook is about: by parcel id, else by our reference sent as external_id. */

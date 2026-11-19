@@ -3,6 +3,7 @@ import { ArrowRight, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { WhatsAppIcon } from "@/components/brand/social-icons";
+import { CopyButton } from "@/components/admin/copy-button";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { OrderTotals } from "@/components/store/order-summary";
 import { db } from "@/db";
@@ -12,7 +13,7 @@ import { formatDateTime } from "@/lib/dates";
 import { formatTND } from "@/lib/money";
 import { formatTunisianPhone, whatsappLink } from "@/lib/tunisia";
 import { maystroStatusLabel } from "@/lib/maystro";
-import { maystroEnabled } from "@/server/maystro";
+import { maystroEnabled, syncOrderFromMaystro } from "@/server/maystro";
 import { DeliveryPanel } from "./delivery-panel";
 import { StatusForm } from "./status-form";
 import { requireAdmin } from "@/server/auth";
@@ -24,8 +25,16 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
   const { id } = await params;
   const orderId = Number(id);
   if (!Number.isInteger(orderId)) notFound();
-  const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+  const load = async () => (await db.select().from(orders).where(eq(orders.id, orderId)).limit(1))[0];
+  let order = await load();
   if (!order) notFound();
+  // A parcel still on its way: re-read it from Maystro first when its status is over 2 minutes
+  // old, so the page (and the order status that follows Maystro) is current. Waits 4 s at most.
+  const stale = !order.maystroSyncedAt || Date.now() - order.maystroSyncedAt.getTime() > 2 * 60_000;
+  if (maystroEnabled() && order.maystroState === "sent" && order.status !== "delivered" && order.status !== "cancelled" && stale) {
+    await Promise.race([syncOrderFromMaystro(order.id), new Promise((resolve) => setTimeout(resolve, 4000))]);
+    order = (await load()) ?? order;
+  }
   const [items, history, allDrivers] = await Promise.all([
     db.select().from(orderItems).where(eq(orderItems.orderId, orderId)),
     db.select().from(orderStatusHistory).where(eq(orderStatusHistory.orderId, orderId)).orderBy(asc(orderStatusHistory.createdAt), asc(orderStatusHistory.id)),
@@ -66,8 +75,11 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
               </div>
               <div>
                 <dt className="text-sm text-muted">الهاتف</dt>
-                <dd dir="ltr" className="text-end text-lg font-semibold tabular">
-                  {formatTunisianPhone(order.phone)}
+                <dd className="flex items-center gap-1">
+                  <span dir="ltr" className="text-lg font-semibold tabular">
+                    {formatTunisianPhone(order.phone)}
+                  </span>
+                  <CopyButton value={order.phone} label="انسخ رقم الهاتف" />
                 </dd>
               </div>
               <div className="sm:col-span-2">

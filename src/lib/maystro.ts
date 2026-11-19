@@ -3,6 +3,7 @@
  * Pure functions only, shared by the checkout, the dashboard and the server client
  * (src/server/maystro.ts). Spec: Maystro's integration guide for tn.omnistro.com.
  */
+import type { OrderStatus } from "@/db/schema";
 import type { Governorate } from "./tunisia";
 
 /** Maystro's code and Latin name for each governorate (Tunisian wilayas are codes 59–82). */
@@ -90,15 +91,24 @@ export function maystroStatusLabel(code: number | null | undefined): string {
   return MAYSTRO_STATUSES[code]?.label ?? `حالة ${code}`;
 }
 
+const SHOP_STEP: Record<Exclude<OrderStatus, "cancelled">, number> = { new: 0, confirmed: 1, preparing: 2, shipped: 3, delivered: 4 };
+
 /**
- * The shop's own status that follows a Maystro status, when it should move on its own:
- * out with the driver → shipped, delivered → delivered. Refusals and returns are left to the
- * shop to decide (cancelling puts items back in the website's stock).
+ * The shop status an order moves to when Maystro reports `code`, or null to leave it as it is.
+ * The shop status follows Maystro: being prepared → preparing, on the way or with the driver →
+ * shipped, delivered → delivered, refused or back in the warehouse → cancelled (which puts the
+ * boxes back in the website's stock). It only moves forward, a delivered order stays delivered,
+ * and an order the shop cancelled is never reopened on its own.
  */
-export function shopStatusFor(code: number): "shipped" | "delivered" | null {
-  if (code === 41) return "delivered";
-  if ([22, 31, 32, 42].includes(code)) return "shipped";
-  return null;
+export function shopStatusFor(code: number, current: OrderStatus): OrderStatus | null {
+  let target: OrderStatus | null = null;
+  if (code === 41) target = "delivered";
+  else if (code === 50 || code === 52) target = "cancelled";
+  else if ([8, 9, 22, 31, 32, 42].includes(code)) target = "shipped";
+  else if ([4, 5, 6, 11, 12, 15].includes(code)) target = "preparing";
+  if (!target || target === current || current === "delivered" || current === "cancelled") return null;
+  if (target === "cancelled") return target;
+  return SHOP_STEP[target as keyof typeof SHOP_STEP] > SHOP_STEP[current] ? target : null;
 }
 
 // ───────────── Parcel ─────────────

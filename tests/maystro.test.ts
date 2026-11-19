@@ -76,10 +76,19 @@ describe("Maystro parcel", () => {
 
 describe("Maystro statuses and webhooks", () => {
   it("moves the shop status only for delivery and hand-over to the driver", () => {
-    expect(shopStatusFor(41)).toBe("delivered");
-    expect(shopStatusFor(31)).toBe("shipped");
-    expect(shopStatusFor(50)).toBeNull();
-    expect(shopStatusFor(4)).toBeNull();
+    // Follows Maystro forward…
+    expect(shopStatusFor(4, "confirmed")).toBe("preparing");
+    expect(shopStatusFor(9, "confirmed")).toBe("shipped");
+    expect(shopStatusFor(31, "preparing")).toBe("shipped");
+    expect(shopStatusFor(41, "shipped")).toBe("delivered");
+    expect(shopStatusFor(50, "shipped")).toBe("cancelled");
+    expect(shopStatusFor(52, "shipped")).toBe("cancelled");
+    // …never backwards, and never out of a final shop status.
+    expect(shopStatusFor(4, "shipped")).toBeNull();
+    expect(shopStatusFor(31, "shipped")).toBeNull();
+    expect(shopStatusFor(31, "delivered")).toBeNull();
+    expect(shopStatusFor(41, "cancelled")).toBeNull();
+    expect(shopStatusFor(53, "shipped")).toBeNull();
   });
 
   it("reads the base64 event envelope", () => {

@@ -2,9 +2,10 @@ import { and, count, desc, eq, like, or, sql, type SQL } from "drizzle-orm";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import Link from "next/link";
 import { BULK_FORM, BulkOrdersBar } from "@/components/admin/bulk-orders";
+import { CopyButton } from "@/components/admin/copy-button";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { db } from "@/db";
-import { ORDER_STATUSES, orders, products, type OrderStatus } from "@/db/schema";
+import { drivers, ORDER_STATUSES, orders, products, type Order, type OrderStatus } from "@/db/schema";
 import { ar } from "@/i18n/ar";
 import { formatDateTime } from "@/lib/dates";
 import { formatTND } from "@/lib/money";
@@ -12,6 +13,7 @@ import { cn } from "@/lib/site";
 import { formatTunisianPhone } from "@/lib/tunisia";
 import { deleteSelectedOrders } from "@/app/admin/actions";
 import { requireAdmin } from "@/server/auth";
+import { syncStaleMaystroOrders } from "@/server/maystro";
 
 const PAGE_SIZE = 25;
 
@@ -42,7 +44,10 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
   }
   const where = filters.length ? and(...filters) : undefined;
 
-  const [rows, [{ total }], counts, lowStock] = await Promise.all([
+  // Parcels on their way at Maystro: refresh the stale ones first, so statuses follow Maystro.
+  await syncStaleMaystroOrders();
+
+  const [rows, [{ total }], counts, lowStock, driverList] = await Promise.all([
     db
       .select()
       .from(orders)
@@ -53,7 +58,9 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
     db.select({ total: count() }).from(orders).where(where),
     db.select({ status: orders.status, n: count() }).from(orders).groupBy(orders.status),
     db.select({ id: products.id, name: products.name, stock: products.stock }).from(products).where(and(eq(products.status, "active"), sql`${products.stock} <= 5`)),
+    db.select({ id: drivers.id, name: drivers.name }).from(drivers),
   ]);
+  const driverName = (id: number | null) => driverList.find((d) => d.id === id)?.name ?? null;
 
   const countOf = (s: OrderStatus) => counts.find((c) => c.status === s)?.n ?? 0;
   const allCount = counts.reduce((n, c) => n + c.n, 0);
@@ -142,6 +149,7 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
                 <th scope="col" className="px-4 py-3 text-start font-medium">الزبون</th>
                 <th scope="col" className="px-4 py-3 text-start font-medium">الولاية</th>
                 <th scope="col" className="px-4 py-3 text-start font-medium">المجموع</th>
+                <th scope="col" className="px-4 py-3 text-start font-medium">التوصيل</th>
                 <th scope="col" className="px-4 py-3 text-start font-medium">الحالة</th>
               </tr>
             </thead>
@@ -163,8 +171,12 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
                     <div className="font-medium">
                       {o.firstName} {o.lastName}
                     </div>
-                    <div dir="ltr" className="text-end text-sm text-muted tabular">
-                      {formatTunisianPhone(o.phone)}
+                    <div className="flex items-center gap-0.5">
+                      <span dir="ltr" className="whitespace-nowrap text-sm text-muted tabular">
+                        {formatTunisianPhone(o.phone)}
+                      </span>
+                      {/* Above the row's link, like the checkbox */}
+                      <CopyButton value={o.phone} label="انسخ رقم الهاتف" className="relative z-10 size-8" />
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -172,6 +184,9 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
                     <div className="text-sm text-muted">{o.city}</div>
                   </td>
                   <td className="px-4 py-3 font-semibold tabular">{formatTND(o.total)}</td>
+                  <td className="px-4 py-3">
+                    <DeliveryTag order={o} driver={driverName(o.driverId)} />
+                  </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={o.status} />
                   </td>
@@ -202,7 +217,10 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
                     </span>
                     <span className="font-semibold tabular">{formatTND(o.total)}</span>
                   </div>
-                  <div className="text-sm text-muted">{formatDateTime(o.createdAt)}</div>
+                  <div className="flex items-center justify-between gap-3 text-sm text-muted">
+                    <span>{formatDateTime(o.createdAt)}</span>
+                    <DeliveryTag order={o} driver={driverName(o.driverId)} />
+                  </div>
                 </Link>
               </li>
             ))}
@@ -224,7 +242,14 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
   );
 }
 
-/** Arabic number agreement: 1 طلب جديد، 2 طلبان، 3–10 طلبات، 11+ طلبًا. */
+/** Who delivers the order: Maystro, one of the shop's delivery people, someone else, or not chosen yet. */
+function DeliveryTag({ order, driver }: { order: Pick<Order, "carrier" | "maystroState">; driver: string | null }) {
+  const pill = "inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-sm font-medium";
+  if (order.carrier === "maystro" || order.maystroState === "sent") return <span className={cn(pill, "bg-[#273142] text-paper")}>Maystro</span>;
+  if (order.carrier === "manual") return <span className={cn(pill, "bg-mist text-ink ring-1 ring-line")}>{driver ?? "توصيل آخر"}</span>;
+  return <span className="text-sm text-muted">—</span>;
+}
+
 function SelectBox({ id, reference }: { id: number; reference: string }) {
   return (
     <input
