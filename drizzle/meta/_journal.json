@@ -85,6 +85,13 @@
       "when": 1795114003586,
       "tag": "0011_sabili_play_photos",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1795121470301,
+      "tag": "0012_sabili_box_photo",
+      "breakpoints": true
     }
   ]
 }

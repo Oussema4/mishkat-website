@@ -86,7 +86,7 @@ export const SABILI = {
   featured: true,
   sortOrder: 1,
   images: [
-    { url: "/images/products/sabili-box.webp", alt: "علبة لعبة سبيلي الزرقاء بشعارها الذهبي" },
+    { url: "/images/products/sabili-box-v2.webp", alt: "علبة لعبة سبيلي الزرقاء بشعارها الذهبي" },
     { url: "/images/products/sabili-table.webp", alt: "علبة سبيلي وبطاقاتها الملوّنة على طاولة" },
     { url: "/images/products/sabili-cards.webp", alt: "بطاقات سبيلي: الملوّنة والصفراء وبطاقتا الحسنة والموعظة" },
     { url: "/images/products/sabili-hand.webp", alt: "علبة سبيلي في اليد" },
