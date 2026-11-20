@@ -3,7 +3,7 @@ import { Mail, Phone } from "lucide-react";
 import Link from "next/link";
 import { FacebookIcon, InstagramIcon, WhatsAppIcon } from "@/components/brand/social-icons";
 import { pageAlternates, pageLocale, type LangParams } from "@/i18n/server";
-import { instagramHandle, whatsappLink } from "@/lib/tunisia";
+import { formatTunisianPhone, instagramHandle, normalizeTunisianPhone, whatsappLink } from "@/lib/tunisia";
 import { getSettings } from "@/server/settings";
 
 export async function generateMetadata({ params }: LangParams): Promise<Metadata> {
@@ -44,7 +44,8 @@ export default async function ContactPage({ params }: LangParams) {
             >
               <WhatsAppIcon className="size-5" />
               <span dir="ltr" className="tabular">
-                {s.phone || s.whatsapp}
+                {/* The WhatsApp number itself (not the phone number, which may differ). */}
+                {normalizeTunisianPhone(s.whatsapp) ? `+216 ${formatTunisianPhone(normalizeTunisianPhone(s.whatsapp)!)}` : s.whatsapp}
               </span>
             </a>
           </div>
