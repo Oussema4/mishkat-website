@@ -142,7 +142,7 @@ export function CustomerDetails({ orderId, customer, editable, communes }: { ord
         </label>
         <label className="block">
           <span className={label}>العنوان</span>
-          <input name="address" defaultValue={customer.address} required minLength={5} maxLength={300} className={adminInput} />
+          <input name="address" defaultValue={customer.address} required minLength={2} maxLength={300} className={adminInput} />
         </label>
         <label className="block sm:col-span-2">
           <span className={label}>ملاحظة (اختياري)</span>

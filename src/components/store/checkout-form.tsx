@@ -335,7 +335,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime, inline }: DeliveryInfo
       </Field>
       {/* One line the phone's autofill can fill with the customer's saved address. */}
       <Field name="address" error={errors.address}>
-        <input {...field("address")} type="text" autoComplete="street-address" placeholder={t.checkout.addressPlaceholder} required minLength={5} maxLength={300} />
+        <input {...field("address")} type="text" autoComplete="street-address" placeholder={t.checkout.addressPlaceholder} required minLength={2} maxLength={300} />
       </Field>
     </>
   );

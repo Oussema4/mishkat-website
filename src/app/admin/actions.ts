@@ -184,7 +184,7 @@ const customerSchema = z.object({
   lastName: z.string().trim().max(60, "اللقب طويل برشا."),
   governorate: z.enum(GOVERNORATES, { error: "اختر الولاية." }),
   city: z.string().trim().max(80, "المعتمدية طويلة برشا."),
-  address: z.string().trim().min(5, "اكتب العنوان.").max(300, "العنوان طويل برشا."),
+  address: z.string().trim().min(2, "اكتب العنوان.").max(300, "العنوان طويل برشا."),
   note: z.string().trim().max(500, "الملاحظة طويلة برشا."),
 });
 

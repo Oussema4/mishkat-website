@@ -70,7 +70,7 @@ export function LeadToOrder({ lead, products }: { lead: Lead; products: Product[
         </label>
         <label className="block">
           <span className={label}>العنوان</span>
-          <input name="address" defaultValue={lead.address} required minLength={5} maxLength={300} className={adminInput} />
+          <input name="address" defaultValue={lead.address} required minLength={2} maxLength={300} className={adminInput} />
         </label>
         {products.map((p) => (
           <label key={p.id} className="block">

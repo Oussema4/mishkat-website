@@ -29,7 +29,7 @@ export function checkoutSchemaFor(m: Dictionary["validation"]) {
     // is picked by the shop when sending the parcel. Still accepted from pages opened before.
     city: z.string().trim().max(80, m.tooLong).optional().default(""),
     communeId: z.number().int().positive().optional(),
-    address: trimmed(5, 300, m.address, m.tooLong),
+    address: trimmed(2, 300, m.address, m.tooLong),
     note: z.string().trim().max(500, m.noteTooLong).optional().default(""),
     items: z
       .array(

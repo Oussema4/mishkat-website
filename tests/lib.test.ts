@@ -75,6 +75,8 @@ describe("checkout validation", () => {
   it("requires an address", () => {
     expect(checkoutSchema.safeParse({ ...valid, address: " " }).success).toBe(false);
     expect(checkoutSchema.safeParse({ ...valid, address: undefined }).success).toBe(false);
+    // One word is enough (the delivery person calls the customer anyway).
+    expect(checkoutSchema.safeParse({ ...valid, address: "قابس" }).success).toBe(true);
   });
 });
 

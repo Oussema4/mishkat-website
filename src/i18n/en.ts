@@ -179,7 +179,7 @@ export const en: Dictionary = {
     governorate: "Choose your governorate from the list",
     city: "Choose the delegation",
     cityList: "Choose the delegation from the list",
-    address: "Write your address (at least the town and neighbourhood)",
+    address: "Write your address",
     noteTooLong: "The note is too long",
     maxPerItem: "At most {n} pieces per product",
     emptyCart: "Your cart is empty",

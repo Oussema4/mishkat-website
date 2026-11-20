@@ -179,7 +179,7 @@ export const fr: Dictionary = {
     governorate: "Choisissez votre gouvernorat dans la liste",
     city: "Choisissez la délégation",
     cityList: "Choisissez la délégation dans la liste",
-    address: "Écrivez votre adresse (au moins la ville et le quartier)",
+    address: "Écrivez votre adresse",
     noteTooLong: "Remarque trop longue",
     maxPerItem: "{n} pièces maximum par produit",
     emptyCart: "Votre panier est vide",
