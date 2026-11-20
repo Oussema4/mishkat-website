@@ -23,7 +23,7 @@ export type StoreSettings = {
 export const DEFAULT_SETTINGS: StoreSettings = {
   deliveryFee: 8000,
   deliveryTime: "48 ساعة",
-  whatsapp: "21692359349",
+  whatsapp: "21658459266",
   phone: "+216 92 359 349",
   email: "mishkat0tn@gmail.com",
   instagram: "https://www.instagram.com/mishkat.2025/",
