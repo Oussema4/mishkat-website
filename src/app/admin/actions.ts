@@ -10,16 +10,16 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { ADMIN_ROLES, admins, categories, checkoutLeads, drivers, ORDER_STATUSES, orders, productImages, products, reviews, type ProductText } from "@/db/schema";
+import { ADMIN_ROLES, admins, categories, checkoutLeads, drivers, ORDER_STATUSES, orders, orderStatusHistory, productImages, products, reviews, type ProductText } from "@/db/schema";
 import { parseBundles, parseFaq, parseLabelValues, parseLines, parseSteps, parseTND, slugify } from "@/lib/admin-format";
-import { MAX_QTY_PER_ITEM } from "@/lib/validation";
+import { checkoutSchema, MAX_QTY_PER_ITEM, splitFullName } from "@/lib/validation";
 import { findCommune } from "@/lib/maystro";
 import { GOVERNORATES, normalizeTunisianPhone } from "@/lib/tunisia";
 import { endSession, getCurrentAdmin, getCurrentOwner, hashPassword, requireAdmin, startSession, verifyPassword } from "@/server/auth";
-import { changeOrderStatus, deleteOrders } from "@/server/order-core";
+import { changeOrderStatus, createOrder, deleteOrders } from "@/server/order-core";
 import { carrierById } from "@/lib/carriers";
 import { getCommunes, maystroEnabled, maystroWebhookUrl, registerWebhook, sendOrderToMaystro, syncOrderFromMaystro } from "@/server/maystro";
-import { saveSettings } from "@/server/settings";
+import { getSettings, saveSettings } from "@/server/settings";
 import { clientIp, hit, isBlocked, reset } from "@/server/rate-limit";
 import { deleteImage } from "@/server/uploads";
 
@@ -245,6 +245,54 @@ export async function dismissLead(form: FormData) {
   if (!Number.isInteger(id) || id <= 0) return;
   await db.update(checkoutLeads).set({ dismissed: form.get("undo") !== "1", updatedAt: new Date() }).where(eq(checkoutLeads.id, id));
   revalidatePath("/admin/abandoned");
+}
+
+/**
+ * The customer was called back and said yes: their unfinished checkout becomes an order ("new",
+ * like one from the site) with the details checked on the phone. Same stock and per-phone rules
+ * as the site; pressing twice gives the same order (the key comes from the lead).
+ */
+export async function convertLeadToOrder(_prev: FormState, form: FormData): Promise<FormState> {
+  const admin = await requireAdmin();
+  const leadId = Number(form.get("leadId"));
+  if (!Number.isInteger(leadId) || leadId <= 0) return { error: "الطلب غير موجود." };
+  const [lead] = await db.select({ id: checkoutLeads.id, orderId: checkoutLeads.orderId }).from(checkoutLeads).where(eq(checkoutLeads.id, leadId)).limit(1);
+  if (!lead) return { error: "الحريف هذا ما عادش في القائمة." };
+
+  const text = (name: string) => String(form.get(name) ?? "");
+  const items = form
+    .getAll("productId")
+    .map((id) => ({ productId: Number(id), quantity: Number(form.get(`qty-${String(id)}`) || 0) }))
+    .filter((i) => Number.isInteger(i.productId) && i.productId > 0 && i.quantity > 0);
+  const { firstName, lastName } = splitFullName(text("fullName"));
+  const parsed = checkoutSchema.safeParse({
+    firstName,
+    lastName,
+    phone: text("phone"),
+    governorate: text("governorate"),
+    address: text("address"),
+    note: text("note"),
+    items,
+    idempotencyKey: `lead-order-${String(lead.id).padStart(8, "0")}`,
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "بيانات غير صالحة." };
+
+  let orderId = lead.orderId;
+  if (!orderId) {
+    const result = await createOrder(db, parsed.data, (await getSettings()).deliveryFee);
+    if (!result.ok) return { error: result.message };
+    const [order] = await db.select({ id: orders.id }).from(orders).where(eq(orders.reference, result.reference)).limit(1);
+    if (!order) return { error: "صار مشكل، عاود جرّب." };
+    orderId = order.id;
+    if (!result.duplicate) {
+      // The history shows who took the order on the phone, not "the site".
+      await db.update(orderStatusHistory).set({ adminName: admin.name }).where(and(eq(orderStatusHistory.orderId, orderId), eq(orderStatusHistory.toStatus, "new")));
+    }
+    await db.update(checkoutLeads).set({ orderId, updatedAt: new Date() }).where(eq(checkoutLeads.id, lead.id));
+  }
+  refreshStore();
+  revalidatePath("/admin", "layout");
+  redirect(`/admin/orders/${orderId}`);
 }
 
 // ───────────── Delivery people ─────────────

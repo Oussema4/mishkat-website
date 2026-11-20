@@ -3,7 +3,7 @@ import { Phone } from "lucide-react";
 import { WhatsAppIcon } from "@/components/brand/social-icons";
 import { CopyButton } from "@/components/admin/copy-button";
 import { db } from "@/db";
-import { checkoutLeads } from "@/db/schema";
+import { checkoutLeads, products } from "@/db/schema";
 import { formatDateTime } from "@/lib/dates";
 import { formatTND } from "@/lib/money";
 import { cn } from "@/lib/site";
@@ -11,6 +11,7 @@ import { formatTunisianPhone, whatsappLink } from "@/lib/tunisia";
 import { dismissLead } from "@/app/admin/actions";
 import { requireAdmin } from "@/server/auth";
 import { ABANDONED_AFTER_MS } from "@/server/leads";
+import { LeadToOrder } from "./lead-to-order";
 
 export const metadata = { title: "ما كمّلوش" };
 
@@ -37,7 +38,7 @@ export default async function AbandonedPage({ searchParams }: PageProps<"/admin/
   const now = Date.now();
   const week = new Date(now - 7 * 86_400_000);
 
-  const [leads, [summary]] = await Promise.all([
+  const [leads, [summary], catalog] = await Promise.all([
     db
       .select()
       .from(checkoutLeads)
@@ -51,6 +52,7 @@ export default async function AbandonedPage({ searchParams }: PageProps<"/admin/
       })
       .from(checkoutLeads)
       .where(gte(checkoutLeads.createdAt, week)),
+    db.select({ id: products.id, name: products.name, price: products.price }).from(products).where(eq(products.status, "active")).orderBy(products.id),
   ]);
   const started = Number(summary?.started ?? 0);
   const finished = Number(summary?.finished ?? 0);
@@ -60,7 +62,7 @@ export default async function AbandonedPage({ searchParams }: PageProps<"/admin/
       <header>
         <h1 className="text-3xl">ما كمّلوش</h1>
         <p className="mt-1 leading-7 text-muted">
-          الحرفاء اللي كتبو نومروهم في فورم الطلب وما ضغطوش «تأكيد الطلب». كلّمهم: ساعات يكون عندهم سؤال ولا صار مشكل في التلفون. كي يكمّل الحريف الطلب، يتنحّى من هنا وحدو.
+          الحرفاء اللي كتبو نومروهم في فورم الطلب وما ضغطوش «تأكيد الطلب». كلّمهم: ساعات يكون عندهم سؤال ولا صار مشكل في التلفون. كي يكمّل الحريف الطلب، يتنحّى من هنا وحدو. وكي يقبل في التليفون، اضغط «قبل: حوّلو لطلب».
         </p>
       </header>
 
@@ -152,6 +154,12 @@ export default async function AbandonedPage({ searchParams }: PageProps<"/admin/
                     <WhatsAppIcon className="size-4" />
                     واتساب
                   </a>
+                  {showHandled ? null : (
+                    <LeadToOrder
+                      lead={{ id: l.id, fullName: `${l.firstName} ${l.lastName}`.trim(), phone: l.phone, governorate: l.governorate, address: l.address, items: l.items }}
+                      products={catalog}
+                    />
+                  )}
                   <form action={dismissLead}>
                     <input type="hidden" name="id" value={l.id} />
                     {showHandled ? <input type="hidden" name="undo" value="1" /> : null}
