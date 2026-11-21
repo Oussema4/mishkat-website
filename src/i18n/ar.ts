@@ -125,6 +125,13 @@ export const ar = {
     rulesNote: "ملخّص من ورقة القواعد الموجودة داخل العلبة.",
     rulesDeck: "افتح العرض كاملًا",
     rulesDeckTitle: "عرض مصوّر لقواعد لعبة سبيلي",
+    deliveryChip: "توصيل في {time}",
+    askWhatsapp: "عندك سؤال؟ ابعثلنا على واتساب",
+    askWhatsappMessage: "السلام عليكم، عندي سؤال على لعبة {name}",
+    video: "فيديو: ناس يلعبو {name}",
+    showVideo: "شوف الفيديو",
+    pauseVideo: "وقّف الفيديو",
+    reviewsShort: "شنوّة قالو اللي لعبوها",
   },
   cart: {
     title: "سلة المشتريات",

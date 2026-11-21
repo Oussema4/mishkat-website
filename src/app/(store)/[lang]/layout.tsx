@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
+import Script from "next/script";
 import { CartHydrator } from "@/components/store/cart-hydrator";
 import { Footer } from "@/components/store/footer";
 import { Header } from "@/components/store/header";
@@ -8,6 +9,7 @@ import { WhatsAppFloat } from "@/components/store/whatsapp-float";
 import { Toaster } from "@/components/ui/toast";
 import { LocaleProvider } from "@/i18n/client";
 import { getDictionary, isLocale, LOCALE_INFO, LOCALES, type Locale } from "@/i18n/config";
+import { CLARITY_SNIPPET } from "@/lib/clarity";
 import { META_DOMAIN_VERIFICATION, META_PIXEL_SNIPPET } from "@/lib/meta-pixel";
 import { siteUrl } from "@/lib/site";
 import { getSettings } from "@/server/settings";
@@ -68,6 +70,8 @@ export default async function StoreLayout({ children, params }: { children: Reac
             {settings.whatsapp ? <WhatsAppFloat number={settings.whatsapp} /> : null}
             <Toaster />
             <CartHydrator />
+            {/* Heatmaps and recordings, loaded once the page is idle (see lib/clarity.ts). */}
+            {CLARITY_SNIPPET ? <Script id="clarity" strategy="lazyOnload">{CLARITY_SNIPPET}</Script> : null}
             <MetaPixel />
           </div>
         </LocaleProvider>

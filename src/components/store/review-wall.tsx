@@ -16,10 +16,13 @@ export function ReviewWall({
   initial = 6,
   showAllLabel,
   labels,
+  stack = false,
 }: {
   reviews: Review[];
   initial?: number;
-  showAllLabel: string;
+  showAllLabel?: string;
+  /** A short single column (next to the order form) instead of the masonry. */
+  stack?: boolean;
   /** Screen-reader texts in the page's language ({n}: the message number). */
   labels: { zoom: string; dialog: string; close: string };
 }) {
@@ -37,9 +40,9 @@ export function ReviewWall({
   return (
     <>
       {visible.length > 0 ? (
-        <ul className="mt-10 columns-1 gap-5 sm:columns-2 lg:columns-3">
+        <ul className={stack ? "mt-3 space-y-2" : "mt-10 columns-1 gap-5 sm:columns-2 lg:columns-3"}>
           {visible.map((r, i) => (
-            <li key={r.id} className="mb-5 break-inside-avoid">
+            <li key={r.id} className={stack ? undefined : "mb-5 break-inside-avoid"}>
               <button
                 type="button"
                 onClick={() => open(r)}
@@ -51,7 +54,7 @@ export function ReviewWall({
                   alt={locale === "ar" ? r.alt : labels.dialog}
                   width={r.width}
                   height={r.height}
-                  sizes="(min-width: 1024px) 380px, (min-width: 640px) 45vw, 92vw"
+                  sizes={stack ? "(min-width: 768px) 520px, 92vw" : "(min-width: 1024px) 380px, (min-width: 640px) 45vw, 92vw"}
                   className="h-auto w-full"
                 />
               </button>
@@ -59,7 +62,7 @@ export function ReviewWall({
           ))}
         </ul>
       ) : null}
-      {reviews.length > initial && !showAll ? (
+      {showAllLabel && reviews.length > initial && !showAll ? (
         <div className="mt-10 flex justify-center">
           <button
             type="button"

@@ -120,6 +120,13 @@ export const en: Dictionary = {
     rulesNote: "A summary of the rules sheet included in the box.",
     rulesDeck: "Open the full presentation (in Arabic)",
     rulesDeckTitle: "Illustrated presentation of the Sabili rules",
+    deliveryChip: "Delivery in {time}",
+    askWhatsapp: "Questions? Message us on WhatsApp",
+    askWhatsappMessage: "Hello, I have a question about {name}",
+    video: "Video: people playing {name}",
+    showVideo: "Watch the video",
+    pauseVideo: "Pause the video",
+    reviewsShort: "What players told us",
   },
   cart: {
     title: "Your cart",

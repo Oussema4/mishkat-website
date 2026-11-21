@@ -16,6 +16,8 @@ import { pixelValue, trackPixel } from "@/lib/meta-pixel";
 import { bundleTotal } from "@/lib/pricing";
 import { MAX_QTY_PER_ITEM } from "@/lib/validation";
 import { cn } from "@/lib/site";
+import { whatsappLink } from "@/lib/tunisia";
+import { WhatsAppIcon } from "@/components/brand/social-icons";
 
 export type CartProduct = {
   id: number;
@@ -111,10 +113,11 @@ function useQuantity(p: CartProduct): [number, (n: number) => void] {
 function OfferPicker({ product, value, onChange }: { product: CartProduct; value: number; onChange: (n: number) => void }) {
   const { t, locale } = useI18n();
   const choices = offerChoices(product);
+  // Compact side by side, like the phone's sticky bar, so the order form starts close below.
   return (
     <fieldset>
       <legend className="font-medium">{t.product.offers}</legend>
-      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+      <div className="mt-2 grid gap-2" style={{ gridTemplateColumns: `repeat(${choices.length}, minmax(0, 1fr))` }}>
         {choices.map((c) => {
           const saved = c.regular - c.total;
           const unavailable = c.quantity > product.stock;
@@ -122,7 +125,7 @@ function OfferPicker({ product, value, onChange }: { product: CartProduct; value
             <label
               key={c.quantity}
               className={cn(
-                "relative flex cursor-pointer flex-col gap-1 rounded-[var(--radius-md)] border border-line bg-ink-soft p-4 transition-colors",
+                "flex min-h-16 cursor-pointer flex-col items-center justify-center rounded-[var(--radius-md)] border border-line bg-ink-soft px-1 py-2 text-center leading-tight transition-colors",
                 "hover:border-gold/60 has-[:checked]:border-gold has-[:checked]:bg-gold/10 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-gold",
                 unavailable && "cursor-not-allowed opacity-45 hover:border-line",
               )}
@@ -136,22 +139,15 @@ function OfferPicker({ product, value, onChange }: { product: CartProduct; value
                 onChange={() => onChange(c.quantity)}
                 className="sr-only"
               />
-              <span className="font-semibold">{t.boxes(c.quantity)}</span>
-              <span className="whitespace-nowrap text-2xl font-bold tabular">{formatTND(c.total, locale)}</span>
+              <span className="text-sm text-paper/80">{t.boxes(c.quantity)}</span>
+              <span className="whitespace-nowrap text-lg font-bold tabular">{formatTND(c.total, locale)}</span>
               {saved > 0 ? (
-                <>
-                  <span className="text-sm text-muted tabular">
-                    <span className="line-through">
-                      <span className="sr-only">{t.product.insteadOf}</span>
-                      {formatTND(c.regular, locale)}
-                    </span>
-                    {" · "}
-                    {fill(t.product.offerUnit, { price: formatTND(Math.round(c.total / c.quantity), locale) })}
+                <span className="text-xs font-semibold text-gold tabular">
+                  <span className="sr-only">
+                    {t.product.insteadOf} {formatTND(c.regular, locale)} ·{" "}
                   </span>
-                  <span className="mt-1 self-start rounded-full bg-gold px-2.5 py-0.5 text-sm font-semibold text-ink tabular">
-                    {fill(t.product.offerSave, { amount: formatTND(saved, locale) })}
-                  </span>
-                </>
+                  {fill(t.product.offerSave, { amount: formatTND(saved, locale) })}
+                </span>
               ) : null}
             </label>
           );
@@ -252,12 +248,15 @@ export function ProductPurchase({
   sticky = false,
   order,
   deliveryFee,
+  whatsapp,
 }: {
   product: CartProduct;
   sticky?: boolean;
   order?: DeliveryInfo;
   /** Sticky bar: the delivery fee, shown under the offers. */
   deliveryFee?: number;
+  /** The shop's WhatsApp number: a "questions?" link next to the order form. */
+  whatsapp?: string;
 }) {
   const { t, locale, href } = useI18n();
   const [qty, setQty] = useQuantity(product);
@@ -335,8 +334,21 @@ export function ProductPurchase({
       <div className="space-y-6">
         {quantityChoice}
         <div className="scroll-mt-20">
-          <h2 className="mb-4 font-sans text-lg font-bold">{t.product.orderForm}</h2>
-          <CheckoutForm {...order} inline={{ lines: [{ ...toLine(product), quantity: qty }] }} />
+          <h2 className="font-sans text-lg font-bold">{t.product.orderForm}</h2>
+          {whatsapp ? (
+            <a
+              href={whatsappLink(whatsapp, fill(t.product.askWhatsappMessage, { name: product.name }))}
+              target="_blank"
+              rel="noopener"
+              className="mt-1 inline-flex min-h-10 items-center gap-2 text-sm font-medium text-[#3ecf7a] underline-offset-4 hover:underline"
+            >
+              <WhatsAppIcon className="size-4" />
+              {t.product.askWhatsapp}
+            </a>
+          ) : null}
+          <div className="mt-3">
+            <CheckoutForm {...order} inline={{ lines: [{ ...toLine(product), quantity: qty }] }} />
+          </div>
         </div>
         <Button type="button" variant="outline" disabled={out} onClick={() => addToCart(false)} className="w-full">
           <ShoppingBag aria-hidden className="size-5" strokeWidth={1.5} />

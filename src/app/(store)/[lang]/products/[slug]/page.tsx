@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Check, Presentation, Truck, Wallet } from "lucide-react";
+import { Check, Presentation, Truck, UsersRound, Wallet } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductPurchase, StickyOrderBar } from "@/components/store/add-to-cart";
@@ -26,6 +26,9 @@ import { getSettings } from "@/server/settings";
  * The other visible messages follow behind "read all"; a message hidden in the dashboard stays hidden.
  */
 const FEATURED_REVIEWS = ["/images/reviews/review-02-msg.webp", "/images/reviews/review-01-msg.webp", "/images/reviews/review-06.webp"];
+
+/** Two short ones shown right above the order form: three hours without phones, the quality on arrival. */
+const NEAR_FORM_REVIEWS = ["/images/reviews/review-01-msg.webp", "/images/reviews/review-06.webp"];
 
 /**
  * Product pages are pre-built at deploy time and served instantly. New products are built
@@ -68,6 +71,7 @@ export default async function ProductPage({ params }: Props) {
   const rank = (url: string) => (FEATURED_REVIEWS.includes(url) ? FEATURED_REVIEWS.indexOf(url) : FEATURED_REVIEWS.length);
   const reviews = product.slug === "sabili" ? [...allReviews].sort((a, b) => rank(a.imageUrl) - rank(b.imageUrl)) : [];
   const featuredCount = reviews.filter((r) => FEATURED_REVIEWS.includes(r.imageUrl)).length || 3;
+  const nearForm = NEAR_FORM_REVIEWS.flatMap((url) => reviews.filter((r) => r.imageUrl === url));
 
   const cartProduct = {
     id: product.id,
@@ -108,10 +112,34 @@ export default async function ProductPage({ params }: Props) {
     },
   };
 
-  const details = [
-    product.ageRange ? { label: t.product.age, value: product.ageRange } : null,
-    product.players ? { label: t.product.players, value: product.players } : null,
-  ].filter((d): d is { label: string; value: string } => d !== null);
+  // The age is one of the badges under the price; the players count stays in the details.
+  const details = [product.players ? { label: t.product.players, value: product.players } : null].filter(
+    (d): d is { label: string; value: string } => d !== null,
+  );
+  const badges = [
+    product.ageRange ? { icon: UsersRound, text: product.ageRange } : null,
+    { icon: Wallet, text: t.checkout.paymentCod },
+    { icon: Truck, text: fill(t.product.deliveryChip, { time: settings.deliveryTime }) },
+  ].filter((b) => b !== null);
+
+  // What's in the box, in a sentence. With messages to show it comes after the form (they take
+  // its place before it); otherwise it opens the order column.
+  const about = (
+    <div className={nearForm.length > 0 ? "mt-8" : "mb-6"}>
+      <p className="max-w-prose text-lg leading-8 text-paper/80">{product.shortDescription}</p>
+
+      {details.length > 0 ? (
+        <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-2">
+          {details.map((d) => (
+            <div key={d.label} className="flex gap-2">
+              <dt className="text-muted">{d.label}:</dt>
+              <dd className="font-semibold">{d.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+    </div>
+  );
 
   return (
     <>
@@ -142,56 +170,67 @@ export default async function ProductPage({ params }: Props) {
         </ol>
       </nav>
 
-      {/* ───── Purchase area ───── */}
-      <section className="container-page grid gap-10 py-8 md:grid-cols-2 md:gap-14 md:py-12">
-        <ProductGallery images={product.images} name={product.name} slug={product.slug} />
-
-        <div className="md:pt-6">
-          <h1 className="text-5xl md:text-6xl">{product.name}</h1>
-          {product.tagline ? <p className="mt-3 text-xl font-medium">{product.tagline}</p> : null}
-          <p className="mt-4 max-w-prose text-lg leading-8 text-paper/80">{product.shortDescription}</p>
-
-          <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
+      {/* ───── Purchase area ─────
+          Phones: name, price and the key facts first, then the photos, then the order. Wider
+          screens: the photos on one side (kept in view), everything else on the other. */}
+      <section className="container-page grid gap-6 pt-4 pb-8 md:grid-cols-2 md:gap-x-14 md:gap-y-8 md:py-12">
+        <div className="min-w-0 md:col-start-2 md:pt-6">
+          <h1 className="text-4xl md:text-6xl">{product.name}</h1>
+          {product.tagline ? <p className="mt-2 text-lg font-medium md:mt-3 md:text-xl">{product.tagline}</p> : null}
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
             <Price price={product.price} compareAt={product.compareAtPrice} size="lg" showSave locale={locale} />
-            <span className="text-muted tabular">{fill(t.product.deliveryExtra, { fee: formatTND(settings.deliveryFee, locale) })}</span>
+            <span className="text-sm text-muted tabular">{fill(t.product.deliveryExtra, { fee: formatTND(settings.deliveryFee, locale) })}</span>
             <StockBadge stock={product.stock} locale={locale} />
           </div>
+          <ul className="mt-4 flex flex-wrap gap-2 text-sm">
+            {badges.map(({ icon: Icon, text }) => (
+              <li key={text} className="inline-flex items-center gap-1.5 rounded-full bg-mist px-3 py-1.5">
+                <Icon aria-hidden className="size-4 shrink-0 text-gold-deep" strokeWidth={1.75} />
+                {text}
+              </li>
+            ))}
+          </ul>
+        </div>
 
-          {details.length > 0 ? (
-            <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-2">
-              {details.map((d) => (
-                <div key={d.label} className="flex gap-2">
-                  <dt className="text-muted">{d.label}:</dt>
-                  <dd className="font-semibold">{d.value}</dd>
-                </div>
-              ))}
-            </dl>
+        <div className="min-w-0 md:sticky md:top-24 md:col-start-1 md:row-span-2 md:row-start-1 md:self-start">
+          <ProductGallery images={product.images} name={product.name} slug={product.slug} />
+        </div>
+
+        <div className="min-w-0 md:col-start-2">
+          {nearForm.length > 0 ? null : about}
+          {/* A couple of real customer messages before the form (all of them further down). */}
+          {nearForm.length > 0 ? (
+            <section aria-labelledby="near-form-reviews">
+              <h2 id="near-form-reviews" className="font-sans text-base font-bold">
+                {t.product.reviewsShort}
+              </h2>
+              <ReviewWall
+                reviews={nearForm}
+                initial={nearForm.length}
+                stack
+                labels={{ zoom: t.home.reviewZoom, dialog: t.home.reviewDialog, close: t.common.close }}
+              />
+              <a href="#product-reviews-title" className="mt-2 inline-flex min-h-10 items-center text-sm font-medium text-gold underline-offset-4 hover:underline">
+                {fill(t.home.reviewsAll, { count: String(reviews.length) })}
+              </a>
+            </section>
           ) : null}
 
-          <div className="mt-8">
+          <div className="mt-6">
             <ProductPurchase
               product={cartProduct}
               order={{ deliveryFee: settings.deliveryFee, deliveryTime: settings.deliveryTime }}
+              whatsapp={settings.whatsapp || undefined}
             />
           </div>
-
-          <ul className="mt-8 space-y-3 rounded-[var(--radius-md)] bg-mist p-5 text-[0.95rem]">
-            <li className="flex items-center gap-3">
-              <Wallet aria-hidden className="size-5 shrink-0 text-gold-deep" strokeWidth={1.5} />
-              {t.checkout.paymentCod}
-            </li>
-            <li className="flex items-center gap-3">
-              <Truck aria-hidden className="size-5 shrink-0 text-gold-deep" strokeWidth={1.5} />
-              {fill(t.product.delivery, { time: settings.deliveryTime, fee: formatTND(settings.deliveryFee, locale) })}
-            </li>
-          </ul>
+          {nearForm.length > 0 ? about : null}
         </div>
       </section>
 
       {/* ───── Real customer messages, right after the order block ───── */}
       {reviews.length > 0 ? (
         <section aria-labelledby="product-reviews-title" className="container-page py-10 md:py-14">
-          <h2 id="product-reviews-title" className="text-3xl md:text-4xl">
+          <h2 id="product-reviews-title" className="scroll-mt-24 text-3xl md:text-4xl">
             {t.home.reviewsTitle}
           </h2>
           <p className="mt-3 max-w-prose text-paper/70">{t.home.reviewsNote}</p>
