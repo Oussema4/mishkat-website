@@ -1,5 +1,6 @@
 import { Package, RefreshCw } from "lucide-react";
 import { formatTND } from "@/lib/money";
+import { postponeBounds, postponedLabel } from "@/lib/postpone";
 import { cn } from "@/lib/site";
 import { customRange, PERIODS, periodRange, tunisDay, type Period } from "@/lib/stats";
 import { formatTunisianPhone, whatsappLink } from "@/lib/tunisia";
@@ -60,6 +61,8 @@ export async function DriverScreen({
       note: o.note,
       noAnswer: o.noAnswerCount > 0 && o.noAnswerAt ? `ما يهزش ×${o.noAnswerCount} · آخر مرّة ${time(o.noAnswerAt)}` : null,
       onWay: o.onWayAt ? `في الطريق · ${time(o.onWayAt)}` : null,
+      postponed: o.status === "postponed" ? (o.postponedUntil ? postponedLabel(o.postponedUntil) : "مؤجّل") : null,
+      postponedUntil: o.postponedUntil,
       // Postponed by the shop (a "no answer" alone stays white).
       waiting: o.status === "postponed",
       whatsapp: whatsappLink(o.phone, `السلام عليكم ${o.firstName}، معاك ${driver.name} موزّع مشكاة. عندي الطلب متاعك (${products}).`),
@@ -155,7 +158,7 @@ export async function DriverScreen({
         </form>
       </details>
 
-      <DriverList orders={cards} recent={recentRows} filtered={period !== "all"} preview={preview} />
+      <DriverList orders={cards} recent={recentRows} filtered={period !== "all"} preview={preview} dayBounds={postponeBounds()} />
 
       {preview ? null : (
         <form action={driverLogout} className="mt-10 text-center">

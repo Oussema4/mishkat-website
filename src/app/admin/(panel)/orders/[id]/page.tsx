@@ -9,6 +9,7 @@ import { db } from "@/db";
 import { drivers, orderItems, orders, orderStatusHistory } from "@/db/schema";
 import { ar } from "@/i18n/ar";
 import { formatDateTime } from "@/lib/dates";
+import { postponeBounds, postponedLabel } from "@/lib/postpone";
 import { formatTND } from "@/lib/money";
 import { whatsappLink } from "@/lib/tunisia";
 import { maystroStatusLabel } from "@/lib/maystro";
@@ -69,6 +70,9 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
           <p className="mt-1 text-muted">{formatDateTime(order.createdAt)}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {order.status === "postponed" && order.postponedUntil ? (
+            <span className="inline-flex items-center rounded-full bg-[#fdd0a8] px-2.5 py-0.5 text-sm font-medium text-[#6b3000]">{postponedLabel(order.postponedUntil)}</span>
+          ) : null}
           {order.onWayAt && order.status !== "delivered" && order.status !== "cancelled" ? (
             <span className="inline-flex items-center rounded-full bg-[#bfd3f5] px-2.5 py-0.5 text-sm font-medium text-[#173777]">
               الموزّع في الطريق ({formatDateTime(order.onWayAt)})
@@ -183,7 +187,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
             <h2 id="status-title" className="font-sans text-lg font-bold">
               حالة الطلب
             </h2>
-            <StatusForm orderId={order.id} current={order.status} />
+            <StatusForm orderId={order.id} current={order.status} postponedUntil={order.postponedUntil} dayBounds={postponeBounds()} />
           </section>
 
           <section aria-labelledby="delivery-title" className="rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">

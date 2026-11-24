@@ -1,0 +1,1 @@
+ALTER TABLE `orders` ADD `postponed_until` text;

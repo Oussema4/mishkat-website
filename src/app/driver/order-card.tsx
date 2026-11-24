@@ -1,7 +1,7 @@
 "use client";
 
-import { Ban, CircleAlert, CircleCheck, LoaderCircle, MapPin, Motorbike, Phone, PhoneOff } from "lucide-react";
-import { useActionState } from "react";
+import { Ban, CalendarClock, CircleAlert, CircleCheck, LoaderCircle, MapPin, Motorbike, Phone, PhoneOff } from "lucide-react";
+import { useActionState, useEffect, useState } from "react";
 import { WhatsAppIcon } from "@/components/brand/social-icons";
 import { cn } from "@/lib/site";
 import { markOrder, type MarkState } from "./actions";
@@ -20,15 +20,32 @@ export type DriverOrder = {
   noAnswer: string | null;
   /** "On the way since 14:30" once he marked it. */
   onWay: string | null;
-  /** Put off (no answer, or postponed by the shop): the card shows in yellow. */
+  /** Postponed (by the shop or by him): the card shows in yellow. */
   waiting: boolean;
+  /** "مؤجّل لـ الخميس 26/11" while postponed. */
+  postponed: string | null;
+  postponedUntil: string | null;
   whatsapp: string;
 };
 
-/** One order with the driver: who, where, how much to collect, and the three marks. */
-export function OrderCard({ order, preview = false }: { order: DriverOrder; preview?: boolean }) {
+/** One order with the driver: who, where, how much to collect, and the five marks. */
+export function OrderCard({
+  order,
+  preview = false,
+  dayBounds,
+}: {
+  order: DriverOrder;
+  preview?: boolean;
+  dayBounds: { min: string; max: string };
+}) {
   const [state, action, pending] = useActionState<MarkState, FormData>(markOrder, {});
-  const button = "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] px-0.5 text-[0.8rem] leading-tight font-bold disabled:opacity-50";
+  // "Postponed" first asks for the day, then "أجّل" saves it.
+  const [askDay, setAskDay] = useState(false);
+  const [day, setDay] = useState(order.postponedUntil ?? "");
+  useEffect(() => {
+    if (!pending && !state.error) setAskDay(false);
+  }, [pending, state]);
+  const button = "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] px-0.5 text-[0.72rem] leading-tight font-bold disabled:opacity-50";
   return (
     <li
       className={cn(
@@ -49,6 +66,12 @@ export function OrderCard({ order, preview = false }: { order: DriverOrder; prev
         </p>
       </div>
 
+      {order.postponed ? (
+        <p className="me-2 mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#fdd0a8] px-2.5 py-0.5 text-sm font-medium text-[#6b3000]">
+          <CalendarClock aria-hidden className="size-3.5" />
+          {order.postponed}
+        </p>
+      ) : null}
       {order.onWay ? (
         <p className="me-2 mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#bfd3f5] px-2.5 py-0.5 text-sm font-medium text-[#173777]">
           <Motorbike aria-hidden className="size-3.5" />
@@ -102,7 +125,7 @@ export function OrderCard({ order, preview = false }: { order: DriverOrder; prev
           const mark = (e.nativeEvent as SubmitEvent).submitter?.getAttribute("value");
           if (mark === "cancelled" && !window.confirm(`تأكّد: الطلب متاع ${order.name} تلغى؟`)) e.preventDefault();
         }}
-        className="mt-4 grid grid-cols-4 gap-1.5"
+        className="mt-4 grid grid-cols-5 gap-1"
       >
         <input type="hidden" name="orderId" value={order.id} />
         <button type="submit" name="mark" value="onWay" disabled={pending} className={cn(button, "bg-[#bfd3f5] text-[#173777]")}>
@@ -117,10 +140,50 @@ export function OrderCard({ order, preview = false }: { order: DriverOrder; prev
           <PhoneOff aria-hidden className="size-5" />
           ما يهزش
         </button>
+        <button
+          type="button"
+          aria-expanded={askDay}
+          disabled={pending}
+          onClick={() => setAskDay((v) => !v)}
+          className={cn(button, "bg-[#fdd0a8] text-[#6b3000]", askDay && "ring-2 ring-[#6b3000]")}
+        >
+          <CalendarClock aria-hidden className="size-5" />
+          مؤجّل
+        </button>
         <button type="submit" name="mark" value="cancelled" disabled={pending} className={cn(button, "bg-[#f7b1b1] text-[#7a1616]")}>
           <Ban aria-hidden className="size-5" />
           تم الإلغاء
         </button>
+        {askDay ? (
+          <div className="col-span-5 mt-1 rounded-[var(--radius-md)] border border-[#fdd0a8] bg-[#fff3e6] p-3">
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium">مؤجّل لنهار</span>
+              <input
+                type="date"
+                name="until"
+                value={day}
+                min={dayBounds.min}
+                max={dayBounds.max}
+                onChange={(e) => setDay(e.target.value)}
+                className="block min-h-11 w-full rounded-[var(--radius-md)] border border-line bg-paper px-3"
+              />
+            </label>
+            <div className="mt-2 flex gap-2">
+              <button
+                type="submit"
+                name="mark"
+                value="postponed"
+                disabled={!day || pending}
+                className="inline-flex min-h-11 flex-1 items-center justify-center rounded-[var(--radius-md)] bg-ink px-4 font-bold text-paper disabled:opacity-50"
+              >
+                أجّل
+              </button>
+              <button type="button" onClick={() => setAskDay(false)} className="inline-flex min-h-11 items-center rounded-[var(--radius-md)] px-4 font-medium text-muted">
+                إلغاء
+              </button>
+            </div>
+          </div>
+        ) : null}
       </form>
       {pending ? (
         <p className="mt-2 flex items-center gap-2 text-sm text-muted">

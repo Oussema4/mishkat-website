@@ -21,6 +21,7 @@ import { carrierById } from "@/lib/carriers";
 import { getCommunes, maystroEnabled, maystroWebhookUrl, registerWebhook, sendOrderToMaystro, syncOrderFromMaystro } from "@/server/maystro";
 import { getSettings, saveSettings } from "@/server/settings";
 import { hashDriverCode, newDriverCode } from "@/lib/driver-session";
+import { dayLabel, parsePostponeDay } from "@/lib/postpone";
 import { driverAccount } from "@/server/driver";
 import { clientIp, hit, isBlocked, reset } from "@/server/rate-limit";
 import { deleteImage } from "@/server/uploads";
@@ -98,11 +99,16 @@ export async function updateOrderStatus(_prev: FormState, form: FormData): Promi
   if (!Number.isInteger(orderId) || !(ORDER_STATUSES as readonly string[]).includes(status)) {
     return { error: "بيانات غير صالحة." };
   }
+  // Postponing needs the day it is put off to (also how the day is changed later).
+  const until = status === "postponed" ? parsePostponeDay(form.get("until")) : null;
+  if (status === "postponed" && !until) return { error: "اختار النهار اللي تأجّل ليه الطلب (من اليوم لـ 3 شهر)." };
   const result = await changeOrderStatus(db, orderId, status as (typeof ORDER_STATUSES)[number], admin);
   if (!result.ok) return { error: result.message };
+  if (until) await db.update(orders).set({ postponedUntil: until, updatedAt: new Date() }).where(eq(orders.id, orderId));
   revalidatePath("/admin", "layout");
+  revalidatePath("/driver");
   refreshStore();
-  return { ok: true, message: "تم تحديث حالة الطلب." };
+  return { ok: true, message: until ? `تأجّل الطلب لـ ${dayLabel(until)}.` : "تم تحديث حالة الطلب." };
 }
 
 /**

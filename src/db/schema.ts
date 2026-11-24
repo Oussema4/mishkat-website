@@ -159,6 +159,8 @@ export const orders = sqliteTable(
     noAnswerAt: integer("no_answer_at", { mode: "timestamp" }),
     /** When the driver marked "on the way" (he called the customer and is heading there). */
     onWayAt: integer("on_way_at", { mode: "timestamp" }),
+    /** Postponed until this day (YYYY-MM-DD, Tunis time), chosen when the order is postponed. */
+    postponedUntil: text("postponed_until"),
     // Delivery through Maystro: the parcel created there, its tracking number and last known status.
     maystroState: text("maystro_state", { enum: MAYSTRO_STATES }).notNull().default("none"),
     maystroOrderId: text("maystro_order_id"),

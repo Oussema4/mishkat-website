@@ -11,6 +11,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { drivers, ORDER_STATUSES, orders, orderStatusHistory, type OrderStatus } from "@/db/schema";
 import { DRIVER_COOKIE, driverCookieOptions, hashDriverCode, signDriverSession } from "@/lib/driver-session";
+import { parsePostponeDay } from "@/lib/postpone";
 import { changeOrderStatus } from "@/server/order-core";
 import { clientIp, hit } from "@/server/rate-limit";
 import { driverLabel, requireDriver } from "@/server/driver";
@@ -42,12 +43,12 @@ export async function driverLogout() {
 
 export type MarkState = { error?: string };
 
-/** One of the four marks on an order still with the driver. */
+/** One of the five marks on an order still with the driver ("postponed" comes with its day). */
 export async function markOrder(_prev: MarkState, form: FormData): Promise<MarkState> {
   const driver = await requireDriver();
   const orderId = Number(form.get("orderId"));
   const mark = String(form.get("mark"));
-  if (!Number.isInteger(orderId) || orderId <= 0 || !["onWay", "delivered", "noAnswer", "cancelled"].includes(mark)) return { error: "صار مشكل، عاود جرّب." };
+  if (!Number.isInteger(orderId) || orderId <= 0 || !["onWay", "delivered", "noAnswer", "postponed", "cancelled"].includes(mark)) return { error: "صار مشكل، عاود جرّب." };
   const [order] = await db
     .select({ id: orders.id, status: orders.status })
     .from(orders)
@@ -55,7 +56,15 @@ export async function markOrder(_prev: MarkState, form: FormData): Promise<MarkS
     .limit(1);
   if (!order) return { error: "الطلب هذا ما عادش عندك. حدّث الصفحة." };
 
-  if (mark === "onWay") {
+  if (mark === "postponed") {
+    const until = parsePostponeDay(form.get("until"));
+    if (!until) return { error: "اختار النهار اللي تأجّل ليه (من اليوم لـ 3 شهر)." };
+    if (order.status !== "postponed") {
+      const result = await changeOrderStatus(db, order.id, "postponed", { id: null, name: driverLabel(driver.name) });
+      if (!result.ok) return { error: result.message };
+    }
+    await db.update(orders).set({ postponedUntil: until, updatedAt: new Date() }).where(eq(orders.id, order.id));
+  } else if (mark === "onWay") {
     // He called the customer and is heading there: the order is out for delivery.
     await db.update(orders).set({ onWayAt: new Date(), updatedAt: new Date() }).where(eq(orders.id, order.id));
     if (order.status !== "shipped") {

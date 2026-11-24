@@ -34,7 +34,7 @@ const inRange = (range: DayRange) =>
 
 /**
  * Orders still with the driver: given to him and neither delivered nor cancelled. Newest order
- * first, like the dashboard's list; the ones the shop postponed always at the bottom.
+ * first, like the dashboard's list; the postponed ones always at the bottom, nearest day first.
  */
 export async function openDriverOrders(driverId: number, range: DayRange) {
   return withItems(
@@ -42,7 +42,12 @@ export async function openDriverOrders(driverId: number, range: DayRange) {
       .select()
       .from(orders)
       .where(and(eq(orders.driverId, driverId), notInArray(orders.status, ["delivered", "cancelled"]), inRange(range)))
-      .orderBy(sql`case when ${orders.status} = 'postponed' then 1 else 0 end`, desc(orders.createdAt), desc(orders.id)),
+      .orderBy(
+        sql`case when ${orders.status} = 'postponed' then 1 else 0 end`,
+        sql`case when ${orders.status} = 'postponed' then coalesce(${orders.postponedUntil}, '9999-12-31') end`,
+        desc(orders.createdAt),
+        desc(orders.id),
+      ),
   );
 }
 

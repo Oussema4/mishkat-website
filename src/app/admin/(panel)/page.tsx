@@ -9,6 +9,7 @@ import { db } from "@/db";
 import { drivers, ORDER_STATUSES, orders, products, type Order, type OrderStatus } from "@/db/schema";
 import { ar } from "@/i18n/ar";
 import { formatDateTime } from "@/lib/dates";
+import { postponedLabel } from "@/lib/postpone";
 import { formatTND } from "@/lib/money";
 import { carrierById } from "@/lib/carriers";
 import { cn } from "@/lib/site";
@@ -204,6 +205,9 @@ export default async function OrdersPage({ searchParams }: PageProps<"/admin">) 
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={o.status} />
+                    {o.status === "postponed" && o.postponedUntil ? (
+                      <span className="mt-1 block text-xs font-medium text-[#6b3000]">{postponedLabel(o.postponedUntil)}</span>
+                    ) : null}
                     {o.onWayAt && o.status !== "delivered" && o.status !== "cancelled" ? (
                       <span className="mt-1 block text-xs font-medium text-[#173777]">الموزّع في الطريق</span>
                     ) : null}

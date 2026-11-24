@@ -23,12 +23,15 @@ export function DriverList({
   recent,
   filtered = false,
   preview = false,
+  dayBounds,
 }: {
   orders: DriverOrder[];
   recent: RecentOrder[];
   filtered?: boolean;
   /** The dashboard's look at a driver's screen: the buttons do nothing. */
   preview?: boolean;
+  /** The postpone date picker's range (today … three months, Tunis time). */
+  dayBounds: { min: string; max: string };
 }) {
   const [query, setQuery] = useState("");
   const q = plain(query.trim());
@@ -70,7 +73,7 @@ export function DriverList({
       ) : (
         <ul className="mt-4 space-y-4">
           {shown.map((o) => (
-            <OrderCard key={o.id} order={o} preview={preview} />
+            <OrderCard key={o.id} order={o} preview={preview} dayBounds={dayBounds} />
           ))}
         </ul>
       )}
