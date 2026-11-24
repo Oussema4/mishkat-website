@@ -1,11 +1,11 @@
 "use client";
 
-import { LoaderCircle, Search, X } from "lucide-react";
+import { LoaderCircle, Search, Undo2, X } from "lucide-react";
 import { useState, useTransition } from "react";
 import { undoMark } from "./actions";
 import { OrderCard, type DriverOrder } from "./order-card";
 
-export type RecentOrder = { id: number; name: string; phone: string; phoneLabel: string; place: string; delivered: boolean; total: string };
+export type RecentOrder = { id: number; name: string; phone: string; phoneLabel: string; place: string; delivered: boolean; total: string; canUndo: boolean };
 
 /** Lower case, no Arabic diacritics, digits only for phones: "حريف" finds "حَريف", "20 444" finds "20444551". */
 const plain = (s: string) =>
@@ -18,7 +18,7 @@ const plain = (s: string) =>
     .replace(/ة/g, "ه");
 
 /** The driver's orders with a search box (name, phone, place or reference), then what he marked today. */
-export function DriverList({ orders, recent }: { orders: DriverOrder[]; recent: RecentOrder[] }) {
+export function DriverList({ orders, recent, filtered = false }: { orders: DriverOrder[]; recent: RecentOrder[]; filtered?: boolean }) {
   const [query, setQuery] = useState("");
   const q = plain(query.trim());
   const digits = query.replace(/\D/g, "");
@@ -53,7 +53,7 @@ export function DriverList({ orders, recent }: { orders: DriverOrder[]; recent: 
       ) : null}
 
       {orders.length === 0 ? (
-        <p className="mt-6 rounded-[var(--radius-lg)] bg-paper p-6 text-center text-muted">ما عندك حتى طلب توّا.</p>
+        <p className="mt-6 rounded-[var(--radius-lg)] bg-paper p-6 text-center text-muted">{filtered ? "ما عندك حتى طلب في الأيامات هاذي." : "ما عندك حتى طلب توّا."}</p>
       ) : shown.length === 0 ? (
         <p className="mt-6 rounded-[var(--radius-lg)] bg-paper p-6 text-center text-muted">ما لقيت حتى حريف بالاسم هذا.</p>
       ) : (
@@ -95,22 +95,24 @@ function RecentItem({ order }: { order: RecentOrder }) {
           {order.delivered ? `وصلت · ${order.total}` : "تم الإلغاء"}
         </p>
       </div>
-      <button
-        type="button"
-        disabled={pending}
-        onClick={() =>
-          start(async () => {
-            const fd = new FormData();
-            fd.set("orderId", String(order.id));
-            await undoMark(fd);
-            window.location.reload();
-          })
-        }
-        className="inline-flex min-h-10 items-center gap-2 rounded-[var(--radius-md)] px-3 text-sm font-medium text-muted hover:bg-mist hover:text-ink disabled:opacity-60"
-      >
-        {pending ? <LoaderCircle aria-hidden className="size-4 animate-spin" /> : null}
-        غلطت، رجّعها
-      </button>
+      {order.canUndo ? (
+        <button
+          type="button"
+          disabled={pending}
+          onClick={() =>
+            start(async () => {
+              const fd = new FormData();
+              fd.set("orderId", String(order.id));
+              await undoMark(fd);
+              window.location.reload();
+            })
+          }
+          className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-[var(--radius-md)] border-2 border-ink bg-paper px-3.5 text-sm font-bold text-ink hover:bg-ink hover:text-paper disabled:opacity-60"
+        >
+          {pending ? <LoaderCircle aria-hidden className="size-4 animate-spin" /> : <Undo2 aria-hidden className="size-4" />}
+          غلطت، رجّعها
+        </button>
+      ) : null}
     </li>
   );
 }
