@@ -18,7 +18,18 @@ const plain = (s: string) =>
     .replace(/ة/g, "ه");
 
 /** The driver's orders with a search box (name, phone, place or reference), then what he marked today. */
-export function DriverList({ orders, recent, filtered = false }: { orders: DriverOrder[]; recent: RecentOrder[]; filtered?: boolean }) {
+export function DriverList({
+  orders,
+  recent,
+  filtered = false,
+  preview = false,
+}: {
+  orders: DriverOrder[];
+  recent: RecentOrder[];
+  filtered?: boolean;
+  /** The dashboard's look at a driver's screen: the buttons do nothing. */
+  preview?: boolean;
+}) {
   const [query, setQuery] = useState("");
   const q = plain(query.trim());
   const digits = query.replace(/\D/g, "");
@@ -59,7 +70,7 @@ export function DriverList({ orders, recent, filtered = false }: { orders: Drive
       ) : (
         <ul className="mt-4 space-y-4">
           {shown.map((o) => (
-            <OrderCard key={o.id} order={o} />
+            <OrderCard key={o.id} order={o} preview={preview} />
           ))}
         </ul>
       )}
@@ -69,7 +80,7 @@ export function DriverList({ orders, recent, filtered = false }: { orders: Drive
           <h2 className="font-sans text-base font-bold">تم التوصيل</h2>
           <ul className="mt-2 space-y-2">
             {shownRecent.map((o) => (
-              <RecentItem key={o.id} order={o} />
+              <RecentItem key={o.id} order={o} preview={preview} />
             ))}
           </ul>
         </section>
@@ -79,7 +90,7 @@ export function DriverList({ orders, recent, filtered = false }: { orders: Drive
 }
 
 /** A delivered or cancelled order of today, with "I tapped by mistake": takes it back and reloads the page. */
-function RecentItem({ order }: { order: RecentOrder }) {
+function RecentItem({ order, preview }: { order: RecentOrder; preview: boolean }) {
   const [pending, start] = useTransition();
   return (
     <li className="flex items-start justify-between gap-3 rounded-[var(--radius-md)] bg-paper p-3">
@@ -100,12 +111,14 @@ function RecentItem({ order }: { order: RecentOrder }) {
           type="button"
           disabled={pending}
           onClick={() =>
-            start(async () => {
-              const fd = new FormData();
-              fd.set("orderId", String(order.id));
-              await undoMark(fd);
-              window.location.reload();
-            })
+            preview
+              ? window.alert("هذا عرض برك: الفلسة ما تخدمش هوني.")
+              : start(async () => {
+                  const fd = new FormData();
+                  fd.set("orderId", String(order.id));
+                  await undoMark(fd);
+                  window.location.reload();
+                })
           }
           className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-[var(--radius-md)] border-2 border-ink bg-paper px-3.5 text-sm font-bold text-ink hover:bg-ink hover:text-paper disabled:opacity-60"
         >

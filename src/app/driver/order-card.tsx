@@ -26,7 +26,7 @@ export type DriverOrder = {
 };
 
 /** One order with the driver: who, where, how much to collect, and the three marks. */
-export function OrderCard({ order }: { order: DriverOrder }) {
+export function OrderCard({ order, preview = false }: { order: DriverOrder; preview?: boolean }) {
   const [state, action, pending] = useActionState<MarkState, FormData>(markOrder, {});
   const button = "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] px-0.5 text-[0.8rem] leading-tight font-bold disabled:opacity-50";
   return (
@@ -94,6 +94,11 @@ export function OrderCard({ order }: { order: DriverOrder }) {
       <form
         action={action}
         onSubmit={(e) => {
+          if (preview) {
+            e.preventDefault();
+            window.alert("هذا عرض برك: الفلايس ما يخدموش هوني، ما يتبدّل شي.");
+            return;
+          }
           const mark = (e.nativeEvent as SubmitEvent).submitter?.getAttribute("value");
           if (mark === "cancelled" && !window.confirm(`تأكّد: الطلب متاع ${order.name} تلغى؟`)) e.preventDefault();
         }}

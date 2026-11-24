@@ -1,5 +1,5 @@
 import { and, desc, eq } from "drizzle-orm";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Eye } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -147,6 +147,13 @@ export default async function DriverAdminPage({ params }: { params: Promise<{ id
             ? "عندو كود دخول. يشوف كان الطلبات اللي عطيتهملو، ويعلّم: وصلت، ما يهزش، تم الإلغاء."
             : "ما عندوش كود دخول. اعملو كود وابعثهولو مع التطبيق."}
         </p>
+        <Link
+          href={`/admin/maystro/drivers/${driver.id}/preview`}
+          className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-md)] border-2 border-ink px-4 font-semibold hover:bg-ink hover:text-paper"
+        >
+          <Eye aria-hidden className="size-4" />
+          شوف كيف يشوفها {driver.name}
+        </Link>
         <DriverCodeForm driverId={driver.id} hasCode={Boolean(driver.accessCodeHash)} siteUrl={siteUrl()} />
         {driver.accessCodeHash ? (
           <form action={removeDriverCode} className="mt-2">
