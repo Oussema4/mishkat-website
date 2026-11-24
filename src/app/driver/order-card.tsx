@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, CircleAlert, CircleCheck, LoaderCircle, MapPin, Phone, PhoneOff } from "lucide-react";
+import { Ban, CircleAlert, CircleCheck, LoaderCircle, MapPin, Motorbike, Phone, PhoneOff } from "lucide-react";
 import { useActionState } from "react";
 import { WhatsAppIcon } from "@/components/brand/social-icons";
 import { cn } from "@/lib/site";
@@ -18,6 +18,8 @@ export type DriverOrder = {
   total: string;
   note: string;
   noAnswer: string | null;
+  /** "On the way since 14:30" once he marked it. */
+  onWay: string | null;
   /** Put off (no answer, or postponed by the shop): the card shows in yellow. */
   waiting: boolean;
   whatsapp: string;
@@ -26,7 +28,7 @@ export type DriverOrder = {
 /** One order with the driver: who, where, how much to collect, and the three marks. */
 export function OrderCard({ order }: { order: DriverOrder }) {
   const [state, action, pending] = useActionState<MarkState, FormData>(markOrder, {});
-  const button = "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] px-1 text-sm font-bold disabled:opacity-50";
+  const button = "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] px-0.5 text-[0.8rem] leading-tight font-bold disabled:opacity-50";
   return (
     <li
       className={cn(
@@ -47,6 +49,12 @@ export function OrderCard({ order }: { order: DriverOrder }) {
         </p>
       </div>
 
+      {order.onWay ? (
+        <p className="me-2 mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#bfd3f5] px-2.5 py-0.5 text-sm font-medium text-[#173777]">
+          <Motorbike aria-hidden className="size-3.5" />
+          {order.onWay}
+        </p>
+      ) : null}
       {order.noAnswer ? (
         <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-[#fdeb9c] px-2.5 py-0.5 text-sm font-medium text-[#5c4700]">
           <PhoneOff aria-hidden className="size-3.5" />
@@ -89,9 +97,13 @@ export function OrderCard({ order }: { order: DriverOrder }) {
           const mark = (e.nativeEvent as SubmitEvent).submitter?.getAttribute("value");
           if (mark === "cancelled" && !window.confirm(`تأكّد: الطلب متاع ${order.name} تلغى؟`)) e.preventDefault();
         }}
-        className="mt-4 grid grid-cols-3 gap-2"
+        className="mt-4 grid grid-cols-4 gap-1.5"
       >
         <input type="hidden" name="orderId" value={order.id} />
+        <button type="submit" name="mark" value="onWay" disabled={pending} className={cn(button, "bg-[#bfd3f5] text-[#173777]")}>
+          <Motorbike aria-hidden className="size-5" />
+          في الطريق
+        </button>
         <button type="submit" name="mark" value="delivered" disabled={pending} className={cn(button, "bg-[#1f8f4e] text-paper")}>
           <CircleCheck aria-hidden className="size-5" />
           وصلت

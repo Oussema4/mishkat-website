@@ -42,12 +42,12 @@ export async function driverLogout() {
 
 export type MarkState = { error?: string };
 
-/** One of the three marks on an order still with the driver. */
+/** One of the four marks on an order still with the driver. */
 export async function markOrder(_prev: MarkState, form: FormData): Promise<MarkState> {
   const driver = await requireDriver();
   const orderId = Number(form.get("orderId"));
   const mark = String(form.get("mark"));
-  if (!Number.isInteger(orderId) || orderId <= 0 || !["delivered", "noAnswer", "cancelled"].includes(mark)) return { error: "صار مشكل، عاود جرّب." };
+  if (!Number.isInteger(orderId) || orderId <= 0 || !["onWay", "delivered", "noAnswer", "cancelled"].includes(mark)) return { error: "صار مشكل، عاود جرّب." };
   const [order] = await db
     .select({ id: orders.id, status: orders.status })
     .from(orders)
@@ -55,7 +55,14 @@ export async function markOrder(_prev: MarkState, form: FormData): Promise<MarkS
     .limit(1);
   if (!order) return { error: "الطلب هذا ما عادش عندك. حدّث الصفحة." };
 
-  if (mark === "noAnswer") {
+  if (mark === "onWay") {
+    // He called the customer and is heading there: the order is out for delivery.
+    await db.update(orders).set({ onWayAt: new Date(), updatedAt: new Date() }).where(eq(orders.id, order.id));
+    if (order.status !== "shipped") {
+      const result = await changeOrderStatus(db, order.id, "shipped", { id: null, name: driverLabel(driver.name) });
+      if (!result.ok) return { error: result.message };
+    }
+  } else if (mark === "noAnswer") {
     await db
       .update(orders)
       .set({ noAnswerCount: sql`${orders.noAnswerCount} + 1`, noAnswerAt: new Date(), updatedAt: new Date() })

@@ -50,6 +50,7 @@ export default async function DriverPage({ searchParams }: { searchParams: Promi
       total: formatTND(o.total),
       note: o.note,
       noAnswer: o.noAnswerCount > 0 && o.noAnswerAt ? `ما يهزش ×${o.noAnswerCount} · آخر مرّة ${time(o.noAnswerAt)}` : null,
+      onWay: o.onWayAt ? `في الطريق · ${time(o.onWayAt)}` : null,
       // Postponed by the shop (a "no answer" alone stays white).
       waiting: o.status === "postponed",
       whatsapp: whatsappLink(o.phone, `السلام عليكم ${o.firstName}، معاك ${driver.name} موزّع مشكاة. عندي الطلب متاعك (${products}).`),

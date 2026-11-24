@@ -69,6 +69,11 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
           <p className="mt-1 text-muted">{formatDateTime(order.createdAt)}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {order.onWayAt && order.status !== "delivered" && order.status !== "cancelled" ? (
+            <span className="inline-flex items-center rounded-full bg-[#bfd3f5] px-2.5 py-0.5 text-sm font-medium text-[#173777]">
+              الموزّع في الطريق ({formatDateTime(order.onWayAt)})
+            </span>
+          ) : null}
           {order.noAnswerCount > 0 && order.noAnswerAt ? (
             <span className="inline-flex items-center rounded-full bg-[#fdeb9c] px-2.5 py-0.5 text-sm font-medium text-[#5c4700]" title={formatDateTime(order.noAnswerAt)}>
               الموزّع: ما يهزش ×{order.noAnswerCount} (آخر مرّة {formatDateTime(order.noAnswerAt)})

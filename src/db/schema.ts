@@ -157,6 +157,8 @@ export const orders = sqliteTable(
     /** Times the driver marked "the customer doesn't answer" (ما يهزش), and the last time. */
     noAnswerCount: integer("no_answer_count").notNull().default(0),
     noAnswerAt: integer("no_answer_at", { mode: "timestamp" }),
+    /** When the driver marked "on the way" (he called the customer and is heading there). */
+    onWayAt: integer("on_way_at", { mode: "timestamp" }),
     // Delivery through Maystro: the parcel created there, its tracking number and last known status.
     maystroState: text("maystro_state", { enum: MAYSTRO_STATES }).notNull().default("none"),
     maystroOrderId: text("maystro_order_id"),
