@@ -3,8 +3,9 @@ import { Package, RefreshCw } from "lucide-react";
 import { formatTND } from "@/lib/money";
 import { formatTunisianPhone, whatsappLink } from "@/lib/tunisia";
 import { driverAccount, openDriverOrders, recentDriverOrders, requireDriver } from "@/server/driver";
-import { driverLogout, undoMark } from "./actions";
-import { OrderCard, type DriverOrder } from "./order-card";
+import { driverLogout } from "./actions";
+import { DriverList, type RecentOrder } from "./driver-list";
+import type { DriverOrder } from "./order-card";
 
 export const metadata: Metadata = { title: "طلباتي" };
 export const dynamic = "force-dynamic";
@@ -36,9 +37,19 @@ export default async function DriverPage() {
       total: formatTND(o.total),
       note: o.note,
       noAnswer: o.noAnswerCount > 0 && o.noAnswerAt ? `ما يهزش ×${o.noAnswerCount} · آخر مرّة ${time(o.noAnswerAt)}` : null,
+      // Put off: the customer didn't answer, or the shop set the order "postponed".
+      waiting: o.noAnswerCount > 0 || o.status === "postponed",
       whatsapp: whatsappLink(o.phone, `السلام عليكم ${o.firstName}، معاك ${driver.name} موزّع مشكاة. عندي الطلب متاعك (${products}).`),
     };
   });
+
+  const recentRows: RecentOrder[] = recent.map((o) => ({
+    id: o.id,
+    name: `${o.firstName} ${o.lastName}`.trim(),
+    phone: o.phone,
+    delivered: o.status === "delivered",
+    total: formatTND(o.total),
+  }));
 
   return (
     <main className="mx-auto max-w-lg px-4 pt-5 pb-16">
@@ -63,45 +74,23 @@ export default async function DriverPage() {
           </span>
           <b className="text-xl tabular">{Math.max(0, account.withHim)}</b>
         </p>
-        <p className="rounded-[var(--radius-md)] bg-paper p-3">
+        <div className="rounded-[var(--radius-md)] bg-paper p-3">
           <span className="block text-muted">فلوس الطلبات اللي وصلتهم</span>
           <b className="text-xl tabular">{formatTND(account.cashWithHim)}</b>
-        </p>
+          <dl className="mt-2 space-y-1 border-t border-line pt-2 text-xs">
+            <div className="flex justify-between gap-2">
+              <dt className="text-muted">حق الطلبيات</dt>
+              <dd className="font-semibold tabular">{formatTND(account.goodsOwed)}</dd>
+            </div>
+            <div className="flex justify-between gap-2">
+              <dt className="text-muted">حق التوصيل (ليك)</dt>
+              <dd className="font-semibold text-success tabular">{formatTND(account.deliveryEarned)}</dd>
+            </div>
+          </dl>
+        </div>
       </section>
 
-      {cards.length === 0 ? (
-        <p className="mt-6 rounded-[var(--radius-lg)] bg-paper p-6 text-center text-muted">ما عندك حتى طلب توّا.</p>
-      ) : (
-        <ul className="mt-5 space-y-4">
-          {cards.map((o) => (
-            <OrderCard key={o.id} order={o} />
-          ))}
-        </ul>
-      )}
-
-      {recent.length > 0 ? (
-        <section className="mt-8">
-          <h2 className="font-sans text-base font-bold">كمّلتهم اليوم</h2>
-          <ul className="mt-2 space-y-2">
-            {recent.map((o) => (
-              <li key={o.id} className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] bg-paper p-3">
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">{`${o.firstName} ${o.lastName}`.trim()}</p>
-                  <p className={o.status === "delivered" ? "text-sm text-success" : "text-sm text-danger"}>
-                    {o.status === "delivered" ? `وصلت · ${formatTND(o.total)}` : "تم الإلغاء"}
-                  </p>
-                </div>
-                <form action={undoMark}>
-                  <input type="hidden" name="orderId" value={o.id} />
-                  <button type="submit" className="min-h-10 rounded-[var(--radius-md)] px-3 text-sm font-medium text-muted hover:bg-mist hover:text-ink">
-                    غلطت، رجّعها
-                  </button>
-                </form>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      <DriverList orders={cards} recent={recentRows} />
 
       <form action={driverLogout} className="mt-10 text-center">
         <button type="submit" className="min-h-10 text-sm text-muted underline-offset-4 hover:underline">

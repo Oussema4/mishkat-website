@@ -79,7 +79,8 @@ async function withItems<T extends { id: number }>(rows: T[]) {
 
 /**
  * The account between the shop and a driver: boxes given, brought back, delivered (from his
- * delivered orders) and still with him; cash from his delivered orders, handed in, still with him.
+ * delivered orders) and still with him; cash from his delivered orders, handed in, still with him,
+ * split into the products' price (owed to the shop) and the delivery fees (his).
  */
 export async function driverAccount(driverId: number) {
   const [ledger, [delivered]] = await Promise.all([
@@ -97,8 +98,12 @@ export async function driverAccount(driverId: number) {
       .innerJoin(orderItems, eq(orderItems.orderId, orders.id))
       .where(and(eq(orders.driverId, driverId), eq(orders.status, "delivered"))),
   ]);
-  const [{ cash } = { cash: 0 }] = await db
-    .select({ cash: sql<number>`coalesce(sum(${orders.total}), 0)` })
+  const [{ cash, goods, delivery } = { cash: 0, goods: 0, delivery: 0 }] = await db
+    .select({
+      cash: sql<number>`coalesce(sum(${orders.total}), 0)`,
+      goods: sql<number>`coalesce(sum(${orders.subtotal}), 0)`,
+      delivery: sql<number>`coalesce(sum(${orders.deliveryFee}), 0)`,
+    })
     .from(orders)
     .where(and(eq(orders.driverId, driverId), eq(orders.status, "delivered")));
   const sum = (kind: string) => Number(ledger.find((l) => l.kind === kind)?.total ?? 0);
@@ -115,6 +120,10 @@ export async function driverAccount(driverId: number) {
     cashCollected: Number(cash),
     cashReceived,
     cashWithHim: Number(cash) - cashReceived,
+    /** The products' price of his delivered orders, less what he handed in: what he owes the shop. */
+    goodsOwed: Number(goods) - cashReceived,
+    /** The delivery fees of his delivered orders: the driver keeps them. */
+    deliveryEarned: Number(delivery),
   };
 }
 

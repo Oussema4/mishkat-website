@@ -18,6 +18,8 @@ export type DriverOrder = {
   total: string;
   note: string;
   noAnswer: string | null;
+  /** Put off (no answer, or postponed by the shop): the card shows in yellow. */
+  waiting: boolean;
   whatsapp: string;
 };
 
@@ -26,7 +28,12 @@ export function OrderCard({ order }: { order: DriverOrder }) {
   const [state, action, pending] = useActionState<MarkState, FormData>(markOrder, {});
   const button = "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-md)] px-1 text-sm font-bold disabled:opacity-50";
   return (
-    <li className="rounded-[var(--radius-lg)] bg-paper p-4 shadow-[var(--shadow-soft)]">
+    <li
+      className={cn(
+        "rounded-[var(--radius-lg)] p-4 shadow-[var(--shadow-soft)]",
+        order.waiting ? "border-2 border-[#e9c642] bg-[#fff5cc]" : "bg-paper",
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-lg font-bold">{order.name}</p>

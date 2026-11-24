@@ -91,8 +91,13 @@ export default async function DriverAdminPage({ params }: { params: Promise<{ id
           {stat("خلّصك", formatTND(account.cashReceived), "text-success")}
           {stat("باقي عندو", formatTND(account.cashWithHim), account.cashWithHim > 0 ? "text-danger" : undefined)}
         </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {stat("منها حق الطلبيات (باقي عليه للمتجر)", formatTND(account.goodsOwed), account.goodsOwed > 0 ? "text-danger" : undefined)}
+          {stat("منها حق التوصيل (ليه)", formatTND(account.deliveryEarned), "text-success")}
+        </div>
         <p className="mt-3 text-sm leading-6 text-muted">
-          «وصّل منهم» تتحسب من الطلبات اللي علّم عليها «وصلت». الفلوس هي المجموع اللي يخلّصو الحريف (التوصيل داخل).
+          «وصّل منهم» تتحسب من الطلبات اللي علّم عليها «وصلت». الفلوس هي المجموع اللي يخلّصو الحريف: حق الطلبيات يرجع للمتجر
+          (ننقصو منو اللي خلّصك)، وحق التوصيل يبقى عند الموزّع.
           {account.withHim < 0 ? " باقين عندو بالسالب: وصّل أكثر ممّا عطيتو، زيد الباكوات اللي عطيتهملو." : ""}
         </p>
 
