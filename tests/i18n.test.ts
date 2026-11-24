@@ -18,7 +18,7 @@ describe("dictionaries", () => {
   });
 
   it("count boxes in each language", () => {
-    expect([1, 2, 3].map(getDictionary("ar").boxes)).toEqual(["علبة واحدة", "علبتان", "3 علب"]);
+    expect([1, 2, 3].map(getDictionary("ar").boxes)).toEqual(["لعبة واحدة", "لعبتان", "3 ألعاب"]);
     expect([1, 3].map(getDictionary("fr").boxes)).toEqual(["1 boîte", "3 boîtes"]);
     expect([1, 3].map(getDictionary("en").boxes)).toEqual(["1 box", "3 boxes"]);
   });

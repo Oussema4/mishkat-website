@@ -12,7 +12,7 @@ export const metadata = { title: "الإحصائيات" };
 
 const card = "rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]";
 const percent = (v: number | null) => (v === null ? "—" : `${String(v).replace(".", ",")}%`);
-const boxesLabel = (n: number) => (n === 1 ? "علبة وحدة" : n === 2 ? "علبتين" : n >= 4 ? "4 علب ولا أكثر" : `${n} علب`);
+const boxesLabel = (n: number) => (n === 1 ? "لعبة وحدة" : n === 2 ? "لعبتين" : n >= 4 ? "4 ألعاب ولا أكثر" : `${n} ألعاب`);
 
 function Kpi({ label, value, note, strong }: { label: string; value: string; note?: string; strong?: boolean }) {
   return (
@@ -111,7 +111,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
         <div>
           <h1 className="text-3xl">الإحصائيات</h1>
           <p className="mt-1 text-muted">
-            الأرقام من الطلبات اللي جات للسيت. المبالغ هي سوم العلب برك، من غير التوصيل، والطلبات الملغاة ما تتحسبش في الفلوس.
+            الأرقام من الطلبات اللي جات للسيت. المبالغ هي سوم الألعاب برك، من غير التوصيل، والطلبات الملغاة ما تتحسبش في الفلوس.
           </p>
         </div>
         <div className="space-y-2">
@@ -154,7 +154,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
       {/* ───── Headline numbers ───── */}
       <section aria-label="أهم الأرقام" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi label="الطلبات" value={String(s.orders)} note={`${s.liveOrders} شغّالة · ${s.cancelledOrders} ملغاة · ${s.waiting} تستنّى التأكيد · ${s.postponed} مؤجّلة`} />
-        <Kpi label="العلب المطلوبة" value={String(s.boxes)} note={`المعدّل ${String(s.averageBoxes).replace(".", ",")} علبة في الطلب`} />
+        <Kpi label="الألعاب المطلوبة" value={String(s.boxes)} note={`المعدّل ${String(s.averageBoxes).replace(".", ",")} لعبة في الطلب`} />
         <Kpi label="قيمة الطلبات" value={formatTND(s.value)} note={`من غير التوصيل · معدّل الطلب ${formatTND(s.averageOrder)}`} />
         <Kpi label="فلوس الطلبات المسلّمة" value={formatTND(s.deliveredValue)} note={`${s.deliveredOrders} طلب تسلّم · ${formatTND(s.inProgressValue)} في الطريق`} strong />
       </section>
@@ -221,7 +221,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
           {/* ───── Offers ───── */}
           <section aria-labelledby="mix-title" className={card}>
             <h2 id="mix-title" className="font-sans text-lg font-bold">
-              قدّاش من علبة في كل طلب
+              قدّاش من لعبة في كل طلب
             </h2>
             <ul className="mt-4 space-y-3">
               {s.mix.map((m) => (
@@ -244,7 +244,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
           <h2 id="delivery-title" className="font-sans text-lg font-bold">
             التوصيل: شكون وصّل وقدّاش
           </h2>
-          <p className="mt-1 text-sm text-muted">الطلبات المؤكّدة واللي في الطريق والمسلّمة. «فلوس المسلّمة» هي سوم العلب اللي لازم توصلك من عند الموزّع، من غير التوصيل.</p>
+          <p className="mt-1 text-sm text-muted">الطلبات المؤكّدة واللي في الطريق والمسلّمة. «فلوس المسلّمة» هي سوم الألعاب اللي لازم توصلك من عند الموزّع، من غير التوصيل.</p>
           {delivery.length === 0 ? (
             <p className="mt-3 text-muted">ما فماش طلبات مؤكّدة في الفترة هاذي.</p>
           ) : (
@@ -333,10 +333,10 @@ export default async function StatsPage({ searchParams }: PageProps<"/admin/stat
                       {p.status === "hidden" ? <span className="ms-2 text-muted">(مخفي)</span> : null}
                     </td>
                     <td className="py-3 leading-6">
-                      <span className="tabular">علبة: {formatTND(p.price)}</span>
+                      <span className="tabular">لعبة: {formatTND(p.price)}</span>
                       {p.bundles.map((b) => (
                         <span key={b.quantity} className="block tabular text-muted">
-                          {boxesLabel(b.quantity)}: {formatTND(b.price)} ({formatTND(Math.round(b.price / b.quantity))} للعلبة)
+                          {boxesLabel(b.quantity)}: {formatTND(b.price)} ({formatTND(Math.round(b.price / b.quantity))} للّعبة)
                         </span>
                       ))}
                     </td>

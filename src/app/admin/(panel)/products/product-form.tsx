@@ -173,7 +173,7 @@ export function ProductForm({
           <AdminField id="players" label="عدد اللاعبين" hint="اتركه فارغًا لإخفائه">
             <input {...describe("players", { hint: true })} defaultValue={product?.players} className={adminInput} />
           </AdminField>
-          <AdminField id="contents" label="محتويات العلبة" hint="سطر لكل عنصر بالشكل: التسمية: القيمة" className="md:col-span-2">
+          <AdminField id="contents" label="محتويات اللعبة" hint="سطر لكل عنصر بالشكل: التسمية: القيمة" className="md:col-span-2">
             <textarea {...describe("contents", { hint: true })} defaultValue={formatLabelValues(product?.contents ?? [])} rows={5} className={adminInput} />
           </AdminField>
           <AdminField id="howToPlay" label="طريقة اللعب" hint="لكل خطوة: العنوان في السطر الأول ثم الشرح تحته. افصل بين الخطوات بسطر فارغ." className="md:col-span-2">

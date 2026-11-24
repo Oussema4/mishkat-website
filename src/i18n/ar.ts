@@ -107,7 +107,7 @@ export const ar = {
     deliveryExtra: "+ {fee} توصيل لكل الولايات",
     addToCart: "أضف إلى السلة",
     description: "عن اللعبة",
-    contents: "محتويات العلبة",
+    contents: "محتويات اللعبة",
     age: "الفئة العمرية",
     players: "عدد اللاعبين",
     howToPlay: "طريقة اللعب",
@@ -119,10 +119,10 @@ export const ar = {
     insteadOf: "بدلًا من ",
     offers: "اختر الكمية",
     offerSave: "وفّر {amount}",
-    offerUnit: "{price} للعلبة",
+    offerUnit: "{price} للّعبة",
     delivery: "توصيل لكل الولايات خلال {time} · {fee}",
     codNote: "الدفع نقدًا عند الاستلام · توصيل خلال {time}",
-    rulesNote: "ملخّص من ورقة القواعد الموجودة داخل العلبة.",
+    rulesNote: "ملخّص من ورقة القواعد الموجودة داخل اللعبة.",
     rulesDeck: "افتح العرض كاملًا",
     rulesDeckTitle: "عرض مصوّر لقواعد لعبة سبيلي",
     deliveryChip: "توصيل في {time}",
@@ -267,8 +267,8 @@ export const ar = {
     tnd: "د.ت",
     listSeparator: "، ",
   },
-  /** Arabic count of boxes: علبة واحدة، علبتان، 3 علب… 11 علبة. */
-  boxes: (n: number) => (n === 1 ? "علبة واحدة" : n === 2 ? "علبتان" : n <= 10 ? `${n} علب` : `${n} علبة`),
+  /** Arabic count of games: لعبة واحدة، لعبتان، 3 ألعاب… 11 لعبة. */
+  boxes: (n: number) => (n === 1 ? "لعبة واحدة" : n === 2 ? "لعبتان" : n <= 10 ? `${n} ألعاب` : `${n} لعبة`),
 };
 
 export type Dictionary = typeof ar;
