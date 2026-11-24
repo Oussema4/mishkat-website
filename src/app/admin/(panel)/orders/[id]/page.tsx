@@ -68,7 +68,14 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
           </h1>
           <p className="mt-1 text-muted">{formatDateTime(order.createdAt)}</p>
         </div>
-        <StatusBadge status={order.status} />
+        <div className="flex flex-wrap items-center gap-2">
+          {order.noAnswerCount > 0 && order.noAnswerAt ? (
+            <span className="inline-flex items-center rounded-full bg-[#fdeb9c] px-2.5 py-0.5 text-sm font-medium text-[#5c4700]" title={formatDateTime(order.noAnswerAt)}>
+              الموزّع: ما يهزش ×{order.noAnswerCount} (آخر مرّة {formatDateTime(order.noAnswerAt)})
+            </span>
+          ) : null}
+          <StatusBadge status={order.status} />
+        </div>
       </header>
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">

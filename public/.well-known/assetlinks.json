@@ -1,10 +1,26 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.mishkattn.admin",
-      "sha256_cert_fingerprints": ["41:AB:33:99:87:B6:53:E4:13:D4:23:74:03:43:0A:88:3B:5F:07:5D:95:A8:5C:CA:91:65:F8:3C:F9:70:0B:18"]
+      "sha256_cert_fingerprints": [
+        "41:AB:33:99:87:B6:53:E4:13:D4:23:74:03:43:0A:88:3B:5F:07:5D:95:A8:5C:CA:91:65:F8:3C:F9:70:0B:18"
+      ]
+    }
+  },
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.mishkattn.driver",
+      "sha256_cert_fingerprints": [
+        "41:AB:33:99:87:B6:53:E4:13:D4:23:74:03:43:0A:88:3B:5F:07:5D:95:A8:5C:CA:91:65:F8:3C:F9:70:0B:18"
+      ]
     }
   }
 ]

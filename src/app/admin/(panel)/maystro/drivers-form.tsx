@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { adminInput, FormMessage, keepValuesOnSubmit, SubmitButton } from "@/components/admin/form-bits";
 import { cn } from "@/lib/site";
@@ -30,6 +31,9 @@ function DriverItem({ driver }: { driver: DriverRow }) {
         <p className="text-muted">
           {driver.active ? "يظهر في الطلبات" : "موقوف: ما يظهرش في الطلبات الجديدة"} · وصّل {driver.delivered} · عندو توا {driver.open}
         </p>
+        <Link href={`/admin/maystro/drivers/${driver.id}`} className="inline-flex min-h-10 items-center font-medium text-ink underline-offset-4 hover:underline">
+          الحسبة والتطبيق
+        </Link>
         <form action={setDriverActive}>
           <input type="hidden" name="id" value={driver.id} />
           <input type="hidden" name="active" value={driver.active ? "0" : "1"} />

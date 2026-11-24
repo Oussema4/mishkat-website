@@ -2,11 +2,11 @@
 
 import { useEffect } from "react";
 
-/** Registers the dashboard's service worker, so phones can install the dashboard as an app. */
-export function RegisterAdminApp() {
+/** Registers an installable app's service worker (dashboard: /admin, driver app: /driver). */
+export function RegisterAdminApp({ sw = "/admin-sw.js", scope = "/admin" }: { sw?: string; scope?: string }) {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
-    navigator.serviceWorker.register("/admin-sw.js", { scope: "/admin" }).catch(() => {});
-  }, []);
+    navigator.serviceWorker.register(sw, { scope }).catch(() => {});
+  }, [sw, scope]);
   return null;
 }

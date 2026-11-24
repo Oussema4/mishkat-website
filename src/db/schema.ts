@@ -94,8 +94,34 @@ export const drivers = sqliteTable("drivers", {
   name: text("name").notNull(),
   phone: text("phone").notNull().default(""),
   active: integer("active", { mode: "boolean" }).notNull().default(true),
+  /** SHA-256 of the code the driver types once in the driver app (/driver); null = no access. */
+  accessCodeHash: text("access_code_hash").unique(),
+  /** Bumped when a new code is made: signs the driver out of every phone. */
+  sessionVersion: integer("session_version").notNull().default(1),
   createdAt: timestamps.createdAt,
 });
+
+/**
+ * The account between the shop and a driver: boxes handed over or brought back, and cash the
+ * driver handed in. What the driver delivered comes from his orders.
+ */
+export const DRIVER_LEDGER_KINDS = ["boxesGiven", "boxesReturned", "cashReceived"] as const;
+export const driverLedger = sqliteTable(
+  "driver_ledger",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    driverId: integer("driver_id")
+      .notNull()
+      .references(() => drivers.id, { onDelete: "cascade" }),
+    kind: text("kind", { enum: DRIVER_LEDGER_KINDS }).notNull(),
+    /** Boxes for the box kinds, millimes for cash. Always positive. */
+    amount: integer("amount").notNull(),
+    note: text("note").notNull().default(""),
+    adminName: text("admin_name").notNull().default(""),
+    createdAt: timestamps.createdAt,
+  },
+  (t) => [index("driver_ledger_driver_idx").on(t.driverId)],
+);
 
 /** none: not sent · sent: parcel created at Maystro · failed: refused or unreachable (see maystroError). */
 export const MAYSTRO_STATES = ["none", "sent", "failed"] as const;
@@ -127,6 +153,9 @@ export const orders = sqliteTable(
     /** With carrier "manual": the shop's delivery person who takes it, and when that was set. */
     driverId: integer("driver_id").references(() => drivers.id, { onDelete: "set null" }),
     driverAssignedAt: integer("driver_assigned_at", { mode: "timestamp" }),
+    /** Times the driver marked "the customer doesn't answer" (ما يهزش), and the last time. */
+    noAnswerCount: integer("no_answer_count").notNull().default(0),
+    noAnswerAt: integer("no_answer_at", { mode: "timestamp" }),
     // Delivery through Maystro: the parcel created there, its tracking number and last known status.
     maystroState: text("maystro_state", { enum: MAYSTRO_STATES }).notNull().default("none"),
     maystroOrderId: text("maystro_order_id"),
@@ -240,6 +269,7 @@ export const rateLimits = sqliteTable("rate_limits", {
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type ProductImage = typeof productImages.$inferSelect;
+export type DriverLedgerEntry = typeof driverLedger.$inferSelect;
 export type Order = typeof orders.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type Admin = typeof admins.$inferSelect;

@@ -53,11 +53,11 @@ const nextConfig: NextConfig = {
     return {
       // Arabic is the store's default language and lives at the root: /shop is served by /ar/shop.
       // French and English keep their prefix (/fr/…, /en/…). Everything that isn't a store page
-      // (dashboard, API, files, Next's own assets) is left alone.
+      // (dashboard, driver app, API, files, Next's own assets) is left alone.
       beforeFiles: [
         { source: "/", destination: "/ar" },
         {
-          source: "/:path((?!(?:ar|fr|en|admin|api|_next|images|uploads|rules)(?:/|$))(?!.*\\.[a-z0-9]+$).+)",
+          source: "/:path((?!(?:ar|fr|en|admin|driver|api|_next|images|uploads|rules)(?:/|$))(?!.*\\.[a-z0-9]+$).+)",
           destination: "/ar/:path",
         },
       ],
@@ -99,6 +99,10 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/admin/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/driver/:path*",
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
       {

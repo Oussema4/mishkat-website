@@ -10,7 +10,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { ADMIN_ROLES, admins, categories, checkoutLeads, drivers, ORDER_STATUSES, orders, orderStatusHistory, productImages, products, reviews, type ProductText } from "@/db/schema";
+import { ADMIN_ROLES, admins, categories, checkoutLeads, DRIVER_LEDGER_KINDS, driverLedger, drivers, ORDER_STATUSES, orders, orderStatusHistory, productImages, products, reviews, type ProductText } from "@/db/schema";
 import { parseBundles, parseFaq, parseLabelValues, parseLines, parseSteps, parseTND, slugify } from "@/lib/admin-format";
 import { checkoutSchema, MAX_QTY_PER_ITEM, splitFullName } from "@/lib/validation";
 import { findCommune } from "@/lib/maystro";
@@ -20,6 +20,7 @@ import { changeOrderStatus, createOrder, deleteOrders } from "@/server/order-cor
 import { carrierById } from "@/lib/carriers";
 import { getCommunes, maystroEnabled, maystroWebhookUrl, registerWebhook, sendOrderToMaystro, syncOrderFromMaystro } from "@/server/maystro";
 import { getSettings, saveSettings } from "@/server/settings";
+import { hashDriverCode, newDriverCode } from "@/lib/driver-session";
 import { clientIp, hit, isBlocked, reset } from "@/server/rate-limit";
 import { deleteImage } from "@/server/uploads";
 
@@ -30,6 +31,8 @@ export type FormState = {
   fieldErrors?: Record<string, string>;
   /** Set when a new product was created and the form uploads its images itself before moving on. */
   productId?: number;
+  /** A driver's new sign-in code, shown once. */
+  code?: string;
 };
 
 /** Store pages are pre-rendered — refresh them after any catalogue/settings change. */
@@ -322,6 +325,68 @@ export async function setDriverActive(form: FormData) {
   if (!Number.isInteger(id) || id <= 0) return;
   await db.update(drivers).set({ active: form.get("active") === "1" }).where(eq(drivers.id, id));
   revalidatePath("/admin", "layout");
+}
+
+/**
+ * A new sign-in code for the driver app. Shown once; any phone signed in with the old code is
+ * signed out (the session version changes).
+ */
+export async function makeDriverCode(_prev: FormState, form: FormData): Promise<FormState> {
+  await requireAdmin();
+  const id = Number(form.get("id"));
+  if (!Number.isInteger(id) || id <= 0) return { error: "الموزّع غير موجود." };
+  const code = newDriverCode();
+  const updated = await db
+    .update(drivers)
+    .set({ accessCodeHash: hashDriverCode(code), sessionVersion: sql`${drivers.sessionVersion} + 1` })
+    .where(eq(drivers.id, id));
+  if (updated.rowsAffected !== 1) return { error: "الموزّع غير موجود." };
+  revalidatePath("/admin/maystro", "layout");
+  return { ok: true, code, message: "الكود الجديد جاهز. الكود القديم ما عادش يخدم." };
+}
+
+/** Takes the driver app away from a driver (lost phone, stopped working): no code, signed out. */
+export async function removeDriverCode(form: FormData) {
+  await requireAdmin();
+  const id = Number(form.get("id"));
+  if (!Number.isInteger(id) || id <= 0) return;
+  await db.update(drivers).set({ accessCodeHash: null, sessionVersion: sql`${drivers.sessionVersion} + 1` }).where(eq(drivers.id, id));
+  revalidatePath("/admin/maystro", "layout");
+}
+
+/** A line in the account with a driver: boxes given or brought back, cash handed in. */
+export async function addDriverLedger(_prev: FormState, form: FormData): Promise<FormState> {
+  const admin = await requireAdmin();
+  const driverId = Number(form.get("driverId"));
+  const kind = String(form.get("kind")) as (typeof DRIVER_LEDGER_KINDS)[number];
+  if (!Number.isInteger(driverId) || driverId <= 0 || !DRIVER_LEDGER_KINDS.includes(kind)) return { error: "بيانات غير صالحة." };
+  const raw = String(form.get("amount") ?? "").trim();
+  let amount: number;
+  if (kind === "cashReceived") {
+    const m = parseTND(raw);
+    if (m === null || m <= 0) return { error: "اكتب المبلغ بالدينار (مثلا 216 ولا 216.500)." };
+    amount = m;
+  } else {
+    amount = Number(raw);
+    if (!Number.isInteger(amount) || amount <= 0 || amount > 10000) return { error: "اكتب عدد الباكوات (رقم صحيح)." };
+  }
+  const note = String(form.get("note") ?? "").trim().slice(0, 200);
+  const [driver] = await db.select({ id: drivers.id }).from(drivers).where(eq(drivers.id, driverId)).limit(1);
+  if (!driver) return { error: "الموزّع غير موجود." };
+  await db.insert(driverLedger).values({ driverId, kind, amount, note, adminName: admin.name });
+  revalidatePath("/admin/maystro", "layout");
+  revalidatePath("/driver");
+  return { ok: true, message: "تسجّل." };
+}
+
+/** Removes a line typed by mistake. */
+export async function deleteDriverLedger(form: FormData) {
+  await requireAdmin();
+  const id = Number(form.get("id"));
+  if (!Number.isInteger(id) || id <= 0) return;
+  await db.delete(driverLedger).where(eq(driverLedger.id, id));
+  revalidatePath("/admin/maystro", "layout");
+  revalidatePath("/driver");
 }
 
 /** Deletes the orders ticked in the list. Owner only: this can't be undone. */
