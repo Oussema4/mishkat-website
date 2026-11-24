@@ -16,7 +16,7 @@ export const SABILI_TRANSLATIONS: ProductTranslations = {
       "Les questions couvrent cinq domaines : la croyance (‘aqîda), le Coran, le fiqh, la Sîra du Prophète et l’histoire islamique. Les cartes colorées portent les questions faciles, les jaunes les plus difficiles.",
       "À la fin, le gagnant ne repart pas seulement avec des points : il distribue aux perdants des cartes « Hassana » et « Maw‘idha », et le jeu devient lui-même une œuvre récompensée.",
     ].join("\n\n"),
-    ageRange: "À partir de 9 ans",
+    ageRange: "",
     contents: [
       { label: "Cartes de questions", value: "125 cartes : colorées (questions faciles) et jaunes (questions plus difficiles)" },
       { label: "Domaines des questions", value: "Croyance, Coran, fiqh, Sîra, histoire islamique" },
@@ -43,12 +43,11 @@ export const SABILI_TRANSLATIONS: ProductTranslations = {
     benefits: [
       "On apprend dans cinq domaines : la croyance, le Coran, le fiqh, la Sîra et l’histoire islamique.",
       "Chaque question ouvre une discussion : celui qui connaît l’histoire la raconte aux autres.",
-      "Réunit petits et grands (dès 9 ans) autour d’une même table, loin des écrans.",
+      "Réunit petits et grands autour d’une même table, loin des écrans.",
       "Deux niveaux de difficulté font grandir le défi d’une manche à l’autre.",
       "Les cartes Hassana et Maw‘idha transforment la fin de la partie en bonne action.",
     ],
     faq: [
-      { q: "À partir de quel âge ?", a: "Dès 9 ans ; petits et grands y jouent ensemble." },
       { q: "Combien de cartes contient la boîte ?", a: "125 cartes de questions (colorées et jaunes), plus les cartes Hassana et Maw‘idha et la fiche de règles." },
       {
         q: "Quelle différence entre les cartes colorées et les jaunes ?",
@@ -67,7 +66,7 @@ export const SABILI_TRANSLATIONS: ProductTranslations = {
       "The questions cover five fields: belief (‘aqeedah), the Quran, fiqh, the Prophet’s Seerah and Islamic history. Coloured cards carry the easy questions, yellow cards the harder ones.",
       "In the end the winner doesn’t just walk away with points: they hand the others “Hassana” and “Maw‘idha” cards, so the game itself becomes a deed you are rewarded for.",
     ].join("\n\n"),
-    ageRange: "Ages 9 and up",
+    ageRange: "",
     contents: [
       { label: "Question cards", value: "125 cards: coloured (easy questions) and yellow (harder questions)" },
       { label: "Question fields", value: "Belief, Quran, fiqh, Seerah, Islamic history" },
@@ -94,12 +93,11 @@ export const SABILI_TRANSLATIONS: ProductTranslations = {
     benefits: [
       "You learn in five fields: belief, the Quran, fiqh, the Seerah and Islamic history.",
       "Every question opens a conversation: whoever knows the story tells it to the others.",
-      "Brings young and old (from age 9) around one table, away from screens.",
+      "Brings young and old around one table, away from screens.",
       "Two difficulty levels make the challenge grow from one round to the next.",
       "Hassana and Maw‘idha cards turn the end of the game into a good deed.",
     ],
     faq: [
-      { q: "What age is the game for?", a: "Ages 9 and up; young and old play it together." },
       { q: "How many cards are in the box?", a: "125 question cards (coloured and yellow), plus the Hassana and Maw‘idha cards and the rules sheet." },
       {
         q: "What’s the difference between coloured and yellow cards?",
