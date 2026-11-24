@@ -40,6 +40,8 @@ export const ar = {
     heroContact: "تواصل معنا",
     heroFieldsLabel: "ما تبنيه ألعاب مشكاة",
     heroFields: ["معرفة", "شغف", "كفاءة", "إدراك", "تعلّم"],
+    heroPhotoAlt: "لعبة سبيلي على الطاولة: بطاقات الأسئلة الملوّنة وأصنافها",
+    heroPhotoLink: "اكتشف لعبة سبيلي",
     // The name
     aboutTitle: "معنى مشكاة",
     aboutText:

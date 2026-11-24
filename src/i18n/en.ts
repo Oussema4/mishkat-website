@@ -40,6 +40,8 @@ export const en: Dictionary = {
     heroContact: "Contact us",
     heroFieldsLabel: "What Mishkat games build",
     heroFields: ["Knowledge", "Passion", "Skill", "Understanding", "Learning"],
+    heroPhotoAlt: "Sabili on the table: the coloured question cards and their categories",
+    heroPhotoLink: "Discover the Sabili game",
     aboutTitle: "What Mishkat means",
     aboutText:
       "A mishkat is a niche in the wall where the lamp is placed, lighting the whole house. That is where our name comes from: games that put knowledge at the heart of the home, where young and old learn while they play.",

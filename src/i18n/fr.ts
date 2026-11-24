@@ -40,6 +40,8 @@ export const fr: Dictionary = {
     heroContact: "Nous contacter",
     heroFieldsLabel: "Ce que développent les jeux Mishkat",
     heroFields: ["Savoir", "Passion", "Compétence", "Compréhension", "Apprentissage"],
+    heroPhotoAlt: "Le jeu Sabili sur la table : les cartes questions colorées et leurs catégories",
+    heroPhotoLink: "Découvrir le jeu Sabili",
     aboutTitle: "Le sens de Mishkat",
     aboutText:
       "La mishkat est une niche dans le mur où l’on pose la lampe, qui éclaire alors toute la maison. Notre nom vient de là : des jeux qui placent le savoir au cœur du foyer, où petits et grands apprennent en jouant.",

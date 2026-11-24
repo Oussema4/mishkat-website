@@ -32,6 +32,9 @@ export async function generateMetadata({ params }: LangParams): Promise<Metadata
   return { alternates: pageAlternates(locale, "/") };
 }
 
+// Sabili being played, in the lamp's place at the centre of the diagram: what Mishkat makes, at first sight.
+const HERO_PHOTO = { src: "/images/home/sabili-on-table.webp", width: 527, height: 912 };
+
 export default async function HomePage({ params }: LangParams) {
   const { locale, t, href } = await pageLocale(params);
   const [products, reviews, settings] = await Promise.all([getActiveProducts(locale), getVisibleReviews(), getSettings(locale)]);
@@ -94,7 +97,10 @@ export default async function HomePage({ params }: LangParams) {
               <p className="sr-only">
                 {t.home.heroFieldsLabel}: {t.home.heroFields.join(t.common.listSeparator)}
               </p>
-              <KnowledgeMap fields={[...t.home.heroFields]} />
+              <KnowledgeMap
+                fields={[...t.home.heroFields]}
+                photo={{ ...HERO_PHOTO, alt: t.home.heroPhotoAlt, label: t.home.heroPhotoLink, href: href("/products/sabili") }}
+              />
             </div>
           </div>
         </section>
