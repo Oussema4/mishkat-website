@@ -21,6 +21,7 @@ import { carrierById } from "@/lib/carriers";
 import { getCommunes, maystroEnabled, maystroWebhookUrl, registerWebhook, sendOrderToMaystro, syncOrderFromMaystro } from "@/server/maystro";
 import { getSettings, saveSettings } from "@/server/settings";
 import { hashDriverCode, newDriverCode } from "@/lib/driver-session";
+import { driverAccount } from "@/server/driver";
 import { clientIp, hit, isBlocked, reset } from "@/server/rate-limit";
 import { deleteImage } from "@/server/uploads";
 
@@ -377,6 +378,30 @@ export async function addDriverLedger(_prev: FormState, form: FormData): Promise
   revalidatePath("/admin/maystro", "layout");
   revalidatePath("/driver");
   return { ok: true, message: "تسجّل." };
+}
+
+/**
+ * "I got the money": the driver handed in the price of the orders he delivered and kept the
+ * delivery fees. Both are written in the account, so what he holds goes back to zero. The amounts
+ * the admin saw must still be the current ones (he may have delivered another order meanwhile).
+ */
+export async function settleDriverCash(_prev: FormState, form: FormData): Promise<FormState> {
+  const admin = await requireAdmin();
+  const driverId = Number(form.get("driverId"));
+  if (!Number.isInteger(driverId) || driverId <= 0) return { error: "الموزّع غير موجود." };
+  const account = await driverAccount(driverId);
+  if (Number(form.get("goods")) !== account.goodsOwed || Number(form.get("delivery")) !== account.deliveryEarned) {
+    return { error: "الحسبة تبدّلت (وصّل طلب آخر؟). حدّث الصفحة وعاود." };
+  }
+  if (account.goodsOwed <= 0 && account.deliveryEarned <= 0) return { error: "ما عندو حتى فلوس." };
+  const entries = [
+    account.goodsOwed > 0 ? { driverId, kind: "cashReceived" as const, amount: account.goodsOwed, note: "تسلّمت الفلوس", adminName: admin.name } : null,
+    account.deliveryEarned > 0 ? { driverId, kind: "deliverySettled" as const, amount: account.deliveryEarned, note: "تسلّمت الفلوس", adminName: admin.name } : null,
+  ].filter((e) => e !== null);
+  await db.insert(driverLedger).values(entries);
+  revalidatePath("/admin/maystro", "layout");
+  revalidatePath("/driver");
+  return { ok: true, message: "تسجّل: الحساب رجع للصفر." };
 }
 
 /** Removes a line typed by mistake. */

@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { CopyButton } from "@/components/admin/copy-button";
 import { adminInput, FormMessage, keepValuesOnSubmit, SubmitButton } from "@/components/admin/form-bits";
 import { cn } from "@/lib/site";
-import { addDriverLedger, makeDriverCode, type FormState } from "../../../../actions";
+import { addDriverLedger, makeDriverCode, settleDriverCash, type FormState } from "../../../../actions";
 
 /** Makes (or remakes) the code the driver types once in his app. The code shows only here, once. */
 export function DriverCodeForm({ driverId, hasCode, siteUrl }: { driverId: number; hasCode: boolean; siteUrl: string }) {
@@ -97,6 +97,56 @@ export function LedgerForm({ driverId }: { driverId: number }) {
         <SubmitButton pending={pending}>سجّل</SubmitButton>
       </div>
       <FormMessage state={state} />
+    </form>
+  );
+}
+
+/**
+ * "I got the money": the driver brought the price of the orders he delivered (he keeps the
+ * delivery fees). Writes both in the account, which goes back to zero.
+ */
+export function SettleCash({
+  driverId,
+  goods,
+  delivery,
+  goodsLabel,
+  deliveryLabel,
+}: {
+  driverId: number;
+  goods: number;
+  delivery: number;
+  goodsLabel: string;
+  deliveryLabel: string;
+}) {
+  const [state, action, pending] = useActionState<FormState, FormData>(settleDriverCash, {});
+  return (
+    <form
+      onSubmit={(e) => {
+        const text = `تسلّمت ${goodsLabel} حق الطلبيات؟
+وحق التوصيل ${deliveryLabel} يبقى عندو.
+الحساب يرجع للصفر.`;
+        if (!window.confirm(text)) {
+          e.preventDefault();
+          return;
+        }
+        keepValuesOnSubmit(action)(e);
+      }}
+      className="mt-4 rounded-[var(--radius-md)] border-2 border-success/40 bg-success/5 p-4"
+    >
+      <input type="hidden" name="driverId" value={driverId} />
+      <input type="hidden" name="goods" value={goods} />
+      <input type="hidden" name="delivery" value={delivery} />
+      <p className="text-sm leading-6">
+        جابلك الفلوس؟ تتسجّل <b className="tabular">{goodsLabel}</b> للمتجر، و<b className="tabular">{deliveryLabel}</b> حق التوصيل يبقى عندو.
+      </p>
+      <SubmitButton pending={pending} className="mt-3">
+        تسلّمت الفلوس
+      </SubmitButton>
+      {state.error || state.message ? (
+        <div className="mt-3">
+          <FormMessage state={state} />
+        </div>
+      ) : null}
     </form>
   );
 }

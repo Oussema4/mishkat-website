@@ -47,6 +47,8 @@ export default async function DriverPage() {
     id: o.id,
     name: `${o.firstName} ${o.lastName}`.trim(),
     phone: o.phone,
+    phoneLabel: formatTunisianPhone(o.phone),
+    place: [o.address, o.city, o.governorate].filter(Boolean).join("، "),
     delivered: o.status === "delivered",
     total: formatTND(o.total),
   }));

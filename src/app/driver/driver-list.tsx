@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { undoMark } from "./actions";
 import { OrderCard, type DriverOrder } from "./order-card";
 
-export type RecentOrder = { id: number; name: string; phone: string; delivered: boolean; total: string };
+export type RecentOrder = { id: number; name: string; phone: string; phoneLabel: string; place: string; delivered: boolean; total: string };
 
 /** Lower case, no Arabic diacritics, digits only for phones: "حريف" finds "حَريف", "20 444" finds "20444551". */
 const plain = (s: string) =>
@@ -24,7 +24,7 @@ export function DriverList({ orders, recent }: { orders: DriverOrder[]; recent: 
   const digits = query.replace(/\D/g, "");
   const matches = (text: string, phone: string) => !q || plain(text).includes(q) || (digits.length >= 2 && phone.includes(digits));
   const shown = orders.filter((o) => matches(`${o.name} ${o.place} ${o.reference}`, o.phone));
-  const shownRecent = recent.filter((o) => matches(o.name, o.phone));
+  const shownRecent = recent.filter((o) => matches(`${o.name} ${o.place}`, o.phone));
 
   return (
     <>
@@ -66,7 +66,7 @@ export function DriverList({ orders, recent }: { orders: DriverOrder[]; recent: 
 
       {shownRecent.length > 0 ? (
         <section className="mt-8">
-          <h2 className="font-sans text-base font-bold">كمّلتهم اليوم</h2>
+          <h2 className="font-sans text-base font-bold">تم التوصيل</h2>
           <ul className="mt-2 space-y-2">
             {shownRecent.map((o) => (
               <RecentItem key={o.id} order={o} />
@@ -82,10 +82,18 @@ export function DriverList({ orders, recent }: { orders: DriverOrder[]; recent: 
 function RecentItem({ order }: { order: RecentOrder }) {
   const [pending, start] = useTransition();
   return (
-    <li className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] bg-paper p-3">
+    <li className="flex items-start justify-between gap-3 rounded-[var(--radius-md)] bg-paper p-3">
       <div className="min-w-0">
         <p className="truncate font-semibold">{order.name}</p>
-        <p className={order.delivered ? "text-sm text-success" : "text-sm text-danger"}>{order.delivered ? `وصلت · ${order.total}` : "تم الإلغاء"}</p>
+        <p className="text-sm text-muted">
+          <a href={`tel:+216${order.phone}`} dir="ltr" className="font-medium text-ink tabular underline-offset-4 hover:underline">
+            {order.phoneLabel}
+          </a>
+        </p>
+        <p className="text-sm leading-6 text-muted">{order.place}</p>
+        <p className={order.delivered ? "text-sm font-medium text-success" : "text-sm font-medium text-danger"}>
+          {order.delivered ? `وصلت · ${order.total}` : "تم الإلغاء"}
+        </p>
       </div>
       <button
         type="button"

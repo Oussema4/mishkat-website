@@ -12,13 +12,13 @@ import { formatTunisianPhone } from "@/lib/tunisia";
 import { deleteDriverLedger, removeDriverCode } from "@/app/admin/actions";
 import { requireAdmin } from "@/server/auth";
 import { driverAccount } from "@/server/driver";
-import { DriverCodeForm, LedgerForm } from "./driver-forms";
+import { DriverCodeForm, LedgerForm, SettleCash } from "./driver-forms";
 
 export const metadata = { title: "حساب الموزّع" };
 
 const card = "rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]";
 
-const KIND_LABEL = { boxesGiven: "عطيتو باكوات", boxesReturned: "رجّعلي باكوات", cashReceived: "خلّصني فلوس" } as const;
+const KIND_LABEL = { boxesGiven: "عطيتو باكوات", boxesReturned: "رجّعلي باكوات", cashReceived: "خلّصني فلوس", deliverySettled: "خذا حق التوصيل" } as const;
 
 /**
  * One delivery person: his access to the driver app, the account between the shop and him
@@ -95,9 +95,18 @@ export default async function DriverAdminPage({ params }: { params: Promise<{ id
           {stat("منها حق الطلبيات (باقي عليه للمتجر)", formatTND(account.goodsOwed), account.goodsOwed > 0 ? "text-danger" : undefined)}
           {stat("منها حق التوصيل (ليه)", formatTND(account.deliveryEarned), "text-success")}
         </div>
+        {account.goodsOwed > 0 || account.deliveryEarned > 0 ? (
+          <SettleCash
+            driverId={driver.id}
+            goods={account.goodsOwed}
+            delivery={account.deliveryEarned}
+            goodsLabel={formatTND(account.goodsOwed)}
+            deliveryLabel={formatTND(account.deliveryEarned)}
+          />
+        ) : null}
         <p className="mt-3 text-sm leading-6 text-muted">
           «وصّل منهم» تتحسب من الطلبات اللي علّم عليها «وصلت». الفلوس هي المجموع اللي يخلّصو الحريف: حق الطلبيات يرجع للمتجر
-          (ننقصو منو اللي خلّصك)، وحق التوصيل يبقى عند الموزّع.
+          (ننقصو منو اللي خلّصك)، وحق التوصيل يبقى عند الموزّع. كي يجيبلك الفلوس اضغط «تسلّمت الفلوس» والحساب يرجع للصفر.
           {account.withHim < 0 ? " باقين عندو بالسالب: وصّل أكثر ممّا عطيتو، زيد الباكوات اللي عطيتهملو." : ""}
         </p>
 
@@ -111,7 +120,7 @@ export default async function DriverAdminPage({ params }: { params: Promise<{ id
                 <div>
                   <p className="font-medium">
                     {KIND_LABEL[l.kind]}:{" "}
-                    <b className="tabular">{l.kind === "cashReceived" ? formatTND(l.amount) : `${l.amount} باكو`}</b>
+                    <b className="tabular">{l.kind === "cashReceived" || l.kind === "deliverySettled" ? formatTND(l.amount) : `${l.amount} باكو`}</b>
                   </p>
                   <p className="text-sm text-muted">
                     {formatDateTime(l.createdAt)}

@@ -105,7 +105,8 @@ export const drivers = sqliteTable("drivers", {
  * The account between the shop and a driver: boxes handed over or brought back, and cash the
  * driver handed in. What the driver delivered comes from his orders.
  */
-export const DRIVER_LEDGER_KINDS = ["boxesGiven", "boxesReturned", "cashReceived"] as const;
+/** deliverySettled: the delivery fees the driver kept, counted as paid when the shop takes his cash. */
+export const DRIVER_LEDGER_KINDS = ["boxesGiven", "boxesReturned", "cashReceived", "deliverySettled"] as const;
 export const driverLedger = sqliteTable(
   "driver_ledger",
   {
@@ -114,7 +115,7 @@ export const driverLedger = sqliteTable(
       .notNull()
       .references(() => drivers.id, { onDelete: "cascade" }),
     kind: text("kind", { enum: DRIVER_LEDGER_KINDS }).notNull(),
-    /** Boxes for the box kinds, millimes for cash. Always positive. */
+    /** Boxes for the box kinds, millimes for cash and delivery fees. Always positive. */
     amount: integer("amount").notNull(),
     note: text("note").notNull().default(""),
     adminName: text("admin_name").notNull().default(""),

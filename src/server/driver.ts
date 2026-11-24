@@ -111,6 +111,7 @@ export async function driverAccount(driverId: number) {
   const returned = sum("boxesReturned");
   const deliveredBoxes = Number(delivered?.boxes ?? 0);
   const cashReceived = sum("cashReceived");
+  const deliverySettled = sum("deliverySettled");
   return {
     given,
     returned,
@@ -119,11 +120,12 @@ export async function driverAccount(driverId: number) {
     withHim: given - returned - deliveredBoxes,
     cashCollected: Number(cash),
     cashReceived,
-    cashWithHim: Number(cash) - cashReceived,
+    /** Cash from his delivered orders not settled yet (both parts below). */
+    cashWithHim: Number(cash) - cashReceived - deliverySettled,
     /** The products' price of his delivered orders, less what he handed in: what he owes the shop. */
     goodsOwed: Number(goods) - cashReceived,
-    /** The delivery fees of his delivered orders: the driver keeps them. */
-    deliveryEarned: Number(delivery),
+    /** The delivery fees of his delivered orders not settled yet: the driver keeps them. */
+    deliveryEarned: Number(delivery) - deliverySettled,
   };
 }
 
