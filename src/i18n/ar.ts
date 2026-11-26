@@ -130,6 +130,8 @@ export const ar = {
     deliveryChip: "توصيل في {time}",
     askWhatsapp: "عندك سؤال؟ ابعثلنا على واتساب",
     askWhatsappMessage: "السلام عليكم، عندي سؤال على لعبة {name}",
+    moreThanOffers: "تحب أكثر من {n}؟ ابعثلنا على واتساب ونعملولك سوم خاص",
+    moreThanOffersMessage: "السلام عليكم، نحب نطلب أكثر من {n} لعب {name}، قدّاش يجي السوم؟",
     video: "فيديو: ناس يلعبو {name}",
     showVideo: "شوف الفيديو",
     pauseVideo: "وقّف الفيديو",

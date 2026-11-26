@@ -10,7 +10,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { ADMIN_ROLES, admins, blockedCustomers, categories, checkoutLeads, DRIVER_LEDGER_KINDS, driverLedger, drivers, ORDER_STATUSES, orders, orderStatusHistory, productImages, products, reviews, type ProductText } from "@/db/schema";
+import { ADMIN_ROLES, admins, blockedCustomers, categories, checkoutLeads, orderItems, DRIVER_LEDGER_KINDS, driverLedger, drivers, ORDER_STATUSES, orders, orderStatusHistory, productImages, products, reviews, type ProductText } from "@/db/schema";
 import { parseBundles, parseFaq, parseLabelValues, parseLines, parseSteps, parseTND, slugify } from "@/lib/admin-format";
 import { checkoutSchema, MAX_QTY_PER_ITEM, splitFullName } from "@/lib/validation";
 import { findCommune } from "@/lib/maystro";
@@ -782,4 +782,64 @@ export async function unblockCustomer(_prev: FormState, form: FormData): Promise
   await db.delete(blockedCustomers).where(and(eq(blockedCustomers.kind, "ip"), eq(blockedCustomers.value, order.ipHash)));
   revalidatePath(`/admin/orders/${orderId}`);
   return { ok: true, message: "تنحّى الحظر." };
+}
+
+/**
+ * Changes an order's quantities and prices (agreed with the customer by phone) and its delivery fee.
+ * The order's totals follow, so do the statistics and the driver's account. While the order still
+ * holds its stock (not cancelled), the stock moves by the difference in quantity.
+ */
+export async function updateOrderItems(_prev: FormState, form: FormData): Promise<FormState> {
+  await requireAdmin();
+  const orderId = Number(form.get("orderId"));
+  const ids = form.getAll("itemId").map(Number);
+  const quantities = form.getAll("quantity").map((v) => Number(v));
+  const totals = form.getAll("lineTotal").map((v) => parseTND(String(v)));
+  const deliveryFee = parseTND(String(form.get("deliveryFee") ?? ""));
+  if (!Number.isInteger(orderId) || ids.length === 0 || ids.length !== quantities.length || ids.length !== totals.length) {
+    return { error: "بيانات غير صالحة." };
+  }
+  if (quantities.some((q) => !Number.isInteger(q) || q < 1 || q > 200)) return { error: "الكمية لازم تكون بين 1 و 200." };
+  if (totals.some((t) => t === null) || deliveryFee === null) return { error: "اكتب السوم بالأرقام (مثلًا 220 ولا 7.5)." };
+
+  try {
+    await db.transaction(async (tx) => {
+      const [order] = await tx.select({ id: orders.id, stockRestored: orders.stockRestored }).from(orders).where(eq(orders.id, orderId)).limit(1);
+      if (!order) throw new Error("الطلب غير موجود.");
+      const current = await tx.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+      let subtotal = 0;
+      for (const [n, id] of ids.entries()) {
+        const item = current.find((i) => i.id === id);
+        if (!item) throw new Error("بيانات غير صالحة.");
+        const quantity = quantities[n];
+        const lineTotal = totals[n]!;
+        const delta = quantity - item.quantity;
+        // The order still holds its boxes: take the extra ones from stock, or give back the ones dropped.
+        if (delta !== 0 && item.productId && !order.stockRestored) {
+          const moved = await tx
+            .update(products)
+            .set({ stock: sql`${products.stock} - ${delta}`, updatedAt: new Date() })
+            .where(delta > 0 ? and(eq(products.id, item.productId), sql`${products.stock} >= ${delta}`) : eq(products.id, item.productId));
+          if (moved.rowsAffected !== 1) throw new Error(`ما فماش ستوك كافي من «${item.productName}» باش تزيد ${delta}.`);
+        }
+        await tx
+          .update(orderItems)
+          .set({ quantity, lineTotal, unitPrice: Math.round(lineTotal / quantity) })
+          .where(eq(orderItems.id, id));
+        subtotal += lineTotal;
+      }
+      // Lines not in the form (none today) keep their amounts.
+      subtotal += current.filter((i) => !ids.includes(i.id)).reduce((n, i) => n + i.lineTotal, 0);
+      await tx
+        .update(orders)
+        .set({ subtotal, deliveryFee: deliveryFee!, total: subtotal + deliveryFee!, updatedAt: new Date() })
+        .where(eq(orders.id, orderId));
+    });
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "ما تسجّلش، عاود جرّب." };
+  }
+  revalidatePath("/admin", "layout");
+  revalidatePath("/driver");
+  refreshStore();
+  return { ok: true, message: "تبدّلت الكمية والسوم." };
 }

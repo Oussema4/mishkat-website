@@ -125,6 +125,8 @@ export const fr: Dictionary = {
     deliveryChip: "Livraison en {time}",
     askWhatsapp: "Une question ? Écrivez-nous sur WhatsApp",
     askWhatsappMessage: "Bonjour, j'ai une question sur {name}",
+    moreThanOffers: "Vous en voulez plus de {n} ? Écrivez-nous sur WhatsApp pour un prix spécial",
+    moreThanOffersMessage: "Bonjour, je voudrais commander plus de {n} jeux {name}. Quel serait le prix ?",
     video: "Vidéo : des joueurs autour de {name}",
     showVideo: "Voir la vidéo",
     pauseVideo: "Mettre la vidéo en pause",

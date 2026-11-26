@@ -18,6 +18,7 @@ import { CustomerDetails } from "./customer-form";
 import { DeliveryPanel } from "./delivery-panel";
 import { StatusForm } from "./status-form";
 import { BlockForm } from "./block-form";
+import { ItemsForm } from "./items-form";
 import { requireAdmin } from "@/server/auth";
 
 export default async function OrderDetailPage({ params }: PageProps<"/admin/orders/[id]">) {
@@ -222,6 +223,13 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
             <div className="mt-4 sm:ms-auto sm:max-w-xs">
               <OrderTotals subtotal={order.subtotal} deliveryFee={order.deliveryFee} total={order.total} />
             </div>
+            <ItemsForm
+              key={`${order.updatedAt.getTime()}`}
+              orderId={order.id}
+              items={items.map((i) => ({ id: i.id, productName: i.productName, quantity: i.quantity, lineTotal: i.lineTotal }))}
+              deliveryFee={order.deliveryFee}
+              sentToMaystro={order.maystroState === "sent"}
+            />
             <p className="mt-4 text-sm text-muted">طريقة الدفع: {ar.checkout.paymentCod}</p>
           </section>
         </div>

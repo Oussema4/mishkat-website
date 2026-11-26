@@ -110,9 +110,11 @@ function useQuantity(p: CartProduct): [number, (n: number) => void] {
   return [qty, (n) => choose(p.id, n)];
 }
 
-function OfferPicker({ product, value, onChange }: { product: CartProduct; value: number; onChange: (n: number) => void }) {
+function OfferPicker({ product, value, onChange, whatsapp }: { product: CartProduct; value: number; onChange: (n: number) => void; whatsapp?: string }) {
   const { t, locale } = useI18n();
   const choices = offerChoices(product);
+  // More than the largest offer: the price is agreed on WhatsApp (a bigger order gets a better price).
+  const most = Math.max(...choices.map((c) => c.quantity));
   // Compact side by side, like the phone's sticky bar, so the order form starts close below.
   return (
     <fieldset>
@@ -153,6 +155,17 @@ function OfferPicker({ product, value, onChange }: { product: CartProduct; value
           );
         })}
       </div>
+      {whatsapp ? (
+        <a
+          href={whatsappLink(whatsapp, fill(t.product.moreThanOffersMessage, { n: most, name: product.name }))}
+          target="_blank"
+          rel="noopener"
+          className="mt-2 flex min-h-12 items-center justify-center gap-2 rounded-[var(--radius-md)] border border-dashed border-[#3ecf7a]/60 px-3 py-2 text-center text-sm font-semibold text-[#3ecf7a] transition-colors hover:bg-[#3ecf7a]/10"
+        >
+          <WhatsAppIcon className="size-4 shrink-0" />
+          {fill(t.product.moreThanOffers, { n: most })}
+        </a>
+      ) : null}
     </fieldset>
   );
 }
@@ -319,7 +332,7 @@ export function ProductPurchase({
   }
 
   const quantityChoice = hasOffers ? (
-    <OfferPicker product={product} value={qty} onChange={setQty} />
+    <OfferPicker product={product} value={qty} onChange={setQty} whatsapp={whatsapp} />
   ) : (
     <div className="flex items-center gap-4">
       <span id="qty-label" className="font-medium">
