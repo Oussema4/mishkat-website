@@ -134,6 +134,13 @@
       "when": 1795536522250,
       "tag": "0018_game_word",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1795713930338,
+      "tag": "0019_block_customers",
+      "breakpoints": true
     }
   ]
 }

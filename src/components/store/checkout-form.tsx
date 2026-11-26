@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { placeOrder, saveCheckoutLead } from "@/app/actions/store";
+import { orderTicket, placeOrder, saveCheckoutLead } from "@/app/actions/store";
 import { PixelEvent } from "@/components/store/meta-pixel";
 import { LinePrice, OrderTotals } from "@/components/store/order-summary";
 import { pixelValue, trackPixel } from "@/lib/meta-pixel";
@@ -145,7 +145,29 @@ export function CheckoutForm({ deliveryFee, deliveryTime, inline }: DeliveryInfo
     value: pixelValue(totals.total),
   };
   // On /checkout, reaching the page starts the checkout; inline, starting to fill the form does.
+  // The order needs a ticket from the server a few seconds old (anti-spam, see order-guard.ts):
+  // asked for as soon as the customer starts on the form, so it is ready long before they confirm.
+  const ticket = useRef<{ value: string; at: number } | null>(null);
+  const ticketRequest = useRef<Promise<void> | null>(null);
+  const fetchTicket = () =>
+    (ticketRequest.current ??= orderTicket()
+      .then((value) => {
+        ticket.current = { value, at: Date.now() };
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        ticketRequest.current = null;
+      }));
+  /** A ticket at least the server's minimum age (waits the rest of it when the form was filled very fast). */
+  const readyTicket = async () => {
+    if (!ticket.current) await fetchTicket();
+    const left = ticket.current ? ticket.current.at + 3_300 - Date.now() : 0;
+    if (left > 0) await new Promise((r) => setTimeout(r, left));
+    return ticket.current?.value ?? "";
+  };
+
   const onFormFocus = () => {
+    if (!ticket.current) void fetchTicket();
     if (!inline || startedCheckout.current) return;
     startedCheckout.current = true;
     trackPixel("InitiateCheckout", checkoutParams);
@@ -180,6 +202,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime, inline }: DeliveryInfo
       address: String(form.get("address") ?? ""),
       note: String(form.get("note") ?? ""),
       trap: String(form.get("mk_trap") ?? ""),
+      wd: typeof navigator !== "undefined" && navigator.webdriver === true,
       items,
       idempotencyKey: idempotencyKey(items),
       ...(leadKey.current ? { leadKey: leadKey.current } : {}),
@@ -204,7 +227,13 @@ export function CheckoutForm({ deliveryFee, deliveryTime, inline }: DeliveryInfo
     submitting.current = true;
     startTransition(async () => {
       try {
-        const result = await placeOrder(payload, locale);
+        let result = await placeOrder({ ...payload, ticket: await readyTicket() }, locale);
+        // Ticket used up (e.g. a retry after a stock message) or expired: one fresh ticket, one more try.
+        if (!result.ok && result.newTicket) {
+          ticket.current = null;
+          result = await placeOrder({ ...payload, ticket: await readyTicket() }, locale);
+          if (!result.ok && result.newTicket) ticket.current = null;
+        }
         if (result.ok) {
           // The cart is cleared by the confirmation page once it renders.
           setPlacedToken(result.token);
@@ -381,7 +410,7 @@ export function CheckoutForm({ deliveryFee, deliveryTime, inline }: DeliveryInfo
   }
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} onChange={captureLead} noValidate className="mt-10 grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-start">
+    <form ref={formRef} onSubmit={onSubmit} onFocus={onFormFocus} onChange={captureLead} noValidate className="mt-10 grid gap-10 lg:grid-cols-[1.4fr_1fr] lg:items-start">
       <PixelEvent event="InitiateCheckout" params={checkoutParams} />
       <div className="space-y-10">
         {alerts}

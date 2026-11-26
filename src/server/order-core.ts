@@ -88,7 +88,8 @@ function sameCustomer(
   return { ok: true, publicToken: existing.publicToken, reference: existing.reference, duplicate: true };
 }
 
-export async function createOrder(db: Database, data: CheckoutData, deliveryFee: number): Promise<CreateOrderResult> {
+/** `origin.ipHash`: the connection a store order came from (kept so the shop can block it). */
+export async function createOrder(db: Database, data: CheckoutData, deliveryFee: number, origin: { ipHash?: string | null } = {}): Promise<CreateOrderResult> {
   // Same checkout submitted twice (double click, retry after timeout) → same order. The secret link
   // is only handed back to the same phone number, never to whoever happens to send the same key.
   const existing = await findByIdempotencyKey(db, data.idempotencyKey);
@@ -171,6 +172,7 @@ export async function createOrder(db: Database, data: CheckoutData, deliveryFee:
           total: totals.total,
           paymentMethod: "cod",
           status: "new",
+          ipHash: origin.ipHash ?? null,
         })
         .returning({ id: orders.id });
 

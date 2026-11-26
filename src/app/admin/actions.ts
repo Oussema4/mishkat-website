@@ -10,7 +10,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { db } from "@/db";
-import { ADMIN_ROLES, admins, categories, checkoutLeads, DRIVER_LEDGER_KINDS, driverLedger, drivers, ORDER_STATUSES, orders, orderStatusHistory, productImages, products, reviews, type ProductText } from "@/db/schema";
+import { ADMIN_ROLES, admins, blockedCustomers, categories, checkoutLeads, DRIVER_LEDGER_KINDS, driverLedger, drivers, ORDER_STATUSES, orders, orderStatusHistory, productImages, products, reviews, type ProductText } from "@/db/schema";
 import { parseBundles, parseFaq, parseLabelValues, parseLines, parseSteps, parseTND, slugify } from "@/lib/admin-format";
 import { checkoutSchema, MAX_QTY_PER_ITEM, splitFullName } from "@/lib/validation";
 import { findCommune } from "@/lib/maystro";
@@ -25,6 +25,7 @@ import { dayLabel, parsePostponeDay } from "@/lib/postpone";
 import { driverAccount } from "@/server/driver";
 import { clientIp, hit, isBlocked, reset } from "@/server/rate-limit";
 import { deleteImage } from "@/server/uploads";
+import { IP_BLOCK_DAYS } from "@/server/order-guard";
 
 export type FormState = {
   ok?: boolean;
@@ -745,4 +746,40 @@ export async function changeOwnPassword(_prev: FormState, form: FormData): Promi
     .returning();
   await startSession(updated); // other devices are signed out, this one stays in
   return { ok: true, message: "تم تغيير كلمة السر." };
+}
+
+/**
+ * Blocks the connection a store order came from for IP_BLOCK_DAYS days: new orders and started
+ * checkouts from it are refused. The phone number is not blocked (fake orders use other people's
+ * numbers), and the order itself is left as is.
+ */
+export async function blockCustomer(_prev: FormState, form: FormData): Promise<FormState> {
+  const admin = await requireAdmin();
+  const orderId = Number(form.get("orderId"));
+  if (!Number.isInteger(orderId)) return { error: "بيانات غير صالحة." };
+  const [order] = await db.select({ ipHash: orders.ipHash }).from(orders).where(eq(orders.id, orderId)).limit(1);
+  if (!order) return { error: "الطلب غير موجود." };
+  if (!order.ipHash) return { error: "هذا الطلب ما فيهش جهاز مسجّل (قديم ولا معمول من لوحة التحكم)." };
+  const expiresAt = new Date(Date.now() + IP_BLOCK_DAYS * 86_400_000);
+  await db
+    .insert(blockedCustomers)
+    .values({ kind: "ip", value: order.ipHash, orderId, adminName: admin.name, expiresAt })
+    .onConflictDoUpdate({
+      target: [blockedCustomers.kind, blockedCustomers.value],
+      set: { orderId, adminName: admin.name, expiresAt, createdAt: new Date() },
+    });
+  revalidatePath(`/admin/orders/${orderId}`);
+  return { ok: true, message: `تحظر الجهاز ${IP_BLOCK_DAYS} يوم: ما عادش ينجم يطلب من السيت.` };
+}
+
+/** Lifts the block on the connection this order came from. */
+export async function unblockCustomer(_prev: FormState, form: FormData): Promise<FormState> {
+  await requireAdmin();
+  const orderId = Number(form.get("orderId"));
+  if (!Number.isInteger(orderId)) return { error: "بيانات غير صالحة." };
+  const [order] = await db.select({ ipHash: orders.ipHash }).from(orders).where(eq(orders.id, orderId)).limit(1);
+  if (!order?.ipHash) return { error: "الطلب غير موجود." };
+  await db.delete(blockedCustomers).where(and(eq(blockedCustomers.kind, "ip"), eq(blockedCustomers.value, order.ipHash)));
+  revalidatePath(`/admin/orders/${orderId}`);
+  return { ok: true, message: "تنحّى الحظر." };
 }

@@ -11,6 +11,8 @@ import { checkoutSchemaFor, fieldErrors } from "@/lib/validation";
 import { getCartSnapshot } from "@/server/catalog";
 import { createOrder } from "@/server/order-core";
 import { clientIp, hit } from "@/server/rate-limit";
+import { hasInsult, isFakePhone } from "@/lib/spam";
+import { checkTicket, hashIp, isBlockedConnection, issueTicket, TICKET_LIFETIME_MS } from "@/server/order-guard";
 import { getCommunes } from "@/server/maystro";
 import { sendPurchaseToMeta } from "@/server/meta-capi";
 import { markLeadConverted, parseLeadInput, saveLead } from "@/server/leads";
@@ -21,11 +23,22 @@ import { getSettings } from "@/server/settings";
 
 export type PlaceOrderResult =
   | { ok: true; token: string }
-  | { ok: false; errors?: Record<string, string>; message?: string; refreshCart?: boolean; newKey?: boolean };
+  | { ok: false; errors?: Record<string, string>; message?: string; refreshCart?: boolean; newKey?: boolean; newTicket?: boolean };
 
-// Abuse guard shared by every server instance (counted in the database): max 8 orders per IP per
-// 10 minutes. Open orders per phone number are capped in createOrder.
-const orderLimit = (ip: string) => ({ key: `order:ip:${ip}`, max: 8, windowMs: 10 * 60 * 1000 });
+// Abuse guards shared by every server instance (counted in the database): orders per connection,
+// per hour and per day. Open orders per phone number are capped in createOrder.
+const orderLimits = (ip: string) => [
+  { key: `order:ip:${ip}`, max: 4, windowMs: 60 * 60 * 1000 },
+  { key: `order:ip-day:${ip}`, max: 8, windowMs: 24 * 60 * 60 * 1000 },
+];
+
+/**
+ * The order form asks for a ticket when the customer starts filling it in (see order-guard.ts):
+ * an order is only taken with a ticket a few seconds old, and each ticket places one order.
+ */
+export async function orderTicket(): Promise<string> {
+  return issueTicket();
+}
 
 export async function placeOrder(input: unknown, lang?: unknown): Promise<PlaceOrderResult> {
   const locale: Locale = isLocale(lang) ? lang : "ar";
@@ -38,8 +51,21 @@ export async function placeOrder(input: unknown, lang?: unknown): Promise<PlaceO
     return { ok: false, message: t.checkout.serverError };
   }
 
+  const raw = (typeof input === "object" && input ? input : {}) as { ticket?: unknown; wd?: unknown };
+  // A browser driven by a script (Selenium, Playwright, Puppeteer…) says so in navigator.webdriver.
+  if (raw.wd === true) {
+    console.warn("placeOrder refused: automated browser");
+    return { ok: false, message: t.checkout.serverError };
+  }
+
   const parsed = checkoutSchemaFor(t.validation).safeParse(input);
   if (!parsed.success) return { ok: false, errors: fieldErrors(parsed.error) };
+  // A made-up number nobody can be called on, or insults typed into the form.
+  if (isFakePhone(parsed.data.phone)) return { ok: false, errors: { phone: t.validation.phone } };
+  if (hasInsult(parsed.data.firstName, parsed.data.lastName, parsed.data.address, parsed.data.note)) {
+    console.warn("placeOrder refused: insult in the form");
+    return { ok: false, message: t.checkout.serverError };
+  }
 
   // A delegation sent by a page opened before the form changed is kept only if it is Maystro's
   // for that governorate; otherwise the shop picks it when sending the parcel.
@@ -52,13 +78,26 @@ export async function placeOrder(input: unknown, lang?: unknown): Promise<PlaceO
   try {
     const requestHeaders = await headers();
     const ip = clientIp(requestHeaders);
-    const { allowed } = await hit(db, orderLimit(ip));
-    if (!allowed) {
-      return { ok: false, message: t.checkout.tooManyOrders };
+    const ipHash = hashIp(ip);
+    if (await isBlockedConnection(ipHash)) {
+      console.warn("placeOrder refused: blocked connection");
+      return { ok: false, message: t.checkout.serverError };
+    }
+
+    // No ticket, a forged or stale one, or one already used: the form gets a fresh ticket and the
+    // customer presses again (a person never notices more than that).
+    const nonce = checkTicket(raw.ticket);
+    if (!nonce || !(await hit(db, { key: `ticket:${nonce}`, max: 1, windowMs: TICKET_LIFETIME_MS })).allowed) {
+      console.warn("placeOrder refused: missing or reused ticket");
+      return { ok: false, message: t.checkout.tryAgain, newTicket: true };
+    }
+
+    for (const limit of orderLimits(ip)) {
+      if (!(await hit(db, limit)).allowed) return { ok: false, message: t.checkout.tooManyOrders };
     }
 
     const settings = await getSettings();
-    const result = await createOrder(db, parsed.data, settings.deliveryFee);
+    const result = await createOrder(db, parsed.data, settings.deliveryFee, { ipHash });
     if (!result.ok) {
       const e = t.orderErrors;
       const message =
@@ -111,9 +150,11 @@ const leadLimit = (ip: string) => ({ key: `lead:ip:${ip}`, max: 40, windowMs: 10
  */
 export async function saveCheckoutLead(input: unknown): Promise<void> {
   const lead = parseLeadInput(input);
-  if (!lead) return;
+  if (!lead || isFakePhone(lead.phone) || hasInsult(lead.fullName, lead.address)) return;
   try {
-    const { allowed } = await hit(db, leadLimit(clientIp(await headers())));
+    const ip = clientIp(await headers());
+    if (await isBlockedConnection(hashIp(ip))) return;
+    const { allowed } = await hit(db, leadLimit(ip));
     if (!allowed) return;
     const { created } = await saveLead(lead);
     if (created) after(() => notifyNewLead(created));

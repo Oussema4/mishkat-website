@@ -168,9 +168,30 @@ export const orders = sqliteTable(
     maystroStatus: integer("maystro_status"),
     maystroError: text("maystro_error"),
     maystroSyncedAt: integer("maystro_synced_at", { mode: "timestamp" }),
+    /** Keyed hash of the connection the order came from (src/server/order-guard.ts); null for dashboard orders and older ones. */
+    ipHash: text("ip_hash"),
     ...timestamps,
   },
-  (t) => [index("orders_status_idx").on(t.status), index("orders_created_idx").on(t.createdAt), index("orders_phone_idx").on(t.phone)],
+  (t) => [index("orders_status_idx").on(t.status), index("orders_created_idx").on(t.createdAt), index("orders_phone_idx").on(t.phone), index("orders_ip_hash_idx").on(t.ipHash)],
+);
+
+/**
+ * Connections blocked from the dashboard: their orders and started checkouts are refused until
+ * expiresAt. kind "ip": an order's connection hash (the only kind used; "phone" is kept free).
+ */
+export const blockedCustomers = sqliteTable(
+  "blocked_customers",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    kind: text("kind", { enum: ["phone", "ip"] }).notNull(),
+    value: text("value").notNull(),
+    /** The order it was blocked from. */
+    orderId: integer("order_id").references(() => orders.id, { onDelete: "set null" }),
+    adminName: text("admin_name").notNull().default(""),
+    expiresAt: integer("expires_at", { mode: "timestamp" }),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`(unixepoch())`),
+  },
+  (t) => [uniqueIndex("blocked_customers_kind_value_idx").on(t.kind, t.value)],
 );
 
 /**

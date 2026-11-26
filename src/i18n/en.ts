@@ -177,6 +177,7 @@ export const en: Dictionary = {
     errorsTitle: "Please fix the following:",
     networkError: "Your order couldn’t be sent. Check your internet connection and try again; your cart is saved.",
     serverError: "Something went wrong and your order wasn’t saved. Try again in a moment or message us on WhatsApp.",
+    tryAgain: "Your order couldn’t be sent this time. Please press the confirm button again.",
     tooManyOrders: "You sent several orders in a short time. Wait a few minutes or message us on WhatsApp.",
     edit: "Edit cart",
   },

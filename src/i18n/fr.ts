@@ -177,6 +177,7 @@ export const fr: Dictionary = {
     errorsTitle: "Veuillez corriger les points suivants :",
     networkError: "La commande n’a pas pu être envoyée. Vérifiez votre connexion puis réessayez ; votre panier est conservé.",
     serverError: "Une erreur est survenue et la commande n’a pas été enregistrée. Réessayez dans un instant ou écrivez-nous sur WhatsApp.",
+    tryAgain: "La commande n’a pas pu être envoyée cette fois. Appuyez de nouveau sur le bouton de confirmation.",
     tooManyOrders: "Vous avez envoyé plusieurs commandes en peu de temps. Patientez quelques minutes ou écrivez-nous sur WhatsApp.",
     edit: "Modifier le panier",
   },

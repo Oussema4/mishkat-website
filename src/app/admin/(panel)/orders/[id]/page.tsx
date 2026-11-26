@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ne } from "drizzle-orm";
+import { and, asc, desc, eq, gt, ne } from "drizzle-orm";
 import { ArrowRight, Phone, Repeat2 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -6,7 +6,7 @@ import { WhatsAppIcon } from "@/components/brand/social-icons";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { OrderTotals } from "@/components/store/order-summary";
 import { db } from "@/db";
-import { drivers, orderItems, orders, orderStatusHistory } from "@/db/schema";
+import { blockedCustomers, drivers, orderItems, orders, orderStatusHistory } from "@/db/schema";
 import { ar } from "@/i18n/ar";
 import { formatDateTime } from "@/lib/dates";
 import { postponeBounds, postponedLabel } from "@/lib/postpone";
@@ -17,6 +17,7 @@ import { getCommunes, maystroEnabled, syncOrderFromMaystro } from "@/server/mays
 import { CustomerDetails } from "./customer-form";
 import { DeliveryPanel } from "./delivery-panel";
 import { StatusForm } from "./status-form";
+import { BlockForm } from "./block-form";
 import { requireAdmin } from "@/server/auth";
 
 export default async function OrderDetailPage({ params }: PageProps<"/admin/orders/[id]">) {
@@ -36,7 +37,7 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
     await Promise.race([syncOrderFromMaystro(order.id), new Promise((resolve) => setTimeout(resolve, 4000))]);
     order = (await load()) ?? order;
   }
-  const [items, history, allDrivers, samePhone] = await Promise.all([
+  const [items, history, allDrivers, samePhone, sameDevice, blocks] = await Promise.all([
     db.select().from(orderItems).where(eq(orderItems.orderId, orderId)),
     db.select().from(orderStatusHistory).where(eq(orderStatusHistory.orderId, orderId)).orderBy(asc(orderStatusHistory.createdAt), asc(orderStatusHistory.id)),
     db.select({ id: drivers.id, name: drivers.name, active: drivers.active }).from(drivers).orderBy(asc(drivers.id)),
@@ -47,6 +48,24 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
       .where(and(eq(orders.phone, order.phone), ne(orders.id, order.id)))
       .orderBy(desc(orders.createdAt))
       .limit(10),
+    // Other orders from the same connection under other numbers (store orders only): many names
+    // and numbers from one place in a short time is how fake orders look.
+    order.ipHash
+      ? db
+          .select({ id: orders.id, reference: orders.reference, status: orders.status, firstName: orders.firstName, lastName: orders.lastName, createdAt: orders.createdAt })
+          .from(orders)
+          .where(and(eq(orders.ipHash, order.ipHash), ne(orders.id, order.id), ne(orders.phone, order.phone)))
+          .orderBy(desc(orders.createdAt))
+          .limit(20)
+      : Promise.resolve([]),
+    // Is the connection this order came from blocked (and until when)?
+    order.ipHash
+      ? db
+          .select({ expiresAt: blockedCustomers.expiresAt })
+          .from(blockedCustomers)
+          .where(and(eq(blockedCustomers.kind, "ip"), eq(blockedCustomers.value, order.ipHash), gt(blockedCustomers.expiresAt, new Date())))
+          .limit(1)
+      : Promise.resolve([]),
   ]);
 
   // The customer's details can be corrected until the order is confirmed (and never once at Maystro).
@@ -146,6 +165,31 @@ export default async function OrderDetailPage({ params }: PageProps<"/admin/orde
                 واتساب
               </a>
             </div>
+            {sameDevice.length > 0 ? (
+              <div role="note" className="mt-4 rounded-[var(--radius-md)] border border-[#f7b1b1] bg-[#fdeaea] p-4">
+                <p className="font-semibold text-[#7a1616]">
+                  نفس الجهاز بعث {sameDevice.length === 1 ? "طلب آخر" : `${sameDevice.length} طلبات أخرى`} بأسماء وأرقام أخرى
+                </p>
+                <ul className="mt-2 space-y-1.5 text-sm">
+                  {sameDevice.map((o) => (
+                    <li key={o.id} className="flex flex-wrap items-center gap-2">
+                      <Link href={`/admin/orders/${o.id}`} dir="ltr" className="font-semibold tabular underline underline-offset-4">
+                        {o.reference}
+                      </Link>
+                      <span>{`${o.firstName} ${o.lastName}`.trim()}</span>
+                      <span className="text-muted">{formatDateTime(o.createdAt)}</span>
+                      <StatusBadge status={o.status} />
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {blocks[0]?.expiresAt ? (
+              <p className="mt-4 rounded-[var(--radius-md)] bg-[#fdeaea] px-4 py-2.5 text-sm font-semibold text-[#7a1616]">
+                الجهاز الي جا منو هذا الطلب محظور حتى {formatDateTime(blocks[0].expiresAt)}: ما ينجمش يطلب من السيت.
+              </p>
+            ) : null}
+            {order.ipHash ? <BlockForm orderId={order.id} blocked={blocks.length > 0} /> : null}
           </section>
 
           <section aria-labelledby="items-title" className="rounded-[var(--radius-lg)] bg-paper p-6 shadow-[var(--shadow-soft)]">
